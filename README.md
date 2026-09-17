@@ -2,6 +2,14 @@
 
 自駕車原理｜教師：CH Tseng
 
+## 學生線上練習
+
+[開啟第二週 L0–L5 分級練習：30 題隨機抽題](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week2/levels/)
+
+以越南文為主、搭配中文小字，電腦與手機皆可使用。先自行判斷等級與理由，再按「揭曉答案與說明」核對，接著按「下一位，隨機抽題」繼續練習。不需要下載檔案或登入 GitHub。
+
+網頁由 GitHub Pages 發布；`main` 分支中的正式抽題 HTML 更新後，公開網頁會自動更新。
+
 本儲存庫提供已完成的課程教材，依上課週次與日期整理。
 
 | 週次 | 日期 | 主要內容 |
