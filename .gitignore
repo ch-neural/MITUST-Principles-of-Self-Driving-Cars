@@ -1,0 +1,25 @@
+# 只追蹤正式交付目錄與說明文件。
+/*
+!/.gitignore
+!/README.md
+!/第一週(09-10)/
+!/第二週(09-17)/
+
+# 作業系統、Office 暫存、製作過程與舊版。
+.DS_Store
+Thumbs.db
+Desktop.ini
+~$*
+*.tmp
+*.temp
+*.log
+*.bak
+**/archive/
+**/_archive/
+**/.codex-work/
+**/.week*/
+**/node_modules/
+**/src/
+**/*原始備份*
+**/*_backup*
+**/*_before*
