@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>感測器實驗室　Phòng thí nghiệm cảm biến</title>
+<style>
+  :root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--tealD:#007F72;--amber:#FFB020;
+        --ink:#1A2733;--mute:#5F7183;--line:#DBE3EA;--card:#F4F7FA;--bad:#D9463E;}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+       color:var(--ink);background:#EEF2F6;}
+  #app{display:grid;grid-template-columns:352px 1fr 340px;height:100vh;}
+  .panel{background:#fff;border-right:1px solid var(--line);overflow:auto;padding:12px 14px;}
+  .panel.right{border-right:none;border-left:1px solid var(--line);}
+  h1{font-size:16px;margin:0 0 2px;color:var(--navy)}
+  h1 .vi{display:block;font-size:11px;color:var(--mute);font-weight:400}
+  h2{font-size:12px;color:var(--tealD);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.04em}
+  .note{font-size:11.5px;color:var(--mute);line-height:1.55;margin:6px 0 2px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin:6px 0 1px}
+  .row b{color:var(--navy);font-variant-numeric:tabular-nums}
+  .row .vi{color:var(--mute);font-size:10.5px;margin-left:5px}
+  input[type=range]{width:100%;margin:2px 0 0;accent-color:var(--teal)}
+  .hint{font-size:10.5px;color:var(--mute);line-height:1.45;margin:2px 0 4px;
+        border-left:2px solid var(--line);padding-left:7px}
+  .hint b{color:var(--navy)}
+  .grid{display:grid;gap:5px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr 1fr 1fr}
+  button{font-family:inherit;font-size:12px;padding:6px 7px;border:1px solid var(--line);
+         background:#fff;border-radius:7px;cursor:pointer;color:var(--ink);line-height:1.3}
+  button:hover{border-color:var(--teal)}
+  button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  button .vi{display:block;font-size:9.5px;opacity:.75}
+  .sensorBtn{display:flex;align-items:center;gap:5px;text-align:left;padding:5px 6px;font-size:11.5px}
+  .sensorBtn .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .sensorBtn.off{opacity:.4}
+  #stage{position:relative;background:#0B1F3A;overflow:hidden}
+  canvas{display:block;width:100%;height:100%;cursor:grab}
+  canvas.drag{cursor:grabbing}
+  #tip{position:absolute;left:12px;top:12px;background:rgba(11,31,58,.82);color:#DCE7F0;
+       padding:7px 11px;border-radius:8px;font-size:11.5px;line-height:1.6;max-width:330px;pointer-events:none}
+  #tip b{color:#fff}
+  .cardk{border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:7px;background:#fff}
+
+  /* ── 手機：改成單欄的直式排列。畫布固定在上面，下面用分頁切換「調整」與「讀數」 ── */
+  #mtabs{display:none}
+  @media (max-width:860px){
+    html,body{height:100%;overflow:hidden}
+    /* 用 flex 而不是 grid：order 在 flex 才能可靠地把畫布排到最前面 */
+    /* 直式排列時要夾住寬度，否則面板內較寬的內容會把整個 app 撐出螢幕 */
+    #app{display:flex;flex-direction:column;height:100dvh;width:100%;max-width:100vw;overflow:hidden}
+    #app>*{min-width:0;max-width:100%}
+    #stage{order:1;flex:0 0 auto;height:40vh;min-height:220px}
+    #mtabs{order:2;flex:0 0 auto;display:flex;background:#fff;border-bottom:1px solid var(--line)}
+    #mtabs button{flex:1 1 0;border:none;border-radius:0;padding:10px 4px;font-size:13px;
+                  font-weight:700;color:var(--mute);border-bottom:3px solid transparent;
+                  min-height:0;white-space:nowrap}
+    #mtabs button.on{color:var(--navy);background:#fff;border-bottom-color:var(--teal)}
+    .panel{order:3;flex:1 1 auto;min-height:0;overflow-y:auto;
+           border:none!important;padding:11px 13px 28px;-webkit-overflow-scrolling:touch;display:none}
+    body.tab-set .panel:not(.right){display:block}
+    body.tab-read .panel.right{display:block}
+    /* 手指比滑鼠粗：按鈕和滑桿都加大 */
+    button{font-size:12.5px;padding:9px 8px;min-height:38px}
+    .sensorBtn{padding:8px;font-size:12px;min-height:40px}
+    input[type=range]{height:30px}
+    .row{font-size:12.5px;margin:9px 0 1px}
+    .g4{grid-template-columns:1fr 1fr 1fr}
+    h1{font-size:15px}
+    h2{margin:14px 0 6px}
+    #tip{max-width:none;right:12px;font-size:11px;padding:6px 9px}
+    .lang{transform:none;right:10px;top:10px}
+    .lang button{font-size:11px;padding:5px 8px;min-height:0}
+    .cardk{padding:9px 11px}
+  }
+  @media (max-width:420px){
+    #stage{height:36vh;min-height:190px}
+    .g4,.g3{grid-template-columns:1fr 1fr}
+    #mtabs button{font-size:12px}
+  }
+  }
+  .cardk.off{opacity:.45;background:var(--card)}
+  .cardk .hd{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--navy)}
+  .cardk .hd .dot{width:9px;height:9px;border-radius:50%}
+  .cardk .hd .vi{font-weight:400;font-size:10px;color:var(--mute)}
+  .cardk .big{font-size:17px;font-weight:700;color:var(--navy);margin:5px 0 1px;font-variant-numeric:tabular-nums}
+  .cardk .sub{font-size:11px;color:var(--mute);line-height:1.5}
+  .cardk .no{color:var(--bad);font-weight:700}
+  .cardk .ok{color:var(--tealD)}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;
+       background:var(--card);color:var(--mute);margin-left:4px}
+  .lang{position:absolute;right:12px;top:12px;display:flex;gap:4px}
+  .lang button{background:rgba(255,255,255,.9)}
+  .foot{font-size:10.5px;color:var(--mute);line-height:1.5;margin-top:10px;
+        border-top:1px solid var(--line);padding-top:8px}
+  @media(max-width:1100px){#app{grid-template-columns:1fr;grid-template-rows:auto 56vh auto;height:auto}
+    .panel{border:none;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ─────────── 左：參數 ─────────── -->
+  <div class="panel">
+    <h1>感測器實驗室<span class="vi">Phòng thí nghiệm cảm biến · Tuần 3</span></h1>
+    <div class="note" data-zh="車子不會動。把物體拖到不同距離，六種感測器同時告訴你它們各自量到什麼。"
+         data-vi="Xe không chạy. Kéo vật thể tới các khoảng cách khác nhau, sáu cảm biến sẽ cho biết mỗi loại đo được gì."></div>
+
+    <h2 data-zh="觀察目標" data-vi="Mục tiêu quan sát"></h2>
+    <div class="grid g3" id="objBtns"></div>
+    <div class="hint" id="objHint"></div>
+
+    <h2 data-zh="感測器（點一下開關，再點展開參數）" data-vi="Cảm biến (bật/tắt, bấm để mở tham số)"></h2>
+    <div class="grid g2" id="senBtns"></div>
+    <div id="params"></div>
+
+    <h2 data-zh="目標的移動" data-vi="Chuyển động của mục tiêu"></h2>
+    <div class="grid g2">
+      <div>
+        <div class="row"><span data-zh="速度 m/s" data-vi="Tốc độ m/s"></span><b id="vSpd">0</b></div>
+        <input type="range" id="spd" min="0" max="20" step="0.5" value="0">
+      </div>
+      <div>
+        <div class="row"><span data-zh="方向°（0＝朝本車）" data-vi="Hướng° (0 = về xe)"></span><b id="vDir">0</b></div>
+        <input type="range" id="dir" min="-180" max="180" step="15" value="0">
+      </div>
+    </div>
+    <div class="hint" id="spdHint"></div>
+
+    <h2 data-zh="外部環境（會同時打到好幾種）" data-vi="Môi trường (ảnh hưởng nhiều loại)"></h2>
+    <div class="grid g4" id="envBtns"></div>
+    <div class="hint" id="envHint"></div>
+
+    <h2 data-zh="單一感測器故障（只打一種）" data-vi="Hỏng một cảm biến (chỉ một loại)"></h2>
+    <div class="grid g2">
+      <button id="btnDrop" data-zh="鏡頭水滴 → 只影響相機" data-vi="Giọt nước → chỉ camera"></button>
+      <button id="btnDirt" data-zh="光達罩髒污 → 只影響光達" data-vi="Vỏ bẩn → chỉ LiDAR"></button>
+    </div>
+    <div class="hint" id="fltHint"></div>
+
+    <div class="foot" data-zh="所有數值是課堂教學模型的設定，不是任何產品的規格，也不是標準衰減公式。第三週・自動駕駛原理・CH Tseng"
+         data-vi="Mọi con số là tham số mô hình dạy học, không phải thông số sản phẩm. Tuần 3 · Nguyên lý xe tự lái"></div>
+  </div>
+
+  <!-- ─────────── 中：俯視世界 ─────────── -->
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="tip"></div>
+    <div class="lang">
+      <button id="btnZh" class="on">中文</button>
+      <button id="btnVi">Tiếng Việt</button>
+    </div>
+  </div>
+
+  <!-- 手機才會出現的分頁列 -->
+  <div id="mtabs">
+    <button data-tab="set" data-zh="調整參數" data-vi="Điều chỉnh"></button>
+    <button data-tab="read" class="on" data-zh="六張讀數卡" data-vi="Sáu thẻ số"></button>
+  </div>
+
+  <!-- ─────────── 右：六張資料卡 ─────────── -->
+  <div class="panel right">
+    <h2 data-zh="這一刻，每種感測器量到什麼" data-vi="Lúc này mỗi cảm biến đo được gì"></h2>
+    <div id="cards"></div>
+    <div class="foot" id="sumFoot"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+// ═══════════════ 語言 ═══════════════
+let LANG = "zh";
+const L = (zh, vi) => (LANG === "zh" ? zh : vi);
+const $ = (id) => document.getElementById(id);
+
+// ═══════════════ 世界設定 ═══════════════
+const PXM = 8;                 // 1 公尺 = 8 像素（會依畫面再縮放）
+const LANE_W = 3.5, LANES = 4;
+const EGO = { w: 1.84, l: 4.4 };
+
+// 物體：w 寬、h 高（公尺）、thermal 熱訊號強度 0–1
+const KINDS = {
+  ped:   { zh: "行人", vi: "Người đi bộ", w: 0.5, h: 1.7, color: "#FF6B6B", thermal: 1.0, cls: true },
+  moto:  { zh: "機車", vi: "Xe máy",      w: 0.8, h: 1.6, color: "#F5C242", thermal: 0.7, cls: true },
+  car:   { zh: "汽車", vi: "Ô tô",        w: 1.8, h: 1.5, color: "#C9D3DD", thermal: 0.45, cls: true },
+  bus:   { zh: "公車", vi: "Xe buýt",     w: 2.5, h: 3.2, color: "#3C6FB0", thermal: 0.4, cls: true },
+  light: { zh: "號誌", vi: "Đèn tín hiệu", w: 0.35, h: 0.9, color: "#5BD1A0", thermal: 0.05, cls: true, signal: true },
+  child: { zh: "小孩", vi: "Trẻ em",      w: 0.35, h: 1.1, color: "#FF9E6B", thermal: 1.0, cls: true },
+};
+
+const objs = [
+  { kind: "ped",   x: -1.5, y: 30 },
+  { kind: "moto",  x:  2.5, y: 18 },
+  { kind: "car",   x: -5.0, y: 45 },
+  { kind: "bus",   x:  5.5, y: 12 },
+  { kind: "light", x:  6.5, y: 38 },
+  { kind: "child", x: -6.5, y: 8 },
+];
+let target = 0;              // 目前觀察的物體
+let tSpeed = 0, tDir = 0;    // 目標的移動（m/s、度；0°＝朝向本車）
+
+// ═══════════════ 外部環境（課堂設定）═══════════════
+// 每一格是「有效距離倍率」。這是教學用的簡化設定，不是實測衰減。
+const ENVS = {
+  sun:   { zh: "晴天白天", vi: "Nắng",      cam: 1.00, lid: 1.00, rad: 1.00, uss: 1.00, thm: 0.95 },
+  cloud: { zh: "陰天",     vi: "Nhiều mây", cam: 0.95, lid: 1.00, rad: 1.00, uss: 1.00, thm: 1.00 },
+  rain1: { zh: "小雨",     vi: "Mưa nhỏ",   cam: 0.80, lid: 0.90, rad: 0.98, uss: 0.90, thm: 0.90 },
+  rain2: { zh: "中雨",     vi: "Mưa vừa",   cam: 0.50, lid: 0.65, rad: 0.90, uss: 0.80, thm: 0.75 },
+  rain3: { zh: "大雨",     vi: "Mưa to",    cam: 0.28, lid: 0.40, rad: 0.80, uss: 0.60, thm: 0.55 },
+  night: { zh: "夜間",     vi: "Ban đêm",   cam: 0.33, lid: 1.00, rad: 1.00, uss: 1.00, thm: 1.05 },
+  glare: { zh: "逆光眩光", vi: "Chói sáng", cam: 0.22, lid: 0.95, rad: 1.00, uss: 1.00, thm: 1.00 },
+  fog:   { zh: "濃霧",     vi: "Sương mù",  cam: 0.20, lid: 0.45, rad: 0.90, uss: 0.90, thm: 0.60 },
+  snow:  { zh: "下雪",     vi: "Tuyết",     cam: 0.25, lid: 0.35, rad: 0.65, uss: 0.70, thm: 0.60 },
+};
+let env = "sun", drop = false, dirt = false;
+
+// ═══════════════ 感測器 ═══════════════
+const SEN = {
+  // 相機：目前 ADAS 主流是 2MP（1920×1080）前視鏡頭，高階已到 8MP
+  cam: { zh: "相機", vi: "Camera", color: "#4FA8FF", on: true,
+         p: { px: 1920, fov: 60, h: 1.5, range: 80 } },
+  lid: { zh: "光達", vi: "LiDAR", color: "#7ED957", on: true,
+         p: { ch: 64, vfov: 27, hres: 0.2, range: 100, mount: 1 } },   // mount 0=車頭 1=車頂
+  // 雷達：預設是長距前向雷達（LRR）——看得遠但視野窄。中短距雷達則是 60–100 m 配 90–150°
+  rad: { zh: "雷達", vi: "Radar", color: "#FFB020", on: true,
+         p: { range: 250, fov: 20, dres: 0.2 } },
+  // 超音波：量產停車感測器約 0.15–5.5 m，水平視野約 120°
+  uss: { zh: "超音波", vi: "Siêu âm", color: "#C08BFF", on: true,
+         p: { range: 4.5, fov: 120 } },
+  gns: { zh: "衛星定位", vi: "GNSS", color: "#9AA9B8", on: true,
+         p: { acc: 2.5, block: 0 } },
+  // 熱像：車用 LWIR 夜間行人偵測，文獻報告可達約 165 m
+  thm: { zh: "熱像", vi: "Ảnh nhiệt", color: "#FF7A59", on: true,
+         p: { px: 320, fov: 50, range: 150 } },
+};
+let openSen = "cam";
+
+// ═══════════════ 感測器模型 ═══════════════
+// 全部是一階近似的教學模型：看得出趨勢就好，不模擬真實光學、波形與演算法。
+const R = Math.PI / 180;
+const dist = (o) => Math.hypot(o.x, o.y);
+const bearing = (o) => Math.atan2(o.x, o.y) / R;          // 0°＝正前方，右為正
+const K = (o) => KINDS[o.kind];
+
+// 相機：從影像裡「腳踩地的那一點」反推距離。誤差 ≈ d²·θ/h，所以愈遠愈糟、裝愈高愈好。
+function camera(o) {
+  const p = SEN.cam.p, e = ENVS[env];
+  const d = dist(o), b = Math.abs(bearing(o));
+  const range = p.range * e.cam * (drop ? 0.7 : 1);
+  if (b > p.fov / 2) return { no: L("不在視野內（視野 ±" + (p.fov / 2) + "°）", "Ngoài góc nhìn (±" + (p.fov / 2) + "°)") };
+  if (d > range) return { no: L("超出有效距離 " + range.toFixed(0) + " m", "Vượt tầm " + range.toFixed(0) + " m") };
+  const theta = (p.fov / p.px) * R;                        // 每像素角
+  const err = d * d * theta / p.h;
+  // 水滴固定遮住畫面一塊：方位落在遮蔽區就整個拿不到
+  const blocked = drop && b > 6 && b < 16;
+  const clsOK = !blocked && e.cam >= 0.3 && !(drop && Math.abs(b) < 20);
+  return {
+    d, err, blocked,
+    cls: clsOK ? L(K(o).zh, K(o).vi) : L("類別未知", "Chưa rõ loại"),
+    clsOK,
+    sig: K(o).signal ? (clsOK ? L("燈色：紅", "Màu đèn: đỏ") : L("號誌資料不足", "Thiếu dữ liệu đèn")) : null,
+  };
+}
+
+// 光達：打在物體上的點數 ＝ 水平點數 × 垂直線數。距離一遠，兩邊一起掉，所以點數大約隨 d² 掉。
+function lidar(o) {
+  const p = SEN.lid.p, e = ENVS[env];
+  const d = dist(o), b = Math.abs(bearing(o));
+  const range = p.range * e.lid * (dirt ? 0.65 : 1);
+  // 安裝位置同時決定安裝高度與近距離盲區：裝愈高，車身周圍看不到的那一圈愈大
+  const mh = p.mount ? 1.8 : 0.8, blind = p.mount ? 3.5 : 0.8;
+  if (d < blind) return { no: L("落在近距離盲區內（" + blind + " m）", "Trong vùng mù gần (" + blind + " m)") };
+  if (d > range) return { no: L("超出有效距離 " + range.toFixed(0) + " m", "Vượt tầm " + range.toFixed(0) + " m") };
+  const dv = p.vfov / (p.ch - 1);                          // 相鄰線束的角間隔
+  const nh = 2 * Math.atan(K(o).w / 2 / d) / R / p.hres;
+  // 垂直方向不可能超過線束總數：物體再近，64 線就只有 64 條線打得到它
+  const nv = Math.min(p.ch, 2 * Math.atan(K(o).h / 2 / d) / R / dv);
+  let n = Math.max(0, Math.floor(nh)) * Math.max(0, Math.floor(nv));
+  if (dirt) n = Math.floor(n * 0.35);
+  if (e.lid < 1) n = Math.floor(n * e.lid);
+  return { d, n, dv, mh, blind, gap: 2 * d * Math.sin(p.hres / 2 * R), vgap: d * Math.tan(dv * R),
+           cls: L("未分類障礙物", "Vật cản chưa phân loại") };
+}
+
+// 雷達：距離與徑向速度。徑向速度是把目標的速度投影到「雷達—目標」連線上。
+function radar(o) {
+  const p = SEN.rad.p, e = ENVS[env];
+  const d = dist(o), b = Math.abs(bearing(o));
+  const range = p.range * e.rad;
+  if (b > p.fov / 2) return { no: L("不在視野內（±" + (p.fov / 2) + "°）", "Ngoài góc nhìn (±" + (p.fov / 2) + "°)") };
+  if (d > range) return { no: L("超出有效距離 " + range.toFixed(0) + " m", "Vượt tầm " + range.toFixed(0) + " m") };
+  // 目標速度向量（tDir 0°＝朝向本車，也就是 −y 方向）
+  const vx = tSpeed * Math.sin(tDir * R), vy = -tSpeed * Math.cos(tDir * R);
+  const ux = o.x / d, uy = o.y / d;                        // 本車→目標的單位向量
+  const vr = vx * ux + vy * uy;                            // 正＝遠離，負＝接近
+  return { d, vr, cls: L("未分類障礙物", "Vật cản chưa phân loại"), dres: p.dres };
+}
+
+// 超音波：只有幾公尺，停車用。
+function ultra(o) {
+  const p = SEN.uss.p, e = ENVS[env];
+  const d = dist(o), b = Math.abs(bearing(o));
+  const range = p.range * e.uss;
+  if (b > p.fov / 2) return { no: L("不在視野內（±" + (p.fov / 2) + "°）", "Ngoài góc nhìn (±" + (p.fov / 2) + "°)") };
+  if (d > range) return { no: L("太遠了，超音波只到 " + range.toFixed(1) + " m", "Quá xa, siêu âm chỉ tới " + range.toFixed(1) + " m") };
+  return { d };
+}
+
+// GNSS：只知道自己在哪，對前方物體完全沒有資訊。
+function gnss() {
+  const p = SEN.gns.p;
+  if (p.block) return { no: L("訊號被遮蔽，沒有有效定位", "Mất tín hiệu, không có định vị") };
+  return { acc: p.acc, lat: 24.7361, lon: 121.1178 };
+}
+
+// 熱像：看的是溫度差。人最亮，號誌幾乎沒有訊號；夜間不受影響，濃霧與大雨會衰減。
+function thermal(o) {
+  const p = SEN.thm.p, e = ENVS[env];
+  const d = dist(o), b = Math.abs(bearing(o));
+  const range = p.range * e.thm;
+  if (b > p.fov / 2) return { no: L("不在視野內（±" + (p.fov / 2) + "°）", "Ngoài góc nhìn (±" + (p.fov / 2) + "°)") };
+  if (d > range) return { no: L("超出有效距離 " + range.toFixed(0) + " m", "Vượt tầm " + range.toFixed(0) + " m") };
+  const t = K(o).thermal;
+  const theta = (p.fov / p.px) * R;
+  const px = Math.max(0, Math.floor(2 * Math.atan(K(o).h / 2 / d) / theta));   // 物體在畫面上佔幾個像素高
+  if (t < 0.15) return { weak: true, px, cls: L("幾乎沒有熱訊號", "Hầu như không có tín hiệu nhiệt") };
+  return { d, t, px, cls: t >= 0.9 ? L("人體熱訊號", "Tín hiệu nhiệt người") : L("熱訊號（引擎／排氣）", "Tín hiệu nhiệt (động cơ)") };
+}
+
+// ═══════════════ 資料卡 ═══════════════
+function cards() {
+  const o = objs[target], box = $("cards");
+  const mk = (key, body, extra) => {
+    const s = SEN[key];
+    return `<div class="cardk${s.on ? "" : " off"}">
+      <div class="hd"><span class="dot" style="background:${s.color}"></span>${L(s.zh, s.vi)}
+        <span class="vi">${LANG === "zh" ? s.vi : s.zh}</span></div>
+      ${s.on ? body : `<div class="sub">${L("已關閉", "Đã tắt")}</div>`}
+      ${s.on && extra ? `<div class="sub">${extra}</div>` : ""}
+    </div>`;
+  };
+  const noBox = (r) => `<div class="sub no">${r.no}</div>`;
+  let h = "";
+
+  const c = camera(o);
+  h += mk("cam", c.no ? noBox(c) :
+    `<div class="big">${c.d.toFixed(1)} ± ${c.err.toFixed(2)} m</div>
+     <div class="sub">${L("類別", "Loại")}：<b class="${c.clsOK ? "ok" : "no"}">${c.cls}</b>${c.sig ? "<br>" + c.sig : ""}</div>`,
+    c.no ? "" : L(`誤差來自「愈遠，一個像素代表愈多公尺」。`, `Sai số do: càng xa, một điểm ảnh càng ứng với nhiều mét.`));
+
+  const l = lidar(o);
+  h += mk("lid", l.no ? noBox(l) :
+    `<div class="big">${l.d.toFixed(1)} m　<span style="font-size:13px">${l.n} ${L("點", "điểm")}</span></div>
+     <div class="sub">${l.cls}</div>`,
+    l.no ? "" : L(`這個距離：左右點距 ${l.gap.toFixed(2)} m、上下線距 ${l.vgap.toFixed(2)} m<br>
+                   裝在${SEN.lid.p.mount ? "車頂" : "車頭"}（約 ${l.mh} m 高）：車身周圍 <b>${l.blind} m</b> 是盲區`,
+                  `Ở khoảng cách này: ngang ${l.gap.toFixed(2)} m, dọc ${l.vgap.toFixed(2)} m<br>
+                   Lắp ${SEN.lid.p.mount ? "trên nóc" : "đầu xe"} (cao ~${l.mh} m): vùng mù quanh xe <b>${l.blind} m</b>`));
+
+  const r = radar(o);
+  h += mk("rad", r.no ? noBox(r) :
+    `<div class="big">${r.d.toFixed(1)} m<span style="font-size:11px;font-weight:400;color:#5F7183">　${L("距離", "khoảng cách")}</span>
+       <span style="font-size:13px;color:${r.vr < -0.1 ? "#D9463E" : r.vr > 0.1 ? "#4FA8FF" : "#5F7183"}">　${r.vr >= 0 ? "+" : ""}${r.vr.toFixed(1)} m/s</span>
+       <span style="font-size:11px;font-weight:400;color:${r.vr < -0.1 ? "#D9463E" : r.vr > 0.1 ? "#4FA8FF" : "#5F7183"}">${
+         r.vr < -0.1 ? L("正在接近", "đang lại gần") : r.vr > 0.1 ? L("正在遠離", "đang ra xa") : L("幾乎沒在接近", "gần như không lại gần")}</span></div>
+     <div class="sub">${r.cls}</div>`,
+    r.no ? "" : (Math.abs(r.vr) < 0.1
+      ? L("徑向速度接近 0：它可能靜止，也可能正在橫向移動。", "Tốc độ xuyên tâm ≈ 0: có thể đứng yên, cũng có thể đang đi ngang.")
+      : L(`${r.vr < 0 ? "距離正在縮短" : "距離正在拉開"}。這是沿連線的分量，不是它自己的速度。`,
+          `${r.vr < 0 ? "Khoảng cách đang ngắn lại" : "Đang xa ra"}. Đây là thành phần dọc đường nối, không phải tốc độ của nó.`)));
+
+  const u = ultra(o);
+  h += mk("uss", u.no ? noBox(u) : `<div class="big">${u.d.toFixed(2)} m</div><div class="sub">${L("近距離障礙", "Vật cản gần")}</div>`);
+
+  const g = gnss();
+  h += mk("gns", g.no ? noBox(g) :
+    `<div class="big">± ${g.acc.toFixed(1)} m</div>
+     <div class="sub">${g.lat.toFixed(4)}, ${g.lon.toFixed(4)}</div>`,
+    L("它只知道本車在哪裡，不提供前方物體的任何資訊。", "Chỉ biết xe đang ở đâu, không cho biết gì về vật phía trước."));
+
+  const t = thermal(o);
+  h += mk("thm", t.no ? noBox(t) : t.weak ?
+    `<div class="big no">—</div><div class="sub">${t.cls}</div>` :
+    `<div class="big">${t.d.toFixed(1)} m　<span style="font-size:13px">${t.px} px</span></div>
+     <div class="sub">${t.cls}</div>`,
+    t.no || t.weak ? L("金屬、號誌燈與標線的溫度跟背景差不多，熱像看不出來。", "Kim loại, đèn và vạch kẻ gần bằng nhiệt nền nên ảnh nhiệt không thấy.")
+                   : L("夜間不受影響，但它讀不出燈色，也看不到標線。", "Ban đêm không bị ảnh hưởng, nhưng không đọc được màu đèn hay vạch kẻ."));
+  box.innerHTML = h;
+
+  // 底下一行總結：這一刻有幾種感測器拿得到這個目標
+  const got = [SEN.cam.on && !c.no, SEN.lid.on && !l.no, SEN.rad.on && !r.no,
+               SEN.uss.on && !u.no, SEN.thm.on && !t.no && !t.weak].filter(Boolean).length;
+  const cls = SEN.cam.on && !c.no && c.clsOK;
+  $("sumFoot").innerHTML = L(
+    `這個目標在 <b>${dist(o).toFixed(1)} m</b>：<b>${got}</b> 種感測器量得到它，`
+    + (cls ? "而且知道它是什麼。" : "<b style='color:#D9463E'>但沒有一種說得出它是什麼</b>——距離不能代替類別。"),
+    `Mục tiêu ở <b>${dist(o).toFixed(1)} m</b>: <b>${got}</b> cảm biến đo được, `
+    + (cls ? "và biết đó là gì." : "<b style='color:#D9463E'>nhưng không cái nào biết đó là gì</b>."));
+}
+
+// ═══════════════ 畫面 ═══════════════
+const cv = $("cv"), ctx = cv.getContext("2d");
+let Z = 1, CX = 0, CY = 0;
+function resize() {
+  const r = cv.parentElement.getBoundingClientRect();
+  cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  Z = Math.min(r.width / 40, r.height / 62);       // 視野大約 40 m 寬、62 m 深
+  CX = r.width / 2; CY = r.height - 60;
+  draw();
+}
+const TX = (x) => CX + x * Z, TY = (y) => CY - y * Z;
+
+function draw() {
+  const r = cv.parentElement.getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  ctx.fillStyle = env === "night" ? "#060D18" : "#0B1F3A";
+  ctx.fillRect(0, 0, r.width, r.height);
+
+  // 路面與車道線
+  ctx.fillStyle = "#16283D";
+  ctx.fillRect(TX(-LANE_W * LANES / 2), 0, LANE_W * LANES * Z, r.height);
+  ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; ctx.setLineDash([8, 10]);
+  for (let i = 1; i < LANES; i++) {
+    const x = TX(-LANE_W * LANES / 2 + LANE_W * i);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, r.height); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // 距離圈：每 10 公尺
+  ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.fillStyle = "rgba(255,255,255,.35)";
+  ctx.font = "10px system-ui";
+  for (let d = 10; d <= 60; d += 10) {
+    ctx.beginPath(); ctx.arc(TX(0), TY(0), d * Z, Math.PI, 2 * Math.PI); ctx.stroke();
+    ctx.fillText(d + " m", 10, TY(d) + 4);            // 貼左邊緣，避免跟物體名稱重疊
+  }
+
+  // 各感測器的涵蓋範圍（扇形）
+  const cone = (key, range, fov, col) => {
+    if (!SEN[key].on) return;
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(TX(0), TY(0));
+    ctx.arc(TX(0), TY(0), range * Z, -Math.PI / 2 - fov / 2 * R, -Math.PI / 2 + fov / 2 * R);
+    ctx.closePath(); ctx.fill();
+  };
+  const e = ENVS[env];
+  cone("cam", SEN.cam.p.range * e.cam * (drop ? 0.7 : 1), SEN.cam.p.fov, "rgba(79,168,255,.10)");
+  cone("thm", SEN.thm.p.range * e.thm, SEN.thm.p.fov, "rgba(255,122,89,.10)");
+  cone("rad", SEN.rad.p.range * e.rad, SEN.rad.p.fov, "rgba(255,176,32,.09)");
+  cone("uss", SEN.uss.p.range * e.uss, SEN.uss.p.fov, "rgba(192,139,255,.16)");
+  if (SEN.lid.on) {   // 光達畫成整圈
+    const lr = SEN.lid.p.range * e.lid * (dirt ? 0.65 : 1);
+    ctx.fillStyle = "rgba(126,217,87,.07)";
+    ctx.beginPath(); ctx.arc(TX(0), TY(0), lr * Z, Math.PI, 2 * Math.PI); ctx.closePath(); ctx.fill();
+    const bl = SEN.lid.p.mount ? 3.5 : 0.8;   // 兩種安裝位置都畫盲區圈，切換時看得出圈在縮放
+    ctx.strokeStyle = "rgba(255,120,120,.5)"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(TX(0), TY(0), bl * Z, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // 物體
+  objs.forEach((o, i) => {
+    const k = KINDS[o.kind], sel = i === target;
+    const w = Math.max(6, k.w * Z), h = Math.max(6, (k.w * 1.1) * Z);
+    ctx.fillStyle = k.color; ctx.globalAlpha = sel ? 1 : 0.72;
+    ctx.beginPath(); ctx.roundRect(TX(o.x) - w / 2, TY(o.y) - h / 2, w, h, 3); ctx.fill();
+    ctx.globalAlpha = 1;
+    if (sel) {
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(TX(o.x), TY(o.y), Math.max(w, h) * 0.9, 0, 2 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(TX(0), TY(0)); ctx.lineTo(TX(o.x), TY(o.y)); ctx.stroke(); ctx.setLineDash([]);
+      // 目標的速度箭頭
+      if (tSpeed > 0) {
+        const vx = tSpeed * Math.sin(tDir * R), vy = -tSpeed * Math.cos(tDir * R);
+        const ex = TX(o.x + vx * 0.8), ey = TY(o.y + vy * 0.8);
+        ctx.strokeStyle = "#FFB020"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(TX(o.x), TY(o.y)); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.fillStyle = "#FFB020"; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, 2 * Math.PI); ctx.fill();
+      }
+    }
+    ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = "10px system-ui"; ctx.textAlign = "center";
+    ctx.fillText(L(k.zh, k.vi), TX(o.x), TY(o.y) - h / 2 - 4);
+    ctx.textAlign = "left";
+  });
+
+  // 本車
+  ctx.fillStyle = "#00A896";
+  ctx.beginPath(); ctx.roundRect(TX(-EGO.w / 2), TY(0) - EGO.l * Z * 0.2, EGO.w * Z, EGO.l * Z, 3); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "11px system-ui"; ctx.textAlign = "center";
+  ctx.fillText(L("本車", "Xe mình"), TX(0), TY(0) + EGO.l * Z + 4);
+  ctx.textAlign = "left";
+
+  const o = objs[target];
+  $("tip").innerHTML = L(
+    `<b>拖曳任何一個物體</b>，右邊六張卡片會立刻改變。<br>目前觀察：<b>${KINDS[o.kind].zh}</b>　距離 <b>${dist(o).toFixed(1)} m</b>　方位 <b>${bearing(o).toFixed(0)}°</b>`,
+    `<b>Kéo bất kỳ vật thể nào</b>, sáu thẻ bên phải đổi ngay.<br>Đang xem: <b>${KINDS[o.kind].vi}</b>　${dist(o).toFixed(1)} m　${bearing(o).toFixed(0)}°`);
+}
+
+// ═══════════════ 拖曳 ═══════════════
+let dragging = -1;
+const posOf = (ev) => {
+  const r = cv.getBoundingClientRect();
+  const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+  const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
+  return { x: (cx - CX) / Z, y: (CY - cy) / Z };
+};
+const pick = (p) => {
+  let best = -1, bd = 2.5;
+  objs.forEach((o, i) => { const d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; best = i; } });
+  return best;
+};
+const onDown = (ev) => {
+  const p = posOf(ev), i = pick(p);
+  if (i >= 0) { dragging = i; target = i; cv.classList.add("drag"); syncObjBtns(); refresh(); ev.preventDefault(); }
+};
+const onMove = (ev) => {
+  if (dragging < 0) return;
+  const p = posOf(ev);
+  objs[dragging].x = Math.max(-19, Math.min(19, p.x));
+  objs[dragging].y = Math.max(0.5, Math.min(60, p.y));
+  refresh(); ev.preventDefault();
+};
+const onUp = () => { dragging = -1; cv.classList.remove("drag"); };
+cv.addEventListener("mousedown", onDown); window.addEventListener("mousemove", onMove); window.addEventListener("mouseup", onUp);
+cv.addEventListener("touchstart", onDown, { passive: false }); window.addEventListener("touchmove", onMove, { passive: false }); window.addEventListener("touchend", onUp);
+
+// ═══════════════ 左側控制項 ═══════════════
+function syncObjBtns() {
+  $("objBtns").innerHTML = objs.map((o, i) =>
+    `<button data-obj="${i}" class="${i === target ? "on" : ""}">${L(KINDS[o.kind].zh, KINDS[o.kind].vi)}</button>`).join("");
+  $("objBtns").querySelectorAll("[data-obj]").forEach((b) =>
+    b.onclick = () => { target = +b.dataset.obj; syncObjBtns(); refresh(); });
+}
+function syncEnvBtns() {
+  $("envBtns").innerHTML = Object.entries(ENVS).map(([k, v]) =>
+    `<button data-env="${k}" class="${k === env ? "on" : ""}">${L(v.zh, v.vi)}</button>`).join("");
+  $("envBtns").querySelectorAll("[data-env]").forEach((b) =>
+    b.onclick = () => { env = b.dataset.env; syncEnvBtns(); refresh(); });
+  $("btnDrop").classList.toggle("on", drop);
+  $("btnDirt").classList.toggle("on", dirt);
+}
+function syncSenBtns() {
+  $("senBtns").innerHTML = Object.entries(SEN).map(([k, s]) =>
+    `<button class="sensorBtn ${s.on ? "" : "off"} ${k === openSen ? "on" : ""}" data-sen="${k}">
+       <span class="dot" style="background:${s.color}"></span>
+       <span>${L(s.zh, s.vi)}<span class="vi">${LANG === "zh" ? s.vi : s.zh}</span></span>
+     </button>`).join("");
+  $("senBtns").querySelectorAll("[data-sen]").forEach((b) => {
+    b.onclick = (ev) => {
+      const k = b.dataset.sen;
+      if (k === openSen) SEN[k].on = !SEN[k].on;   // 已展開的再按一次＝開關
+      else openSen = k;
+      syncSenBtns(); params(); refresh();
+    };
+  });
+}
+
+// 每個滑桿都直接顯示它造成的後果，學生不必自己換算
+const SLIDERS = {
+  cam: [
+    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang", min: 320, max: 3840, step: 160 },
+    { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 20, max: 120, step: 5 },
+    { k: "h", zh: "安裝高度（公尺）", vi: "Chiều cao lắp", min: 0.6, max: 2.4, step: 0.1 },
+    { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 150, step: 5 },
+  ],
+  lid: [
+    { k: "ch", zh: "線束數（垂直）", vi: "Số kênh dọc", min: 8, max: 128, step: 8 },
+    { k: "vfov", zh: "垂直視野（度）", vi: "Góc nhìn dọc", min: 10, max: 60, step: 1 },
+    { k: "hres", zh: "水平角解析度（度）", vi: "Phân giải góc ngang", min: 0.1, max: 2, step: 0.1 },
+    { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 200, step: 10 },
+    { k: "mount", zh: "安裝位置（0 車頭／1 車頂）", vi: "Vị trí lắp (0 đầu / 1 nóc)", min: 0, max: 1, step: 1 },
+  ],
+  rad: [
+    { k: "range", zh: "有效距離（公尺）", vi: "Tầm hiệu dụng", min: 30, max: 300, step: 10 },
+    { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 10, max: 150, step: 5 },
+    { k: "dres", zh: "距離解析度（公尺）", vi: "Phân giải khoảng cách", min: 0.1, max: 1.5, step: 0.1 },
+  ],
+  uss: [
+    { k: "range", zh: "有效距離（公尺）", vi: "Tầm hiệu dụng", min: 0.5, max: 5.5, step: 0.5 },
+    { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 20, max: 150, step: 10 },
+  ],
+  gns: [
+    { k: "acc", zh: "定位精度 ±（公尺）", vi: "Độ chính xác ±", min: 0.2, max: 15, step: 0.2 },
+    { k: "block", zh: "訊號遮蔽（0 正常／1 中斷）", vi: "Mất tín hiệu (0/1)", min: 0, max: 1, step: 1 },
+  ],
+  thm: [
+    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang", min: 160, max: 640, step: 80 },
+    { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 20, max: 90, step: 5 },
+    { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 200, step: 10 },
+  ],
+};
+
+function params() {
+  const s = SEN[openSen], list = SLIDERS[openSen];
+  $("params").innerHTML = list.map((d) =>
+    `<div class="row"><span>${L(d.zh, d.vi)}</span><b id="v_${d.k}">${s.p[d.k]}</b></div>
+     <input type="range" id="p_${d.k}" min="${d.min}" max="${d.max}" step="${d.step}" value="${s.p[d.k]}">`).join("")
+    + `<div class="hint" id="senHint"></div>`;
+  list.forEach((d) => {
+    const el = $("p_" + d.k);
+    el.addEventListener("input", () => { s.p[d.k] = +el.value; $("v_" + d.k).textContent = +el.value; refresh(); });
+  });
+}
+
+// 依目前選到的感測器與目標，算出「這個設定代表什麼」
+function senHint() {
+  const el = $("senHint"); if (!el) return;
+  const o = objs[target], d = dist(o), p = SEN[openSen].p;
+  if (openSen === "cam") {
+    const th = (p.fov / p.px);
+    el.innerHTML = L(
+      `每像素 <b>${th.toFixed(4)}°</b>。在 ${d.toFixed(0)} m 處，一個像素代表 <b>${(d * th * R).toFixed(3)} m</b>。<br>
+       估距誤差約 <b>${(d * d * th * R / p.h).toFixed(2)} m</b> —— 它隨距離的<b>平方</b>成長，裝得愈高愈小。<br>
+       <span style="color:#007F72">真車：目前主流 1920（2MP），高階 3840（8MP）；前視主鏡視野約 50–60°，裝在擋風玻璃後約 1.2–1.5 m。</span>`,
+      `Mỗi điểm ảnh <b>${th.toFixed(4)}°</b>. Ở ${d.toFixed(0)} m, một điểm ảnh ứng với <b>${(d * th * R).toFixed(3)} m</b>.<br>
+       Sai số khoảng <b>${(d * d * th * R / p.h).toFixed(2)} m</b>, tăng theo <b>bình phương</b> khoảng cách.`);
+  } else if (openSen === "lid") {
+    const dv = p.vfov / (p.ch - 1);
+    el.innerHTML = L(
+      `相鄰線束間隔 <b>${dv.toFixed(2)}°</b>。在 ${d.toFixed(0)} m 處，上下兩線相距 <b>${(d * Math.tan(dv * R)).toFixed(2)} m</b>、
+       左右兩點相距 <b>${(2 * d * Math.sin(p.hres / 2 * R)).toFixed(2)} m</b>。<br>
+       行人高 1.7 m：線距超過這個數，整個人就可能落在兩線之間。<br>
+       <b>安裝位置</b>只改車身周圍的盲區（車頭 0.8 m／車頂 3.5 m），不會改遠處的點數——
+       想看出差別，請把目標拖到 <b>3 公尺以內</b>。`,
+      `Khoảng cách giữa hai kênh <b>${dv.toFixed(2)}°</b>. Ở ${d.toFixed(0)} m: dọc <b>${(d * Math.tan(dv * R)).toFixed(2)} m</b>,
+       ngang <b>${(2 * d * Math.sin(p.hres / 2 * R)).toFixed(2)} m</b>.<br>
+       <b>Vị trí lắp</b> chỉ đổi vùng mù quanh xe (đầu 0,8 m / nóc 3,5 m), không đổi số điểm ở xa —
+       kéo mục tiêu vào <b>dưới 3 m</b> mới thấy khác biệt.`);
+  } else if (openSen === "rad") {
+    el.innerHTML = L(
+      `距離解析度 <b>${p.dres} m</b>：兩個目標靠得比這更近，會被當成同一個。<br>
+       雷達是唯一直接量到「接近／遠離速度」的，但它不提供類別。<br>
+       <span style="color:#007F72">真車有兩種：長距 LRR 約 250 m 但視野只有 15–30°；中短距 MRR／SRR 約 60–100 m、視野 90–150°。
+       看得遠和看得廣要分兩顆做，所以真車前後角落還會再裝好幾顆。</span>`,
+      `Phân giải <b>${p.dres} m</b>: hai mục tiêu gần hơn mức này sẽ bị coi là một.<br>
+       Radar là loại duy nhất đo trực tiếp tốc độ tiếp cận, nhưng không cho biết loại vật.`);
+  } else if (openSen === "uss") {
+    el.innerHTML = L(
+      `只有 <b>${p.range} m</b>。目前這個目標在 ${d.toFixed(1)} m —— ${d <= p.range ? "在範圍內。" : "<b>完全量不到</b>。"}<br>
+       它的用途是停車和車身周圍，不是看前方的路。<br>
+       <span style="color:#007F72">真車：量產停車感測器約 0.15–5.5 m、水平視野約 120°，前後保險桿各排四顆。</span>`,
+      `Chỉ <b>${p.range} m</b>. Mục tiêu đang ở ${d.toFixed(1)} m. Dùng để đỗ xe, không phải quan sát đường.`);
+  } else if (openSen === "gns") {
+    el.innerHTML = L(
+      `精度 ±${p.acc} m。車道寬 3.5 m —— ${p.acc > 1.75 ? "<b>這個誤差已經比半個車道寬</b>，不能單靠它判斷自己在哪一個車道。" : "勉強能分辨車道，但仍需要相機看標線。"}`,
+      `Độ chính xác ±${p.acc} m. Làn rộng 3,5 m.`);
+  } else if (openSen === "thm") {
+    const th = p.fov / p.px;
+    el.innerHTML = L(
+      `在 ${d.toFixed(0)} m 處，一個 1.7 m 高的人只佔 <b>${Math.floor(1.7 / (d * th * R))} 個像素高</b>。<br>
+       熱像靠溫度差，夜間反而清楚；但它讀不出燈色，也看不到標線。<br>
+       <span style="color:#007F72">真車：FLIR ADK 等車用熱像為 320×240 或 640×512、視野 24–50°；文獻報告夜間行人偵測可達約 165 m。</span>`,
+      `Ở ${d.toFixed(0)} m, người cao 1,7 m chỉ chiếm <b>${Math.floor(1.7 / (d * th * R))} điểm ảnh</b>.`);
+  }
+}
+
+function objHint() {
+  const o = objs[target], k = KINDS[o.kind];
+  $("objHint").innerHTML = L(
+    `<b>${k.zh}</b>：寬 ${k.w} m、高 ${k.h} m。物體愈小，愈晚被光達打到足夠的點。`,
+    `<b>${k.vi}</b>: rộng ${k.w} m, cao ${k.h} m.`);
+  $("spdHint").innerHTML = tSpeed === 0
+    ? L("目標靜止：雷達的徑向速度是 0。拉一點速度，注意看——<b>六張卡只有雷達會動</b>。",
+        "Mục tiêu đứng yên: tốc độ xuyên tâm = 0. Kéo thử tốc độ — <b>chỉ thẻ radar thay đổi</b>.")
+    : L(`0°＝直直朝本車走，90°＝橫越馬路。<b>橫越時徑向速度會接近 0</b>，雷達幾乎看不出它在動。<br>
+         <b>為什麼只有雷達變？</b>另外五種量的是「這一瞬間的位置」——人站在 ${dist(objs[target]).toFixed(0)} 公尺，
+         距離就是 ${dist(objs[target]).toFixed(0)} 公尺，跟它下一秒往哪走無關。雷達量的是回波的頻率變化，
+         那本來就是「距離縮短或拉長的速率」，所以速度一改它就跟著跳。`,
+        `0° = đi thẳng về phía xe, 90° = băng ngang. Khi băng ngang, tốc độ xuyên tâm ≈ 0.<br>
+         <b>Vì sao chỉ radar đổi?</b> Năm loại kia đo VỊ TRÍ tại một thời điểm — đứng ở ${dist(objs[target]).toFixed(0)} m
+         thì khoảng cách là ${dist(objs[target]).toFixed(0)} m, không liên quan tới việc nó sắp đi đâu.
+         Radar đo độ lệch tần số của sóng phản xạ, tức là TỐC ĐỘ thay đổi của khoảng cách.`);
+  $("fltHint").innerHTML = L(
+    `這兩個是<b>感測器自己髒了</b>，不是天氣，所以只打一種：水滴糊在鏡頭上，只有相機看不清；
+     罩子沾泥，只有光達的雷射出不去。<b>切換時請只看那一張卡，其他五張本來就不會動。</b><br>
+     水滴的重點不是距離變差，而是<b>距離還在、類別不見了</b>——相機會從「行人」變成「類別未知」。`,
+    `Đây là <b>cảm biến tự bẩn</b>, không phải thời tiết, nên chỉ ảnh hưởng một loại.
+     Giọt nước: camera vẫn ra khoảng cách nhưng <b>mất phân loại</b>. Vỏ bẩn: chỉ LiDAR mất điểm.`);
+  if (env === "snow") {
+    $("envHint").innerHTML = L(
+      `雪花直徑 1–10 mm，<b>跟雷達的波長（約 4 mm）差不多大</b>——所以這是唯一連雷達都明顯變差的天氣：
+       有效距離從 250 m 掉到 ${(SEN.rad.p.range * ENVS.snow.rad).toFixed(0)} m。
+       想看到它消失，請把目標拖到 <b>170 公尺以外</b>。<br>
+       光達更慘（100 → ${(SEN.lid.p.range * ENVS.snow.lid).toFixed(0)} m）：飄落的雪花本身就會反射，
+       真車還會把雪花誤判成障礙物。此外雪會<b>積在感測器表面</b>，效果接近「光達罩髒污」。`,
+      `Bông tuyết 1–10 mm, <b>cỡ bằng bước sóng radar (~4 mm)</b> — đây là thời tiết duy nhất làm radar kém rõ rệt:
+       tầm giảm còn ${(SEN.rad.p.range * ENVS.snow.rad).toFixed(0)} m. Kéo mục tiêu ra <b>quá 170 m</b> để thấy nó mất.`);
+    return;
+  }
+  $("envHint").innerHTML = L(
+    `雨霧同時削弱相機和光達，雷達受影響最小。夜間<b>只有相機</b>變差——光達和雷達自己發訊號，不靠環境的光。`,
+    `Mưa và sương làm yếu camera và LiDAR; radar ít bị nhất. Ban đêm chỉ camera kém đi.`);
+}
+
+// ═══════════════ 更新 ═══════════════
+function refresh() { draw(); cards(); senHint(); objHint(); }
+function applyLang() {
+  document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
+  $("btnZh").classList.toggle("on", LANG === "zh");
+  $("btnVi").classList.toggle("on", LANG === "vi");
+  syncObjBtns(); syncEnvBtns(); syncSenBtns(); params(); refresh();
+}
+// 手機分頁：預設看讀數卡，要改參數再切過去
+document.body.classList.add("tab-read");
+document.querySelectorAll("#mtabs button").forEach((b) => {
+  b.onclick = () => {
+    document.body.classList.remove("tab-set", "tab-read");
+    document.body.classList.add("tab-" + b.dataset.tab);
+    document.querySelectorAll("#mtabs button").forEach((x) => x.classList.toggle("on", x === b));
+    resize();
+  };
+});
+
+$("btnZh").onclick = () => { LANG = "zh"; applyLang(); };
+$("btnVi").onclick = () => { LANG = "vi"; applyLang(); };
+$("btnDrop").onclick = () => { drop = !drop; syncEnvBtns(); refresh(); };
+$("btnDirt").onclick = () => { dirt = !dirt; syncEnvBtns(); refresh(); };
+$("spd").addEventListener("input", (e) => { tSpeed = +e.target.value; $("vSpd").textContent = tSpeed; refresh(); });
+$("dir").addEventListener("input", (e) => { tDir = +e.target.value; $("vDir").textContent = tDir; refresh(); });
+
+window.addEventListener("resize", resize);
+resize(); applyLang();
+
+// 測試用：把內部函式暴露出去（瀏覽器上不影響使用）
+window.__lab = { camera, lidar, radar, ultra, gnss, thermal, objs, SEN, ENVS,
+                 setEnv: (e) => { env = e; }, setTarget: (i) => { target = i; },
+                 setMotion: (s, d) => { tSpeed = s; tDir = d; },
+                 setFault: (dp, dt) => { drop = dp; dirt = dt; }, dist, bearing };
+})();
+</script>
+</body>
+</html>
