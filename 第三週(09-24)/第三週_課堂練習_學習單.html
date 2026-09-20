@@ -1,189 +1,65 @@
 <!doctype html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
+<html lang="vi"><head><meta charset="utf-8">
 <title>Tuần 3 · Phiếu bài tập tại lớp｜第三週 課堂練習學習單</title>
 <style>
-  @page { size: A4; margin: 14mm 13mm; }
-  :root { --navy:#0B1F3A; --teal:#007F72; --mute:#5F7183; --line:#C9D3DD; --card:#F4F7FA; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:"Arial Unicode MS", Arial, "Microsoft JhengHei", sans-serif;
-         color:#1A2733; font-size:10.8px; line-height:1.4; }
-  .sheet { max-width: 190mm; margin: 0 auto; padding: 6mm 0; }
-  h1 { font-size:16px; margin:0 0 1px; color:var(--navy); }
-  h1 small { font-size:11px; color:var(--mute); font-weight:400; display:block; margin-top:2px; }
-  .hdr { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm;
-         border-bottom:2px solid var(--navy); padding-bottom:4px; margin-bottom:6px; }
-  .who { font-size:10.5px; color:var(--navy); white-space:nowrap; }
-  .who span { display:inline-block; border-bottom:1px solid var(--navy); min-width:26mm; margin:0 6px 0 2px; }
-  h2 { font-size:11.5px; margin:7px 0 3px; color:#fff; background:var(--navy);
-       padding:3px 7px; border-radius:3px; }
-  h2 small { font-weight:400; opacity:.75; font-size:10px; }
-  .q { margin:0 0 4px; padding-left:19px; position:relative; page-break-inside:avoid; }
-  .q b.n { position:absolute; left:0; top:0; color:var(--teal); }
-  .vi { display:block; }
-  .zh { display:block; color:var(--mute); font-size:10.2px; }
-  .line { border-bottom:1px dotted #90A4B4; height:13px; margin-top:2px; }
-  .line.s { width:46mm; display:inline-block; height:13px; vertical-align:bottom; margin-left:4px; }
-  .box { border:1px solid var(--line); background:var(--card); border-radius:4px;
-         padding:4px 8px; margin:3px 0 5px; font-size:10.2px; }
-  .box b { color:var(--navy); }
-  table { border-collapse:collapse; width:100%; margin:4px 0 6px; font-size:10.4px; }
-  th, td { border:1px solid var(--line); padding:3px 5px; text-align:center; }
-  th { background:var(--navy); color:#fff; font-weight:700; }
-  td.l { text-align:left; }
-  .ans { display:none; background:#FFF6E3; border-left:3px solid #FFB020;
-         padding:3px 7px; margin-top:3px; font-size:10.2px; color:#7A4E00; border-radius:0 3px 3px 0; }
-  body.show-ans .ans { display:block; }
-  body.show-ans .line, body.show-ans .line.s { border-bottom-color:#E2E8EE; }
-  .bar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line);
-         padding:6px 10px; display:flex; gap:8px; align-items:center; z-index:9; }
-  button { font:inherit; font-size:11px; padding:4px 11px; border:1px solid var(--line);
-           background:#fff; border-radius:5px; cursor:pointer; color:var(--navy); }
-  button.on { background:var(--navy); color:#fff; border-color:var(--navy); }
-  .foot { margin-top:8px; padding-top:5px; border-top:1px solid var(--line);
-          font-size:9.4px; color:var(--mute); }
-  @media print { .bar { display:none; } .sheet { padding:0; } }
-</style>
-</head>
-<body>
-
-<div class="bar">
-  <button id="btnAns">Hiện đáp án｜顯示解答</button>
-  <button onclick="window.print()">In｜列印</button>
-  <span style="font-size:10.5px;color:#5F7183">
-    Đáp án chỉ để giáo viên xem. Bản in mặc định là bản trắng cho học sinh.
-    ｜解答僅供教師，列印預設是學生空白版。</span>
-</div>
-
-<div class="sheet">
+  @page { size: A4; margin: 13mm 12mm; }
+  :root{--navy:#0B1F3A;--teal:#007F72;--mute:#5F7183;--line:#C9D3DD;--card:#F4F7FA;--amber:#FFB020;}
+  *{box-sizing:border-box}
+  body{margin:0;color:#1A2733;font-family:Arial,"Arial Unicode MS","Microsoft JhengHei",sans-serif;
+       font-size:11.6px;line-height:1.48}
+  .sheet{max-width:186mm;margin:0 auto}
+  /* 越南文為主：字大、黑色。中文是輔助：字小、灰色 */
+  .vi{display:block;font-size:11.8px;color:#111C27}
+  .zh{display:block;font-size:9.6px;color:var(--mute);margin-top:1px;line-height:1.45;
+      font-family:"Microsoft JhengHei","PingFang TC","Heiti TC",sans-serif}
+  .vi b{color:var(--navy)} .zh b{color:#3D4C5A}
+  .vi i,.zh i{font-style:normal;opacity:.85}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-end;gap:6mm;
+       border-bottom:2px solid var(--navy);padding-bottom:5px;margin-bottom:7px}
+  h1{font-size:16.5px;margin:0;color:var(--navy);line-height:1.25}
+  h1 .zh{font-size:11px;margin-top:2px}
+  .meta{font-size:9.6px;color:var(--mute);margin-top:3px}
+  .who{font-size:10px;color:var(--navy);white-space:nowrap;text-align:right}
+  .who span{display:inline-block;border-bottom:1px solid var(--navy);min-width:27mm;margin:0 0 0 5px}
+  .who div{margin-bottom:4px}
+  .how{border:1px solid var(--line);background:var(--card);border-radius:4px;padding:5px 9px;margin-bottom:8px}
+  h2{font-size:12px;margin:11px 0 5px;color:#fff;background:var(--navy);padding:4px 8px;border-radius:3px}
+  h2 .zh{color:#B9C8D6;display:inline;font-size:10px;margin-left:6px}
+  .pnote{font-size:10.5px;color:var(--teal);margin:0 0 6px;padding-left:2px}
+  .pnote .zh{color:#6F8393;font-size:9.4px}
+  .q{margin:0 0 7px;padding-left:21px;position:relative;page-break-inside:avoid}
+  .q>.n{position:absolute;left:0;top:0;color:#fff;background:var(--teal);width:16px;height:16px;
+        border-radius:50%;text-align:center;line-height:16px;font-size:10px;font-weight:700}
+  .line{border-bottom:1px dotted #9CB0C0;height:15px;margin-top:4px}
+  table{border-collapse:collapse;width:100%;margin:5px 0 4px;font-size:10.5px}
+  th,td{border:1px solid var(--line);padding:4px 5px;text-align:center}
+  th{background:var(--navy);color:#fff}
+  th .zh{color:#B9C8D6;display:inline;margin-left:4px;font-size:9px}
+  td.l{text-align:left}
+  td.blank{background:#FFFDF2}
+  .ans{background:#FFF8E6;border-left:3px solid var(--amber);padding:4px 9px;margin-top:4px;border-radius:0 3px 3px 0}
+  .ans .vi{font-size:10.8px;color:#6B4400} .ans .zh{font-size:9.4px;color:#8A6A2A}
+  .ans .vi b,.ans .zh b{color:#7A4E00}
+  .ans .tag{font-size:8.6px;font-weight:700;color:#A9862F;letter-spacing:.06em;display:block;margin-bottom:1px}
+  .foot{margin-top:9px;padding-top:5px;border-top:1px solid var(--line);font-size:9px;color:var(--mute)}
+  .foot .zh{font-size:8.6px}
+  .url{font-family:Arial,sans-serif;color:var(--teal);font-weight:700}
+  @media print{ .sheet{padding:0} }
+</style></head>
+<body><div class="sheet">
   <div class="hdr">
-    <h1>Tuần 3 · Phiếu bài tập tại lớp
-      <small>第三週 課堂練習學習單｜Nguyên lý xe tự lái 自動駕駛原理｜2026/09/24</small></h1>
-    <div class="who">Lớp 班級<span></span><br>MSSV 學號<span></span><br>Họ tên 姓名<span></span></div>
+    <div>
+      <h1>Tuần 3 · Phiếu bài tập tại lớp
+        <span class="zh">第三週 課堂練習學習單</span></h1>
+      <div class="meta">Nguyên lý xe tự lái · Trường Đại học Khoa học Kỹ thuật Minh Thực　·　2026/09/24<br>自動駕駛原理 · 敏實科技大學</div>
+    </div>
+    <div class="who">
+        <div>Lớp 班級<span></span></div>
+        <div>MSSV 學號<span></span></div>
+        <div>Họ tên 姓名<span></span></div></div>
   </div>
-
-  <div class="box">
-    <b>Cách làm 作答方式：</b>
-    Viết tay, được mở vở và dùng máy tính. Nộp trước khi hết giờ.
-    Câu nào cũng có thể kiểm chứng lại bằng công cụ mô phỏng của hôm nay.
-    <span class="zh">用筆寫，可翻筆記、可用計算機。下課前交。每一題都能用今天的模擬工具驗證。</span>
-  </div>
-
-  <h2>A. Tính toán <small>｜計算（camera 相機：1920 px · 60° · cao 1,5 m）</small></h2>
-
-  <div class="q"><b class="n">1</b>
-    <span class="vi">Mỗi điểm ảnh ứng với bao nhiêu độ?　60° ÷ 1920 =<span class="line s"></span>°</span>
-    <span class="zh">每一個像素代表幾度？</span>
-    <div class="ans">0,03125° — 60 ÷ 1920。（第 2 節第 2 張的第一條算式）</div>
-  </div>
-
-  <div class="q"><b class="n">2</b>
-    <span class="vi">Người ở 30 m, sai số ±0,33 m. Vậy ở 60 m sai số khoảng bao nhiêu?<span class="line s"></span>m</span>
-    <span class="zh">行人在 30 公尺，誤差 ±0.33 公尺。那麼在 60 公尺，誤差大約多少？</span>
-    <div class="ans">約 ±1,33 m。距離兩倍 → 誤差四倍（sai số ∝ d²）。工具實測 60 m 為 ±1.31。</div>
-  </div>
-
-  <div class="q"><b class="n">3</b>
-    <span class="vi">Vẫn ở 30 m. Đổi cảm biến lên 3840 px thì sai số còn<span class="line s"></span>m.
-      Còn nếu giữ 1920 px nhưng thu góc nhìn xuống 30° thì sai số là<span class="line s"></span>m.</span>
-    <span class="zh">還是在 30 公尺。像素換成 3840，誤差剩多少？若維持 1920 但視野縮到 30°，誤差是多少？</span>
-    <div class="ans">兩個都是 ±0,16 m。<b>數字一樣，代價不一樣</b>：加倍像素是花錢，縮小視野是犧牲左右兩側看得到的範圍。</div>
-  </div>
-
-  <div class="q"><b class="n">4</b>
-    <span class="vi">LiDAR 64 kênh trải đều trong 27°. Hai kênh cạnh nhau cách nhau<span class="line s"></span>°
-      （27 ÷ 63）. Khe đó rộng bao nhiêu ở 10 m?<span class="line s"></span>cm</span>
-    <span class="zh">光達 64 線平均分佈在 27° 裡。相鄰兩線差幾度？這道縫在 10 公尺處寬幾公分？</span>
-    <div class="ans">0,43°；在 10 m 約 7,5 cm（10 × tan 0,43°）。在 40 m 會被撐開成約 30 cm。</div>
-  </div>
-
-  <div class="q"><b class="n">5</b>
-    <span class="vi">Cùng một người: 10 m có 308 điểm, 40 m chỉ còn<span class="line s"></span>điểm. Vì sao?</span>
-    <span class="zh">同一個人：10 公尺有 308 點，40 公尺只剩幾點？為什麼？</span>
-    <div class="line"></div>
-    <div class="ans">15 點。距離變 4 倍，<b>左右和上下兩個方向同時變疏</b>，所以點數剩 1/16。
-      （10 m：22 條線 × 14 點；40 m：5 × 3）</div>
-  </div>
-
-  <h2>B. Điền bảng và giải thích <small>｜填表與解釋</small></h2>
-
-  <div class="q"><b class="n">6</b>
-    <span class="vi">Điền tầm hiệu dụng (m) vào ô trống.</span>
-    <span class="zh">把有效距離（公尺）填進空格。</span>
-    <table>
-      <tr><th style="width:24%">Điều kiện 條件</th><th>Camera 相機</th><th>LiDAR 光達</th><th>Radar 雷達</th><th>Ảnh nhiệt 熱像</th></tr>
-      <tr><td class="l">Nắng 晴天</td><td>80</td><td>100</td><td>250</td><td>143</td></tr>
-      <tr><td class="l">Sương mù 濃霧</td><td>&nbsp;</td><td>45</td><td>&nbsp;</td><td>90</td></tr>
-      <tr><td class="l">Tuyết 下雪</td><td>20</td><td>&nbsp;</td><td>&nbsp;</td><td>90</td></tr>
-    </table>
-    <div class="ans">濃霧：相機 <b>16</b>、雷達 <b>225</b>。下雪：光達 <b>35</b>、雷達 <b>163</b>。</div>
-  </div>
-
-  <div class="q"><b class="n">7</b>
-    <span class="vi">Vì sao radar không sợ sương mù, nhưng lại kém đi khi có tuyết?
-      (gợi ý: bước sóng radar ≈ 4 mm)</span>
-    <span class="zh">為什麼雷達不怕霧，卻在下雪時變差？（提示：雷達波長約 4 公釐）</span>
-    <div class="line"></div><div class="line"></div>
-    <div class="ans">霧滴只有 1–50 µm，<b>比雷達的波長小很多</b>，電磁波直接繞過去。雪花 1–10 mm，
-      <b>跟 4 mm 的波長差不多大甚至更大</b>，就擋得住它了。規則：波長 &gt; 顆粒 → 穿過去；波長 &lt; 顆粒 → 被擋住。</div>
-  </div>
-
-  <div class="q"><b class="n">8</b>
-    <span class="vi">Ban đêm chỉ có MỘT loại bị hỏng. Loại nào, và vì sao hai loại kia không sao?</span>
-    <span class="zh">夜間只有一種會壞。哪一種？為什麼另外兩種沒事？</span>
-    <div class="line"></div><div class="line"></div>
-    <div class="ans">相機。它是<b>被動</b>的，只能接收現場已經有的光。光達和雷達是<b>主動</b>的，訊號自己發出去、自己收，
-      等於自己帶手電筒。熱像更特別，它讀的是人體自己放出來的紅外線，晚上反而更清楚。</div>
-  </div>
-
-  <div class="q"><b class="n">9</b>
-    <span class="vi">LiDAR lắp trên nóc (cao 1,8 m), vùng mù 3,5 m. Một đứa trẻ đứng cách đầu xe 2 m:
-      LiDAR có thấy không?<span class="line s"></span>Loại nào bù được chỗ này?<span class="line s"></span></span>
-    <span class="zh">光達裝在車頂（高 1.8 公尺），盲區 3.5 公尺。小孩站在車頭前 2 公尺：光達看得到嗎？哪一種感測器補這一塊？</span>
-    <div class="ans">看不到（2 m 在 3.5 m 的盲區裡）。由<b>超音波</b>補——它只有 4,5 m，剛好管這一圈。
-      裝愈高，最低那條射線要飛愈遠才落地，盲區就愈大。</div>
-  </div>
-
-  <h2>C. Vận dụng <small>｜應用（寫完整句子，各 2–3 行）</small></h2>
-
-  <div class="q"><b class="n">10</b>
-    <span class="vi">Bạn thiết kế một xe buýt nhỏ tự lái chạy trong nội thành Đài Trung, tốc độ tối đa 30 km/h,
-      mùa hè hay có mưa rào buổi chiều. Chọn <b>ba</b> loại cảm biến và mỗi loại viết một lý do bằng con số.</span>
-    <span class="zh">你要設計一台在台中市區跑的自駕接駁車，時速上限 30，夏天常有午後雷陣雨。
-      請選<b>三種</b>感測器，每一種用一個數字寫出理由。</span>
-    <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
-    <div class="ans">合理的答案例如：①<b>相機</b>——唯一讀得出紅綠燈和號誌，市區非有不可；
-      ②<b>光達</b>——時速 30 只需看到約 30 m，中雨時光達仍有 65 m，夠用；
-      ③<b>超音波</b>——補車身周圍 3,5 m 的盲區，路口和停靠站有行人靠近。
-      （只要理由帶數字、且對應到今天量過的邊界，都算對。雷達也可以，理由是雨中衰減最小。）</div>
-  </div>
-
-  <div class="q"><b class="n">11</b>
-    <span class="vi">Có người nói: “LiDAR này chính xác hơn.” Bạn phải hỏi lại câu gì? Vì sao?</span>
-    <span class="zh">有人跟你說「這顆光達比較準」。你要追問什麼？為什麼？</span>
-    <div class="line"></div><div class="line"></div><div class="line"></div>
-    <div class="ans">要追問：你說的「準」是<b>單點測距的精度</b>，還是<b>遠處看得出形狀</b>？
-      這是兩個不同的規格。線束數不會讓一個點量到的距離更準（那是計時器的事，約 ±2 cm），
-      它決定的是有沒有打到、打到幾點——也就是那個東西<b>在哪裡、多大、是什麼</b>。</div>
-  </div>
-
-  <div class="foot">
-    Mọi con số lấy từ công cụ mô phỏng của tuần 3 (tham số dạy học, không phải thông số sản phẩm).
-    ｜所有數字取自第三週模擬工具，為課堂教學設定，非任何產品規格。　Nguyên lý xe tự lái · CH Tseng
-  </div>
-</div>
-
-<script>
-  const b = document.getElementById("btnAns");
-  // 網址後面加 ?ans 會直接開成解答版（方便老師直接列印一份解答）
-  const wantAns = new URLSearchParams(location.search).has("ans");
-  b.onclick = () => {
-    const on = document.body.classList.toggle("show-ans");
-    b.classList.toggle("on", on);
-    b.textContent = on ? "Ẩn đáp án｜隱藏解答" : "Hiện đáp án｜顯示解答";
-  };
-  if (wantAns) b.click();
-</script>
-</body>
-</html>
+  <div class="how"><span class="vi">Viết tay. Được mở vở và dùng máy tính bỏ túi. Nộp lại trước khi hết giờ. Mỗi câu đều có thể tự kiểm chứng lại bằng công cụ mô phỏng đã dùng trong lớp.</span><span class="zh">用筆寫。可以翻筆記、可以用計算機。下課前交回。每一題都能用課堂上那個模擬工具自己驗證。</span>
+    <span class="vi" style="margin-top:3px">Công cụ 工具：<span class="url">ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week3/lab/</span></span></div>
+  <h2>Phần A · Tính toán<span class="zh">第 A 部分 · 計算</span></h2><p class="pnote"><span class="vi">Camera của xe: 1920 điểm ảnh theo chiều ngang, góc nhìn ngang 60°, lắp cao 1,5 m so với mặt đường.</span><span class="zh">車上相機：水平 1920 個像素、水平視野 60°、裝在離地 1.5 公尺處。</span></p><div class="q"><span class="n">1</span><span class="vi">Với camera nói trên, <b>mỗi một điểm ảnh ứng với bao nhiêu độ</b> trong thực tế? Hãy viết ra cả phép tính, đừng chỉ ghi đáp số.</span><span class="zh">以上面那台相機來說，<b>每一個像素在現實中代表幾度</b>？請把算式也寫出來，不要只寫答案。</span><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">2</span><span class="vi">Vẫn camera đó. Khi một người đi bộ đứng cách xe <b>30 m</b>, công cụ báo sai số ước lượng khoảng cách là <b>±0,33 m</b>. Nếu người đó lùi ra xa thành <b>60 m</b> thì sai số sẽ vào khoảng bao nhiêu? Viết cả lý do.</span><span class="zh">同一台相機。當行人站在 <b>30 公尺</b> 處，工具顯示估距誤差是 <b>±0.33 公尺</b>。如果這個人退到 <b>60 公尺</b>，誤差大約會變成多少？請連理由一起寫。</span><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">3</span><span class="vi">Người vẫn đứng ở 30 m, sai số ban đầu ±0,33 m. Có hai cách để làm cho sai số nhỏ lại: <br>(a) thay cảm biến lên <b>3840 điểm ảnh</b>, vẫn giữ góc nhìn 60°; <br>(b) giữ nguyên 1920 điểm ảnh nhưng <b>thu góc nhìn từ 60° xuống 30°</b>. <br>Điền sai số của từng cách, rồi nói rõ <b>hai cách đó phải trả giá khác nhau ở chỗ nào</b>.</span><span class="zh">行人一樣站在 30 公尺，原本誤差 ±0.33 公尺。有兩種辦法可以讓誤差變小：<br>(a) 把感測器換成 <b>3840 像素</b>，視野維持 60°；<br>(b) 維持 1920 像素，但把<b>視野從 60° 縮到 30°</b>。<br>請填出兩種做法各自的誤差，然後說清楚<b>這兩種做法付出的代價有什麼不同</b>。</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">4</span><span class="vi">Một LiDAR có <b>64 kênh</b>, các kênh trải đều trong góc nhìn dọc <b>27°</b>. <br>(a) Hai kênh cạnh nhau cách nhau bao nhiêu độ? <br>(b) Ở khoảng cách 10 m, khe giữa hai kênh rộng khoảng bao nhiêu cm? <br>(c) Còn ở 40 m thì khe đó rộng bao nhiêu?</span><span class="zh">一顆光達有 <b>64 線</b>，這些線平均分佈在垂直視野 <b>27°</b> 之內。<br>(a) 相鄰兩條線之間差幾度？<br>(b) 在 10 公尺處，兩條線之間的縫大約寬幾公分？<br>(c) 那在 40 公尺處，這道縫又有多寬？</span><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">5</span><span class="vi">Vẫn LiDAR 64 kênh đó, và vẫn cùng <b>một</b> người đi bộ (cao 1,7 m, rộng 0,5 m). Ở 10 m, LiDAR đánh trúng người này <b>308 điểm</b>. Ở 40 m thì còn lại bao nhiêu điểm? Số kênh vẫn là 64 và người cũng không nhỏ đi — vậy <b>tại sao số điểm lại tụt nhiều đến thế</b>?</span><span class="zh">同樣是那顆 64 線光達，也同樣是<b>同一個</b>行人（高 1.7、寬 0.5 公尺）。在 10 公尺，光達打在他身上 <b>308 個點</b>。在 40 公尺剩幾點？線束數還是 64、人也沒有變小——那<b>為什麼點數會掉這麼多</b>？</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><h2>Phần B · Điền bảng và giải thích<span class="zh">第 B 部分 · 填表與解釋</span></h2><div class="q"><span class="n">6</span><span class="vi">Dưới đây là <b>tầm hiệu dụng</b> (đơn vị: mét) của bốn loại cảm biến trong ba điều kiện thời tiết. Hãy điền bốn ô còn trống.</span><span class="zh">下表是四種感測器在三種天氣下的<b>有效距離</b>（單位：公尺）。請把四個空格填完。</span><table><tr><th>Điều kiện<span class="zh">條件</span></th><th>Camera<span class="zh">相機</span></th><th>LiDAR<span class="zh">光達</span></th><th>Radar<span class="zh">雷達</span></th><th>Ảnh nhiệt<span class="zh">熱像</span></th></tr><tr><td class="l">Nắng<span class="zh">晴天</span></td><td>80</td><td>100</td><td>250</td><td>143</td></tr><tr><td class="l">Sương mù<span class="zh">濃霧</span></td><td class="blank">&nbsp;</td><td>45</td><td class="blank">&nbsp;</td><td>90</td></tr><tr><td class="l">Tuyết<span class="zh">下雪</span></td><td>20</td><td class="blank">&nbsp;</td><td class="blank">&nbsp;</td><td>90</td></tr></table></div><div class="q"><span class="n">7</span><span class="vi">Radar <b>gần như không hề hấn gì</b> khi có sương mù, nhưng lại <b>kém đi rõ rệt</b> khi trời có tuyết. Hãy giải thích tại sao lại như vậy. <br><i>Gợi ý: bước sóng của radar khoảng 4 mm; hạt sương mù 1–50 µm; bông tuyết 1–10 mm.</i></span><span class="zh">雷達在<b>濃霧中幾乎不受影響</b>，但在<b>下雪時卻明顯變差</b>。請解釋為什麼會這樣。<br><i>提示：雷達的波長約 4 公釐；霧滴 1–50 微米；雪花 1–10 公釐。</i></span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">8</span><span class="vi">Khi trời tối, trong sáu loại cảm biến chỉ có <b>một</b> loại bị hỏng hẳn. Đó là loại nào? Và tại sao hai loại LiDAR, radar lại <b>không hề bị ảnh hưởng</b>? Ảnh nhiệt thì sao — ban đêm nó tốt lên hay kém đi?</span><span class="zh">天黑的時候，六種感測器裡只有<b>一種</b>會整個壞掉。是哪一種？另外，為什麼光達和雷達<b>完全不受影響</b>？熱像呢——晚上它是變好還是變差？</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">9</span><span class="vi">Một xe lắp LiDAR <b>trên nóc, cao 1,8 m</b>, vùng mù quanh xe là <b>3,5 m</b>. Có một đứa trẻ đang đứng cách đầu xe <b>2 m</b>. <br>(a) LiDAR có nhìn thấy đứa trẻ này không? Vì sao? <br>(b) Loại cảm biến nào trên xe bù được đúng chỗ này?</span><span class="zh">一台車的光達裝在<b>車頂、高 1.8 公尺</b>，車身周圍的盲區是 <b>3.5 公尺</b>。現在有一個小孩站在車頭前 <b>2 公尺</b> 的地方。<br>(a) 光達看得到這個小孩嗎？為什麼？<br>(b) 車上哪一種感測器剛好補這一塊？</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><h2>Phần C · Vận dụng<span class="zh">第 C 部分 · 應用</span></h2><p class="pnote"><span class="vi">Hai câu này viết thành câu văn hoàn chỉnh, mỗi câu khoảng 3–4 dòng.</span><span class="zh">這兩題請寫成完整句子，每題大約 3–4 行。</span></p><div class="q"><span class="n">10</span><span class="vi">Bạn được giao thiết kế một <b>xe buýt nhỏ tự lái chạy trong nội thành Đài Trung</b>: tốc độ tối đa 30 km/h, chạy cả ban ngày lẫn buổi tối, mùa hè hay gặp mưa rào buổi chiều, dọc đường có nhiều ngã tư và điểm dừng đón khách. Hãy chọn <b>ba</b> loại cảm biến cho chiếc xe này, và với mỗi loại viết một lý do <b>có kèm con số</b> mà bạn đã đo được hôm nay.</span><span class="zh">你被指派設計一台<b>在台中市區行駛的自駕小巴</b>：時速上限 30 公里、白天和傍晚都要跑、夏天常遇到午後雷陣雨、沿路有很多路口和上下車的站點。請為這台車選出 <b>三種</b> 感測器，並為每一種寫一個<b>帶有數字</b>的理由——數字要用今天量到的。</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="q"><span class="n">11</span><span class="vi">Trong một buổi họp, có người nói với bạn: <b>“Con LiDAR này chính xác hơn con kia.”</b> Bạn cần hỏi ngược lại người đó câu gì trước khi tin? Giải thích tại sao câu hỏi đó lại quan trọng.</span><span class="zh">在一場會議上，有人跟你說：<b>「這顆光達比那顆準。」</b>在你相信他之前，應該先反問他什麼問題？並說明為什麼這個問題很重要。</span><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div></div>
+  <div class="foot"><span class="vi">Mọi con số lấy từ công cụ mô phỏng của tuần 3 — đây là tham số dùng để dạy học, không phải thông số kỹ thuật của một sản phẩm cụ thể.</span><span class="zh">所有數字取自第三週的模擬工具，是課堂教學用的設定值，不是任何產品的實際規格。</span></div>
+</div></body></html>
