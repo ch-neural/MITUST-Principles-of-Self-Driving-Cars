@@ -73,7 +73,35 @@
   .mount button span { font-size:10.5px; }
   .mount button.on { background:var(--navy); border-color:var(--navy); }
   .mount button.on b, .mount button.on span { color:#fff; }
-  @media (max-width: 900px) { #app { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; } .panel { border:none; } }
+  /* ── 手機：單欄。讓整頁自然捲動，畫布與分頁列用 sticky 黏在上面。
+        （不要鎖死高度再讓面板內部捲動——手機瀏覽器上會捲不動。） ── */
+  #mtabs { display:none; }
+  @media (max-width: 860px) {
+    :root { --stageH: max(42vh, 240px); }
+    /* body 只要設了 overflow 就會變成 sticky 的捲動祖先，所以水平夾寬只設在 html */
+    html { overflow-x:hidden; }
+    body { height:auto; -webkit-text-size-adjust:100%; }
+    #app { display:block; height:auto; width:100%; max-width:100vw; overflow:visible; }
+    #stage { position:sticky; top:0; z-index:5; height:var(--stageH); }
+    #mtabs { position:sticky; top:var(--stageH); z-index:6; display:flex;
+             background:#fff; border-bottom:1px solid var(--line); }
+    #mtabs button { flex:1 1 0; border:none; border-radius:0; padding:10px 4px; font-size:13px;
+                    font-weight:700; color:var(--mute); background:#fff;
+                    border-bottom:3px solid transparent; min-height:0; white-space:nowrap; }
+    #mtabs button.on { color:var(--navy); background:#fff; border-bottom-color:var(--teal); }
+    .panel { display:none; border:none !important; padding:11px 13px 40px; overflow:visible; height:auto; }
+    body.tab-set .panel:not(.right) { display:block; }
+    body.tab-read .panel.right { display:block; }
+    /* 手指比滑鼠粗 */
+    button { font-size:12.5px; padding:9px 8px; min-height:38px; }
+    input[type=range] { height:30px; }
+    .mount { gap:8px; }
+    h1 { font-size:15px; }
+  }
+  @media (max-width: 420px) {
+    :root { --stageH: max(38vh, 200px); }
+    #mtabs button { font-size:12px; }
+  }
 </style>
 </head>
 <body>
@@ -200,6 +228,12 @@
       </table>
       <div class="hint">診斷是規則式的，只看幾個數字，可能判錯。判錯本身也是教材：真車的事故分析比這難一百倍。</div>
     </div></div>
+  </div>
+
+  <!-- 手機才會出現的分頁列 -->
+  <div id="mtabs">
+    <button data-tab="set" class="on">調整參數　Tham số</button>
+    <button data-tab="read">這一趟　Chuyến này</button>
   </div>
 
   <div class="panel right">
@@ -709,6 +743,34 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function resize() { cv.width = stage.clientWidth; cv.height = stage.clientHeight; }
+// ── 手機版：block 佈局下 CSS 的 order 不管用，直接把畫布與分頁列搬到最前面 ──
+const MOBILE = window.matchMedia("(max-width:860px)");
+const mtabs = document.getElementById("mtabs");
+function reorderForMobile() {
+  const app = document.getElementById("app"), left = document.querySelector(".panel:not(.right)");
+  if (MOBILE.matches) {
+    if (app.firstElementChild !== stage) app.insertBefore(stage, app.firstElementChild);
+    if (stage.nextElementSibling !== mtabs) app.insertBefore(mtabs, stage.nextElementSibling);
+  } else if (app.firstElementChild !== left) {
+    app.insertBefore(left, app.firstElementChild);          // 還原成桌機三欄的順序
+    app.insertBefore(stage, left.nextElementSibling);
+  }
+  resize();
+}
+MOBILE.addEventListener("change", reorderForMobile);
+reorderForMobile();
+
+// 手機分頁：預設停在「調整參數」，要看結果再切過去
+document.body.classList.add("tab-set");
+mtabs.querySelectorAll("button").forEach((b) => {
+  b.onclick = () => {
+    document.body.classList.remove("tab-set", "tab-read");
+    document.body.classList.add("tab-" + b.dataset.tab);
+    mtabs.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    resize();
+  };
+});
+
 window.addEventListener("resize", resize);
 
 // ───────────────────────── 控制項 ─────────────────────────
