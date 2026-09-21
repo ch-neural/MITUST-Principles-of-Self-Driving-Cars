@@ -356,6 +356,22 @@ function spawnAhead() {
           color: moto ? "#F5C242" : ["#C9D3DD", "#8FA3B5", "#5B7A99", "#E4E9EE", "#7B8FA1"][Math.floor(Math.random() * 5)],
         });
       }
+      // 機車流：在一般車流之外再塞幾台機車，而且會並排在同一個車道裡——這才像機車海
+      if (S.motos) {
+        const extra = 2 + Math.floor(Math.random() * 3);          // 每批多 2–4 台
+        for (let m = 0; m < extra; m++) {
+          const lane = Math.floor(Math.random() * LANES);
+          traffic.push({
+            kind: "moto",
+            x: laneX(lane) + (Math.random() - 0.5) * LANE_W * 0.9,
+            y: nextSpawnY + (Math.random() - 0.5) * 26 * PXM,
+            w: 0.8 * PXM, l: 2.0 * PXM,
+            speed: (25 + Math.random() * 25) / 3.6 * PXM,
+            drift: (Math.random() - 0.5) * 1.6 * PXM, driftT: 0,
+            color: "#F5C242",
+          });
+        }
+      }
     }
     nextSpawnY -= (n === 0 ? 60 : 44 - n * 3) * PXM;
   }
@@ -675,7 +691,23 @@ function draw() {
   };
   parkedTrucks.forEach((o) => drawBox(o, o.color));
   traffic.forEach((o) => drawBox(o, o.color));
-  peds.forEach((p) => { ctx.fillStyle = "#FF6B6B"; ctx.beginPath(); ctx.arc(tx(p.x), ty(p.y), p.w * 0.8, 0, Math.PI * 2); ctx.fill(); });
+  // 行人：畫成正面的小人（頭、身體、手、腳）。在這個尺度下，「看得出是人」比「視角正確」重要。
+  peds.forEach((p) => {
+    ctx.save();
+    ctx.translate(tx(p.x), ty(p.y));
+    ctx.strokeStyle = "#E8544E"; ctx.lineWidth = 1.5; ctx.lineCap = "round";
+    ctx.beginPath();                                   // 兩腿
+    ctx.moveTo(-1.0, 4.0); ctx.lineTo(-1.7, 7.0);
+    ctx.moveTo(1.0, 4.0);  ctx.lineTo(1.7, 7.0);
+    ctx.moveTo(-1.7, 0.2); ctx.lineTo(-4.0, 2.6);      // 兩臂
+    ctx.moveTo(1.7, 0.2);  ctx.lineTo(4.0, 2.6);
+    ctx.stroke();
+    ctx.fillStyle = "#E8544E";                         // 身體
+    ctx.beginPath(); ctx.roundRect(-1.8, -1.4, 3.6, 5.6, 1.5); ctx.fill();
+    ctx.fillStyle = "#FF9A93";                         // 頭
+    ctx.beginPath(); ctx.arc(0, -3.6, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  });
   // 射線
   if (S.showRays) {
     const spin = S.mount === "spin", period = spin ? 1 / S.spin : 1;
