@@ -6,6 +6,7 @@ on:
     paths:
       - '第二週(09-17)/第1節_分級練習_30題隨機抽題.html'
       - '第三週(09-24)/第三週_感測器實驗室.html'
+      - '第四週(10-01)/第四週_自駕模擬器.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -32,6 +33,7 @@ jobs:
           sparse-checkout: |
             第二週(09-17)/第1節_分級練習_30題隨機抽題.html
             第三週(09-24)/第三週_感測器實驗室.html
+            第四週(10-01)/第四週_自駕模擬器.html
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -40,10 +42,11 @@ jobs:
       - name: Prepare the public student pages
         shell: bash
         run: |
-          mkdir -p _site/week2/levels _site/week3/lab
+          mkdir -p _site/week2/levels _site/week3/lab _site/week4/sim
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/index.html
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/week2/levels/index.html
           cp -- '第三週(09-24)/第三週_感測器實驗室.html' _site/week3/lab/index.html
+          cp -- '第四週(10-01)/第四週_自駕模擬器.html' _site/week4/sim/index.html
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4

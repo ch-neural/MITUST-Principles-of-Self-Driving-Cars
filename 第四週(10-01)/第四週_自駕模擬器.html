@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自動駕駛原理　瀏覽器模擬器</title>
+<style>
+  :root { --navy:#0B1F3A; --navy2:#13314F; --teal:#00A896; --tealD:#007F72; --amber:#FFB020;
+          --ink:#1A2733; --mute:#5F7183; --line:#DBE3EA; --card:#F4F7FA; --bg:#E9EEF2; --red:#D9463E; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font-family: "微軟正黑體","Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",Arial,sans-serif; }
+  #app { display:grid; grid-template-columns: 300px 1fr 250px; height:100vh; gap:0; }
+  .panel { background:#fff; border-right:1px solid var(--line); overflow-y:auto; padding:14px 16px; }
+  .panel.right { border-right:none; border-left:1px solid var(--line); }
+  h1 { font-size:17px; margin:0 0 2px; color:var(--navy); }
+  .vi { color:var(--mute); font-size:11px; font-weight:normal; display:block; }
+  .sec { margin-top:14px; padding-top:10px; border-top:1px solid var(--line); }
+  .sec h2 { font-size:12.5px; color:var(--tealD); margin:0 0 8px; letter-spacing:.5px; }
+  label.row { display:block; margin:8px 0 2px; font-size:13px; }
+  label.row b { float:right; color:var(--navy); font-variant-numeric: tabular-nums; }
+  input[type=range] { width:100%; accent-color: var(--teal); }
+  .tog { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:13px; cursor:pointer; }
+  .tog input { accent-color: var(--teal); width:16px; height:16px; }
+  .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  button { border:1px solid var(--line); background:var(--card); color:var(--navy); border-radius:7px;
+           padding:6px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  button.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  button.warn { background:#FFF6E4; border-color:#F2D79B; color:#8A5A00; }
+  button:hover { filter:brightness(1.06); }
+  .mode { display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-top:6px; }
+  .mode button { flex:1; border:none; border-radius:0; background:#fff; }
+  .mode button.on { background:var(--teal); color:#fff; }
+  #stage { position:relative; background:#2b3a2e; overflow:hidden; }
+  canvas { display:block; width:100%; height:100%; }
+  #hud { position:absolute; left:12px; top:10px; display:flex; gap:8px; flex-wrap:wrap; pointer-events:none; }
+  .tile { background:rgba(11,31,58,.82); color:#fff; border-radius:8px; padding:6px 10px; min-width:96px; }
+  .tile .k { font-size:10.5px; color:#9FB6C8; }
+  .tile .v { font-size:20px; font-weight:bold; font-variant-numeric: tabular-nums; line-height:1.15; }
+  .tile .u { font-size:11px; color:#D8E4EE; margin-left:2px; }
+  .tile.act .v { color:var(--amber); font-size:16px; }
+  #crash { position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  #crash > div { color:#fff; padding:18px 28px; border-radius:12px; }
+  #crash small { display:block; font-size:13px; font-weight:normal; margin-top:6px; }
+  .hint { font-size:11px; color:var(--mute); line-height:1.4; margin:-2px 0 6px; }
+  #crash { pointer-events:auto; }
+  #crash > div { max-width:560px; background:rgba(11,31,58,.94); border:2px solid var(--red); text-align:left; font-size:14px; font-weight:normal; line-height:1.5; }
+  #crash h3 { margin:0 0 8px; font-size:22px; color:#FF8A80; }
+  #crash .dx { margin:8px 0; padding:8px 10px; background:rgba(255,255,255,.06); border-radius:8px; line-height:1.5; }
+  #crash .dx b { color:var(--amber); }
+  #crash .why { color:#D8E4EE; }
+  #crash .tip { color:#9FE6D8; }
+  #crash .kbd { color:#9FB6C8; font-size:12px; margin-top:8px; }
+  #help { position:absolute; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:5; }
+  #help > div { background:#fff; color:var(--ink); max-width:760px; max-height:88%; overflow:auto; border-radius:12px; padding:18px 22px; font-size:13px; line-height:1.5; }
+  #help h3 { margin:0 0 6px; color:var(--navy); font-size:17px; }
+  #help table { border-collapse:collapse; width:100%; margin:8px 0 14px; }
+  #help th, #help td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  #help th { background:var(--card); color:var(--navy); font-size:12.5px; }
+  #help .close { float:right; }
+  .stat { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--line); }
+  .stat b { color:var(--navy); font-variant-numeric: tabular-nums; }
+  .note { font-size:12px; color:var(--mute); line-height:1.5; margin-top:8px; }
+  .keys { font-size:12px; color:var(--mute); line-height:1.7; }
+  .keys kbd { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:0 5px; font-family:inherit; }
+  .log { font-size:12px; line-height:1.55; max-height:180px; overflow:auto; background:var(--card); border-radius:8px; padding:8px 10px; margin-top:6px; }
+  .log div { border-bottom:1px solid #fff; padding:2px 0; }
+  .log .t { color:var(--mute); margin-right:6px; font-variant-numeric: tabular-nums; }
+  .mount { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:2px 0 8px; }
+  .mount button { padding:8px 6px; border:1px solid var(--line); background:#fff; border-radius:8px; cursor:pointer;
+                  font-family:inherit; line-height:1.35; text-align:center; color:var(--mute); }
+  .mount button b { display:block; font-size:13px; color:var(--navy); }
+  .mount button span { font-size:10.5px; }
+  .mount button.on { background:var(--navy); border-color:var(--navy); }
+  .mount button.on b, .mount button.on span { color:#fff; }
+  @media (max-width: 900px) { #app { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; } .panel { border:none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="panel">
+    <h1>自動駕駛原理　瀏覽器模擬器<span class="vi">Trình mô phỏng xe tự lái trên trình duyệt</span></h1>
+    <div class="note">車上那台電腦只看得到射線碰到的東西。先用<b>固定式</b>玩一輪，再切到<b>旋轉式</b>跑同一個情境，比較兩者各自看不到什麼。</div>
+
+    <div class="sec">
+      <h2>光達型式　Loại LiDAR</h2>
+      <div class="mount">
+        <button id="mtFixed" class="on"><b>固定式</b><span>裝在車頭・只看前方<br>Cố định · phía trước</span></button>
+        <button id="mtSpin"><b>旋轉式</b><span>裝在車頂・360° 輪流<br>Xoay · trên nóc xe</span></button>
+      </div>
+      <div class="hint" id="mountHint"></div>
+
+      <div id="fixedCtl">
+        <label class="row">射線數 <span class="vi">Số tia</span><b id="vRays">7</b></label>
+        <input type="range" id="rays" min="1" max="15" value="7">
+        <div class="hint" id="hRays"></div>
+        <label class="row">張角（度）<span class="vi">Góc quét (°)</span><b id="vSpread">90</b></label>
+        <input type="range" id="spread" min="10" max="180" value="90">
+        <div class="hint" id="hSpread"></div>
+      </div>
+
+      <div id="spinCtl" style="display:none">
+        <label class="row">每圈取樣數 <span class="vi">Số điểm mỗi vòng</span><b id="vAzm">24</b></label>
+        <input type="range" id="azm" min="8" max="72" step="4" value="24">
+        <div class="hint" id="hAzm"></div>
+        <label class="row">轉速（Hz）<span class="vi">Tốc độ quay</span><b id="vSpin">10</b></label>
+        <input type="range" id="spin" min="2" max="20" step="1" value="10">
+        <div class="hint" id="hSpin"></div>
+      </div>
+
+      <label class="row">射線長度（公尺）<span class="vi">Tầm đo (m)</span><b id="vLen">25</b></label>
+      <input type="range" id="len" min="3" max="40" value="25">
+      <div class="hint" id="hLen"></div>
+      <label class="tog"><input type="checkbox" id="showRays" checked> 顯示射線 <span class="vi">Hiện tia</span></label>
+    </div>
+
+    <div class="sec">
+      <h2>路況　Điều kiện đường</h2>
+      <label class="row">車流密度 <span class="vi">Mật độ xe</span><b id="vDensity">3</b></label>
+      <input type="range" id="density" min="0" max="8" value="3">
+      <div class="hint">車愈多，變道空間愈少，愈常跟車。</div>
+      <label class="tog"><input type="checkbox" id="motos"> 機車流（會鑽縫） <span class="vi">Xe máy</span></label>
+      <label class="tog"><input type="checkbox" id="parked"> 違停貨車 <span class="vi">Xe tải đỗ trái phép</span></label>
+      <label class="tog"><input type="checkbox" id="peds"> 行人穿越 <span class="vi">Người đi bộ băng qua</span></label>
+      <label class="tog"><input type="checkbox" id="rain"> 雨天（射線變短、有雜訊） <span class="vi">Trời mưa</span></label>
+      <label class="tog"><input type="checkbox" id="night"> 夜晚 <span class="vi">Ban đêm</span></label>
+    </div>
+
+    <div class="sec">
+      <h2>模式　Chế độ</h2>
+      <div class="mode"><button id="mAuto" class="on">自動駕駛 Tự lái</button><button id="mManual">手動 Lái tay</button></div>
+      <label class="row">自動模式目標車速（km/h）<span class="vi">Tốc độ mục tiêu</span><b id="vTarget">50</b></label>
+      <input type="range" id="target" min="10" max="80" value="50">
+      <div class="hint">車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。</div>
+      <div class="btns"><button id="helpBtn">參數說明與診斷規則</button></div>
+      <div class="btns">
+        <button class="primary" id="restart">重新開始 <span class="vi" style="display:inline;color:#cfe">Bắt đầu lại</span></button>
+        <button id="pause">暫停 / 繼續</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>預設情境　Tình huống mẫu</h2>
+      <div class="btns">
+        <button data-preset="one">只有一條射線</button>
+        <button data-preset="std">標準配置</button>
+        <button data-preset="narrow">張角太窄</button>
+        <button data-preset="short">射線太短</button>
+        <button class="warn" data-preset="hanoi">河內尖峰</button>
+        <button class="warn" data-preset="rainnight">雨夜</button>
+        <button data-preset="spin">旋轉式・標準</button>
+        <button class="warn" data-preset="spinslow">旋轉式・2 Hz 慢動作</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="hud">
+      <div class="tile"><div class="k">車速 Tốc độ</div><div class="v"><span id="hSpeed">0</span><span class="u">km/h</span></div></div>
+      <div class="tile"><div class="k">最近障礙 Vật cản gần nhất</div><div class="v"><span id="hDist">—</span><span class="u">m</span></div></div>
+      <div class="tile"><div class="k">前方資料年齡 Tuổi dữ liệu</div><div class="v"><span id="hAge">0</span><span class="u">ms</span></div></div>
+      <div class="tile act"><div class="k">決策 Quyết định</div><div class="v" id="hAct">—</div></div>
+      <div class="tile"><div class="k">煞停距離 Quãng đường phanh</div><div class="v"><span id="hBrake">0</span><span class="u">m</span></div></div>
+    </div>
+    <div id="crash"><div id="crashBox"></div></div>
+    <div id="help"><div>
+      <button class="close" id="helpClose">關閉</button>
+      <h3>參數說明　Giải thích tham số</h3>
+      <table>
+        <tr><th>參數</th><th>對應真車的什麼</th><th>調大會怎樣</th><th>調小會怎樣</th></tr>
+        <tr><td><b>固定式</b></td><td>裝在車頭或擋風玻璃後的固態光達（Luminar、Hesai 那一類）</td><td>所有射線同一瞬間發射，資料年齡永遠 0；點集中在前方</td><td>張角以外完全沒有資料，側後方全盲</td></tr>
+        <tr><td><b>旋轉式</b></td><td>裝在車頂的機械旋轉光達（Velodyne、Ouster 那種圓罐子）＝把固定式模組放在轉盤上</td><td>水平 360° 沒有死角，變道前看得到側後方</td><td>一次只量一個方向；沒輪到的方位是上一圈的舊資料，車身周圍還有一圈盲區</td></tr>
+        <tr><td>每圈取樣數</td><td>水平角解析度（真車約 0.1°–0.4°）</td><td>點變密，小目標比較不會漏</td><td>方位之間的縫隙變大</td></tr>
+        <tr><td>轉速</td><td>更新率。真車常見 10 或 20 Hz（10 Hz ＝ 每分鐘 600 轉），量產機種很少低於 5 Hz。本頁 2 Hz 這一檔只是為了看清楚，不是真實設定</td><td>資料比較新；但發射率固定，每圈的點數會變少</td><td>一圈的時間變長，後方的資料可能過期好幾百毫秒</td></tr>
+        <tr><td>射線數</td><td>光達的解析度（每秒幾萬到幾百萬點）</td><td>縫隙變小，側面鑽進來的機車比較早被看到；真車上算力與成本上升</td><td>兩條射線之間出現看不到的縫隙，小目標（機車、行人）從縫隙穿過</td></tr>
+        <tr><td>射線長度</td><td>測距範圍（車用光達 150–300 公尺）</td><td>更早看到前方障礙，有時間減速或變道；雨天只剩 55%</td><td>短於煞停距離時，看到就煞不住，一定撞</td></tr>
+        <tr><td>張角</td><td>視野 FOV（真車用好幾顆感測器分工）</td><td>看得到側面；但同樣射線數會變稀</td><td>正前方清楚，側面來的機車、行人、切進來的車看不到</td></tr>
+        <tr><td>目標車速</td><td>ODD 的速度上限</td><td>煞停距離以平方成長：50 km/h 約 20 公尺，80 km/h 約 48 公尺</td><td>幾乎所有碰撞都能靠降速避免，代價是效率</td></tr>
+        <tr><td>車流密度</td><td>場景的交通量</td><td>變道空間變少，跟車變多</td><td>—</td></tr>
+        <tr><td>機車流</td><td>台灣與越南的機車海</td><td>小、快、會左右鑽；對射線是小目標，最容易從縫隙穿過</td><td>—</td></tr>
+        <tr><td>違停貨車</td><td>佔半個車道的靜止障礙</td><td>張角窄的時候很晚才發現</td><td>—</td></tr>
+        <tr><td>行人穿越</td><td>從路邊橫向進入的目標</td><td>從側面進來，考驗張角與射線數</td><td>—</td></tr>
+        <tr><td>雨天</td><td>感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊</td><td>同樣的參數會撐不住，要降速或加射線補冗餘</td><td>—</td></tr>
+        <tr><td>夜晚</td><td>射線再縮 15%，畫面變暗</td><td>—</td><td>—</td></tr>
+      </table>
+      <h3>撞了以後，診斷怎麼判斷</h3>
+      <table>
+        <tr><th>診斷</th><th>判斷依據</th><th>建議</th></tr>
+        <tr><td>看不到：固定式沒有後方視野</td><td>撞到的東西在自車後方，而且目前是固定式</td><td>切到旋轉式；真車會加裝後方感測器或盲點雷達</td></tr>
+        <tr><td>側後方：資料是上一圈的</td><td>撞到的東西在後方，目前是旋轉式</td><td>提高轉速，或降目標車速</td></tr>
+        <tr><td>旋轉式：資料已經過期</td><td>量到過，但最後一次量測距現在超過大半圈的時間</td><td>提高轉速；代價是每圈取樣數變少</td></tr>
+        <tr><td>看不到：視野外</td><td>撞到的東西從來沒被任何射線碰到，而且它是從側面進來的</td><td>加大張角，或加射線數</td></tr>
+        <tr><td>看不到：縫隙太大</td><td>從來沒被射線碰到，但它在張角範圍內</td><td>加射線數</td></tr>
+        <tr><td>看到太晚：射線太短</td><td>第一次看到它時的距離，已經小於當時的煞停距離</td><td>射線長度加到煞停距離＋5 公尺，或降速</td></tr>
+        <tr><td>看到太晚：雨天漏讀</td><td>雨天，撞前兩秒有多次漏讀</td><td>降速；或加射線數補冗餘</td></tr>
+        <tr><td>看到了但來不及：車速太快</td><td>看到時距離夠，但煞停距離大於當時距離（對方也在動）</td><td>降目標車速</td></tr>
+        <tr><td>變道中側撞</td><td>撞的時候正在變道，對方在側面</td><td>張角加大讓側面射線看得更遠；或降速</td></tr>
+        <tr><td>手動駕駛</td><td>手動模式</td><td>這是你的反應時間，不是參數問題</td></tr>
+      </table>
+      <div class="hint">診斷是規則式的，只看幾個數字，可能判錯。判錯本身也是教材：真車的事故分析比這難一百倍。</div>
+    </div></div>
+  </div>
+
+  <div class="panel right">
+    <h2 style="font-size:13px;color:var(--tealD);margin:0 0 6px">這一趟　Chuyến này</h2>
+    <div class="stat"><span>行駛距離 <span class="vi">Quãng đường</span></span><b><span id="sDist">0</span> m</b></div>
+    <div class="stat"><span>時間 <span class="vi">Thời gian</span></span><b><span id="sTime">0</span> s</b></div>
+    <div class="stat"><span>碰撞 <span class="vi">Va chạm</span></span><b id="sCrash">0</b></div>
+    <div class="stat"><span>緊急煞車 <span class="vi">Phanh gấp</span></span><b id="sHard">0</b></div>
+    <div class="stat"><span>變換車道 <span class="vi">Đổi làn</span></span><b id="sLane">0</b></div>
+    <div class="stat"><span>放棄變道（後方有車） <span class="vi">Hủy đổi làn</span></span><b id="sAbort">0</b></div>
+    <div class="stat"><span>感測器漏讀 <span class="vi">Tia mất tín hiệu</span></span><b id="sDrop">0</b></div>
+
+    <div class="sec">
+      <h2>事件　Sự kiện</h2>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="sec">
+      <h2>手動操作　Phím</h2>
+      <div class="keys">
+        <kbd>↑</kbd> 加速　<kbd>↓</kbd> 煞車<br>
+        <kbd>←</kbd> <kbd>→</kbd> 轉向<br>
+        <kbd>空白鍵</kbd> 暫停　<kbd>R</kbd> 重新開始<br>
+        <kbd>A</kbd> 切換自動／手動
+      </div>
+    </div>
+
+    <div class="sec note">
+      比例：1 公尺 = 10 像素。車道寬 3.5 公尺，自駕車 1.8 × 4.5 公尺。<br>
+      煞停距離 = 反應距離（0.3 秒）＋ 煞車距離（減速度 6 m/s²）。<br>
+      本模擬器為《自動駕駛原理》課程自製教材，第 3、4 週上機使用。
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+// ───────────────────────── 基本參數 ─────────────────────────
+const PXM = 10;                 // 1 公尺 = 10 px
+const LANE_W = 3.5 * PXM;       // 車道寬
+const LANES = 4;
+const ROAD_W = LANE_W * LANES;
+const SHOULDER = 1.2 * PXM;
+const EGO_W = 1.8 * PXM, EGO_L = 4.5 * PXM;
+const MAX_SPEED = 80 / 3.6 * PXM;     // px/s
+const ACCEL = 2.5 * PXM, BRAKE = 6 * PXM, COAST = 0.6 * PXM;
+const REACT = 0.3;                    // 反應時間（秒）
+const BLIND = 3.5;                    // 旋轉式裝在車頂造成的近距離盲區半徑（公尺）
+
+const $ = (id) => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+const stage = $("stage");
+
+// ───────────────────────── 狀態 ─────────────────────────
+const S = {
+  auto: true, paused: false, t: 0, crashed: false, crashWhy: "",
+  mount: "fixed",                 // fixed = 固定式（車頭前向）；spin = 旋轉式（車頂 360°）
+  rays: 7, len: 25, spread: 90, showRays: true,
+  azm: 24, spin: 10, beam: 0, mem: [], lastRear: 0,
+  density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50,
+  stats: { dist: 0, crash: 0, hard: 0, lane: 0, drop: 0, abort: 0 },
+  keys: {}, act: "—", lastHard: 0, laneTarget: 1, laneCooldown: 0, recentDrops: [],
+};
+let ego, traffic = [], parkedTrucks = [], peds = [], readings = [], nextSpawnY = 0, nextPedY = 0, nextParkY = 0;
+const log = (msg) => {
+  const box = $("log");
+  const d = document.createElement("div");
+  d.innerHTML = `<span class="t">${S.t.toFixed(1)}s</span>${msg}`;
+  box.prepend(d);
+  while (box.children.length > 40) box.removeChild(box.lastChild);
+};
+
+function laneX(i) { return -ROAD_W / 2 + LANE_W * (i + 0.5); }
+
+function reset() {
+  S.t = 0; S.crashed = false; S.crashWhy = ""; S.act = "—";
+  S.stats = { dist: 0, crash: S.stats.crash, hard: 0, lane: 0, drop: 0, abort: 0 };
+  S.lastAbort = 0;
+  ego = { x: laneX(1), y: 0, angle: 0, speed: 0, w: EGO_W, l: EGO_L };
+  S.laneTarget = 1; S.laneCooldown = 0; S.recentDrops = [];
+  S.beam = 0; S.mem = []; S.lastRear = 0;
+  traffic = []; parkedTrucks = []; peds = [];
+  nextSpawnY = -30 * PXM; nextPedY = -60 * PXM; nextParkY = -80 * PXM;
+  $("crash").style.display = "none";
+  $("log").innerHTML = "";
+  log("出發　Xuất phát");
+}
+
+// ───────────────────────── 生成車流 ─────────────────────────
+function spawnAhead() {
+  const horizon = ego.y - 140 * PXM;
+  while (nextSpawnY > horizon) {
+    const n = S.density;
+    if (n > 0) {
+      const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+      const count = Math.min(LANES - 1, Math.round(n / 8 * 3 + Math.random()));
+      for (let i = 0; i < count; i++) {
+        const lane = lanes[i];
+        const moto = S.motos && Math.random() < 0.6;
+        traffic.push({
+          kind: moto ? "moto" : "car",
+          x: laneX(lane) + (moto ? (Math.random() - 0.5) * LANE_W * 0.8 : 0),
+          y: nextSpawnY + (Math.random() - 0.5) * 12 * PXM,
+          w: moto ? 0.8 * PXM : 1.8 * PXM, l: moto ? 2.0 * PXM : 4.4 * PXM,
+          speed: (moto ? (25 + Math.random() * 25) : (20 + Math.random() * 25)) / 3.6 * PXM,
+          drift: moto ? (Math.random() - 0.5) * 1.6 * PXM : 0, driftT: 0,
+          color: moto ? "#F5C242" : ["#C9D3DD", "#8FA3B5", "#5B7A99", "#E4E9EE", "#7B8FA1"][Math.floor(Math.random() * 5)],
+        });
+      }
+    }
+    nextSpawnY -= (n === 0 ? 60 : 44 - n * 3) * PXM;
+  }
+  if (S.parked) while (nextParkY > horizon) {
+    const side = Math.random() < 0.5 ? 0 : LANES - 1;
+    parkedTrucks.push({ kind: "truck", x: laneX(side) + (side === 0 ? -0.35 : 0.35) * LANE_W, y: nextParkY,
+                        w: 2.2 * PXM, l: 7 * PXM, speed: 0, color: "#3C6FB0" });
+    nextParkY -= (70 + Math.random() * 60) * PXM;
+  } else nextParkY = horizon;
+  if (S.peds) while (nextPedY > horizon) {
+    const fromLeft = Math.random() < 0.5;
+    peds.push({ kind: "ped", x: fromLeft ? -ROAD_W / 2 - SHOULDER : ROAD_W / 2 + SHOULDER, y: nextPedY,
+                w: 0.5 * PXM, l: 0.5 * PXM, vx: (fromLeft ? 1 : -1) * (1.5 + Math.random() * 1.0) * PXM, started: false });
+    nextPedY -= (50 + Math.random() * 50) * PXM;
+  } else nextPedY = horizon;
+  // 後方來車（比自車快）。固定式看不到它，旋轉式看得到——這是兩種型式唯一會跑出不同結果的地方
+  if (S.density > 0 && S.t > 4 && S.t - S.lastRear > 7 + Math.random() * 5) {
+    S.lastRear = S.t;
+    traffic.push({ kind: "car", x: laneX(Math.floor(Math.random() * LANES)), y: ego.y + 52 * PXM,
+                   w: 1.8 * PXM, l: 4.4 * PXM, speed: (S.target + 12 + Math.random() * 10) / 3.6 * PXM,
+                   drift: 0, driftT: 0, color: "#9AA9B8", fromRear: true,
+                   v0: (S.target + 12 + Math.random() * 10) / 3.6 * PXM });
+  }
+}
+
+// ───────────────────────── 幾何 ─────────────────────────
+function rectPoly(o) {
+  const c = Math.cos(o.angle || 0), s = Math.sin(o.angle || 0), hw = o.w / 2, hl = o.l / 2;
+  return [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl]].map(([px, py]) => [o.x + px * c - py * s, o.y + px * s + py * c]);
+}
+function segInter(a, b, c, d) {
+  const r = [b[0] - a[0], b[1] - a[1]], s = [d[0] - c[0], d[1] - c[1]];
+  const den = r[0] * s[1] - r[1] * s[0];
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * s[1] - (c[1] - a[1]) * s[0]) / den;
+  const u = ((c[0] - a[0]) * r[1] - (c[1] - a[1]) * r[0]) / den;
+  return (t >= 0 && t <= 1 && u >= 0 && u <= 1) ? t : null;
+}
+function polysHit(p, q) {
+  for (let i = 0; i < p.length; i++) for (let j = 0; j < q.length; j++)
+    if (segInter(p[i], p[(i + 1) % p.length], q[j], q[(j + 1) % q.length]) !== null) return true;
+  return false;
+}
+const obstacles = () => [...traffic, ...parkedTrucks, ...peds];
+
+// ───────────────────────── 感測 ─────────────────────────
+function effLen() {
+  let len = S.len * PXM;
+  if (S.rain) len *= 0.55;
+  if (S.night) len *= 0.85;
+  return len;
+}
+function castRay(from, ang, len, obs, borders) {
+  const end = [from[0] + Math.sin(ang) * len, from[1] - Math.cos(ang) * len];
+  let best = null, hit = null;
+  for (const { o, poly } of obs) for (let j = 0; j < 4; j++) {
+    const t = segInter(from, end, poly[j], poly[(j + 1) % 4]);
+    if (t !== null && (best === null || t < best)) { best = t; hit = o; }
+  }
+  for (const b of borders) { const t = segInter(from, end, b[0], b[1]); if (t !== null && (best === null || t < best)) { best = t; hit = { kind: "border" }; } }
+  return { t: best, hit, end };
+}
+
+// 固定式：所有射線同一瞬間發射，資料年齡永遠是 0，但只看得到張角內。
+// 旋轉式：一條射線繞著車頂轉，掃到哪個方位才更新哪個方位；沒輪到的方向拿的是上一圈的舊資料。
+function sense(dt) {
+  const len = effLen();
+  const noise = S.rain ? 0.25 : 0;
+  const obs = obstacles().map((o) => ({ o, poly: rectPoly(o) }));
+  const borders = [
+    [[-ROAD_W / 2 - SHOULDER, ego.y - 400 * PXM], [-ROAD_W / 2 - SHOULDER, ego.y + 100 * PXM]],
+    [[ROAD_W / 2 + SHOULDER, ego.y - 400 * PXM], [ROAD_W / 2 + SHOULDER, ego.y + 100 * PXM]],
+  ];
+  const nose = [ego.x + Math.sin(ego.angle) * ego.l / 2, ego.y - Math.cos(ego.angle) * ego.l / 2];
+  const roof = [ego.x, ego.y];
+  const note = (hit, d, a) => {
+    if (hit.seenFirst === undefined) { hit.seenFirst = d; hit.seenFirstT = S.t; hit.seenFirstV = ego.speed; hit.seenFirstAng = a; }
+    hit.seenLast = S.t; hit.seenLastD = d;
+  };
+  // 一條射線的量測：漏讀、盲區、距離雜訊都在這裡處理
+  const measure = (from, a, minD) => {
+    const r = castRay(from, ego.angle + a, len, obs, borders);
+    let best = r.t, hit = r.hit, dropped = false;
+    if (best !== null && minD && best * len < minD) { best = null; hit = null; }      // 車頂盲區
+    if (best !== null && noise && Math.random() < noise * 0.5) { best = null; hit = null; dropped = true; S.stats.drop++; S.recentDrops.push(S.t); }
+    if (best !== null && hit && hit.kind !== "border") note(hit, best * len, a);
+    if (best !== null && noise) best = Math.min(1, Math.max(0.05, best + (Math.random() - 0.5) * noise * 0.4));
+    return { t: best, hit, dropped, to: r.end };
+  };
+
+  if (S.mount === "fixed") {
+    readings = [];
+    const n = S.rays, spread = S.spread * Math.PI / 180;
+    for (let i = 0; i < n; i++) {
+      const a = n === 1 ? 0 : -spread / 2 + spread * i / (n - 1);
+      const m = measure(nose, a, 0);
+      readings.push({ a, ang: ego.angle + a, from: nose, to: m.to, t: m.t, hit: m.hit, dropped: m.dropped, len, t0: S.t });
+    }
+    return;
+  }
+
+  // 旋轉式
+  if (S.mem.length !== S.azm) S.mem = Array.from({ length: S.azm }, () => ({ t: null, hit: null, dropped: false, t0: -9 }));
+  const stepDeg = 360 / S.azm;
+  const sweep = Math.min(360, 360 * S.spin * dt);
+  const i0 = Math.floor(S.beam / stepDeg) + 1, i1 = Math.floor((S.beam + sweep) / stepDeg);
+  for (let k = i0; k <= i1; k++) {
+    const idx = ((k % S.azm) + S.azm) % S.azm;
+    const a = (((idx * stepDeg + 180) % 360) - 180) * Math.PI / 180;   // 正規化成 −180°…180°
+    const m = measure(roof, a, BLIND * PXM);
+    S.mem[idx] = { t: m.t, hit: m.hit, dropped: m.dropped, t0: S.t, a };
+  }
+  S.beam = (S.beam + sweep) % 360;
+  readings = S.mem.map((m, i) => {
+    const a = m.a !== undefined ? m.a : (((i * stepDeg + 180) % 360) - 180) * Math.PI / 180;
+    const ang = ego.angle + a;
+    return { a, ang, from: roof, to: [roof[0] + Math.sin(ang) * len, roof[1] - Math.cos(ang) * len],
+             t: m.t, hit: m.hit, dropped: m.dropped, len, t0: m.t0 };
+  });
+}
+
+// ───────────────────────── 自動駕駛（規則式） ─────────────────────────
+function autopilot(dt) {
+  const target = S.target / 3.6 * PXM;
+  const F = 16 * Math.PI / 180, SIDE = 110 * Math.PI / 180;
+  const fwd = readings.filter((r) => Math.abs(r.a) < F);
+  const left = readings.filter((r) => r.a <= -F && r.a >= -SIDE);
+  const right = readings.filter((r) => r.a >= F && r.a <= SIDE);
+  const rearL = readings.filter((r) => r.a < -SIDE);     // 固定式在這裡永遠是空的
+  const rearR = readings.filter((r) => r.a > SIDE);
+  const minD = (arr) => arr.reduce((m, r) => (r.t !== null && r.hit && r.hit.kind !== "border") ? Math.min(m, r.t * r.len) : m, Infinity);
+  const dF = minD(fwd), dL = minD(left), dR = minD(right), dRL = minD(rearL), dRR = minD(rearR);
+  const v = ego.speed;
+  const stopDist = v * REACT + v * v / (2 * BRAKE);   // 煞停距離
+  const margin = 2.5 * PXM;
+  let act = "直行", accel = 0;
+  S.laneCooldown = Math.max(0, S.laneCooldown - dt);
+
+  if (dF < stopDist + margin) {
+    accel = -BRAKE; act = "煞車";
+    if (dF < stopDist * 0.7 && v > 5 * PXM && S.t - S.lastHard > 1.5) { S.stats.hard++; S.lastHard = S.t; log("緊急煞車　Phanh gấp"); }
+    if (S.laneCooldown === 0 && v > 3 * PXM) tryLaneChange(dL, dR, dF, dRL, dRR);
+  } else if (dF < stopDist + 12 * PXM) {
+    accel = v > target * 0.6 ? -BRAKE * 0.4 : 0; act = "跟車";
+    if (S.laneCooldown === 0) tryLaneChange(dL, dR, dF, dRL, dRR);
+  } else {
+    accel = v < target ? ACCEL : (v > target + 2 ? -COAST : 0); act = "直行";
+  }
+  ego.speed = Math.max(0, Math.min(MAX_SPEED, v + accel * dt));
+
+  // 轉向：朝目標車道中心
+  const tx = laneX(S.laneTarget);
+  const err = (tx - ego.x) / PXM;
+  const wantAngle = Math.max(-0.35, Math.min(0.35, err * 0.12));
+  ego.angle += (wantAngle - ego.angle) * Math.min(1, dt * 5);
+  if (Math.abs(err) > 0.4) act = S.laneTarget > laneOf(ego.x) ? "右變道" : (S.laneTarget < laneOf(ego.x) ? "左變道" : act);
+  S.act = act;
+}
+function laneOf(x) { return Math.max(0, Math.min(LANES - 1, Math.round((x + ROAD_W / 2) / LANE_W - 0.5))); }
+function tryLaneChange(dL, dR, dF, dRL, dRR) {
+  const cur = laneOf(ego.x);
+  const clear = 8 * PXM, rearClear = 15 * PXM;
+  // 側後方：旋轉式看得到，固定式的 dRL/dRR 永遠是 Infinity（沒有資料＝以為淨空）
+  const blockL = dRL < rearClear, blockR = dRR < rearClear;
+  let canL = cur > 0 && dL > clear && !blockL, canR = cur < LANES - 1 && dR > clear && !blockR;
+  if ((blockL || blockR) && S.t - (S.lastAbort || 0) > 2) {
+    S.lastAbort = S.t; S.stats.abort++;
+    log(`放棄變道：側後方有車 ${(Math.min(dRL, dRR) / PXM).toFixed(1)} m　Hủy đổi làn`);
+  }
+  if (!canL && !canR) return;
+  let to = cur;
+  if (canL && canR) to = dL >= dR ? cur - 1 : cur + 1; else to = canL ? cur - 1 : cur + 1;
+  if (to !== S.laneTarget) { S.laneTarget = to; S.laneCooldown = 2.5; S.stats.lane++; log(`${to < cur ? "左" : "右"}變道　Đổi làn ${to < cur ? "trái" : "phải"}（前方 ${(dF / PXM).toFixed(1)} m）`); }
+}
+
+// ───────────────────────── 手動 ─────────────────────────
+function manual(dt) {
+  const k = S.keys;
+  let accel = 0;
+  if (k.ArrowUp) accel = ACCEL; else if (k.ArrowDown) accel = -BRAKE; else accel = -COAST;
+  ego.speed = Math.max(0, Math.min(MAX_SPEED, ego.speed + accel * dt));
+  let steer = 0;
+  if (k.ArrowLeft) steer = -1; if (k.ArrowRight) steer = 1;
+  const want = steer * 0.35;
+  ego.angle += (want - ego.angle) * Math.min(1, dt * 6);
+  S.act = k.ArrowDown ? "煞車" : (steer ? (steer < 0 ? "左轉" : "右轉") : (k.ArrowUp ? "加速" : "滑行"));
+}
+
+// ───────────────────────── 更新 ─────────────────────────
+function update(dt) {
+  if (S.crashed) return;
+  S.t += dt;
+  spawnAhead();
+  sense(dt);
+  if (S.auto) autopilot(dt); else manual(dt);
+  // 自車移動
+  ego.x += Math.sin(ego.angle) * ego.speed * dt;
+  ego.y -= Math.cos(ego.angle) * ego.speed * dt;
+  S.stats.dist += ego.speed * dt / PXM;
+  // 車流
+  for (const c of traffic) {
+    c.y -= c.speed * dt;
+    if (c.fromRear) {
+      // 後方來車也有駕駛：追上就跟車，不會直接輾過去。
+      // 這樣一來，唯一會被追撞的情況就是自車切到它前面——那才是「有沒有看側後方」的問題。
+      const gap = (c.y - ego.y) - (c.l + ego.l) / 2;
+      const sameLane = Math.abs(c.x - ego.x) < LANE_W * 0.7;
+      if (sameLane && gap < 18 * PXM) c.speed = Math.max(0, Math.max(ego.speed * 0.95, c.speed - 7 * PXM * dt));
+      else if (c.speed < c.v0) c.speed = Math.min(c.v0, c.speed + 2.5 * PXM * dt);
+    }
+    if (c.kind === "moto") { c.driftT -= dt; if (c.driftT <= 0) { c.drift = (Math.random() - 0.5) * 2.2 * PXM; c.driftT = 1 + Math.random() * 2; } c.x += c.drift * dt;
+      c.x = Math.max(-ROAD_W / 2 + c.w, Math.min(ROAD_W / 2 - c.w, c.x)); }
+  }
+  for (const p of peds) {
+    if (!p.started && p.y > ego.y - 70 * PXM) { p.started = true; }
+    if (p.started) p.x += p.vx * dt;
+  }
+  traffic = traffic.filter((c) => c.y < ego.y + 100 * PXM);
+  parkedTrucks = parkedTrucks.filter((c) => c.y < ego.y + 60 * PXM);
+  peds = peds.filter((p) => p.y < ego.y + 60 * PXM && Math.abs(p.x) < ROAD_W / 2 + SHOULDER + 2 * PXM);
+  // 碰撞
+  const ep = rectPoly(ego);
+  const names = { car: "撞到車輛　Đâm vào xe", moto: "撞到機車　Đâm vào xe máy", truck: "撞到違停貨車　Đâm vào xe tải đỗ", ped: "撞到行人　Đâm vào người đi bộ" };
+  for (const o of obstacles()) if (polysHit(ep, rectPoly(o))) return crash(names[o.kind], o);
+  if (Math.abs(ego.x) + ego.w / 2 > ROAD_W / 2 + SHOULDER) return crash("衝出路面　Lao ra khỏi đường", null);
+}
+function stopDist(v) { return v * REACT + v * v / (2 * BRAKE); }
+function diagnose(why, o) {
+  const v = ego.speed, sd = stopDist(v) / PXM, vk = Math.round(v / PXM * 3.6);
+  let effLen = S.len; if (S.rain) effLen *= 0.55; if (S.night) effLen *= 0.85;
+  const needLen = Math.ceil(sd + 5);
+  const drops2s = S.recentDrops.filter((t) => S.t - t < 2).length;
+  const changing = Math.abs(laneX(S.laneTarget) - ego.x) > 0.4 * PXM;
+  if (!S.auto) return { title: "手動駕駛", why: `你自己開的，時速 ${vk}。碰撞前的煞停距離約 ${sd.toFixed(1)} 公尺。`, tip: "這不是參數問題，是反應時間。切回自動駕駛（A 鍵）看規則式自駕怎麼處理同一個情況。" };
+  if (!o) return { title: "衝出路面", why: `變道或轉向過猛，時速 ${vk}。`, tip: "降目標車速；或加射線數讓兩側射線更早看到路肩。" };
+  const rel = o.x - ego.x, side = Math.abs(rel) > 0.6 * LANE_W;
+  const halfSpread = S.spread / 2;
+  const angToObj = Math.abs(Math.atan2(rel, Math.max(1, ego.y - o.y)) * 180 / Math.PI);
+  const name = { car: "台車", moto: "台機車", truck: "台違停貨車", ped: "個行人" }[o.kind];
+  const behind = o.y > ego.y + ego.l * 0.3;
+  // 來自側後方：固定式根本沒有那個方向的資料
+  if (behind) {
+    if (S.mount === "fixed")
+      return { title: "看不到：固定式沒有後方視野",
+               why: `這${name}在自車後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺、側向 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。固定式裝在車頭、張角 ${S.spread}°，後方沒有任何一條射線，所以變道時等於閉著眼睛切出去。`,
+               tip: "切到旋轉式（車頂 360°）跑同一個情境：它變道前會先看側後方，來不及就放棄變道。真車的作法是另外加裝後方感測器或盲點雷達。" };
+    return { title: "側後方：資料是上一圈的",
+             why: `這${name}在後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺。旋轉式看得到後方，但那個方位的資料最舊可能是 ${(1000 / S.spin).toFixed(0)} ms 前的；這段時間它已經移動了一段距離。`,
+             tip: `把轉速從 ${S.spin} Hz 調高，後方的資料就比較新；代價是每圈取樣數要跟著降，角解析度變差。或降目標車速，把變道的時間壓力拿掉。` };
+  }
+  // 旋轉式：明明量到過，但決策當下用的是舊資料
+  if (S.mount === "spin" && o.seenFirst !== undefined && S.t - (o.seenLast || 0) > 0.6 / S.spin)
+    return { title: "旋轉式：決策當下的資料已經過期",
+             why: `最後一次量到這${name}是 ${((S.t - o.seenLast) * 1000).toFixed(0)} ms 前，距離 ${(o.seenLastD / PXM).toFixed(1)} 公尺。掃描線還沒轉回它那個方位，車子手上只有那筆舊的。`,
+             tip: `轉速調高（目前 ${S.spin} Hz，一圈 ${(1000 / S.spin).toFixed(0)} ms）；或降目標車速，讓一圈的時間內世界變化少一點。` };
+  if (o.seenFirst === undefined) {
+    if (S.rays === 1)
+      return { title: "看不到：只有一條射線", why: `只有一條射線，只看得到正前方一條線。這${name}偏離車頭約 ${angToObj.toFixed(0)}°，完全在視線外。`, tip: "加射線數到 5 以上，張角 60° 以上。一顆只看正前方的感測器，連最基本的變道都做不到。" };
+    if (angToObj > halfSpread * 0.9 || side)
+      return { title: "看不到：在視野外", why: `這${name}從側面進來（偏離車頭約 ${angToObj.toFixed(0)}°），張角只有 ${S.spread}°，沒有任何一條射線碰到它。`,
+               tip: `把張角加到至少 ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°；或加射線數到 ${Math.min(15, S.rays + 4)} 讓側面也有射線。${o.kind === "moto" ? "機車會鑽縫，是最考驗視野的目標。" : ""}` };
+    return { title: "看不到：射線之間的縫隙太大", why: `這${name}在張角範圍內，但 ${S.rays} 條射線分在 ${S.spread}° 裡，相鄰射線在 ${effLen.toFixed(0)} 公尺處相隔約 ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} 公尺，它剛好從縫隙穿過。`,
+             tip: `加射線數到 ${Math.min(15, S.rays + 4)}；或把張角收窄一點讓射線密一些（但側面會看不到）。` };
+  }
+  const seenAt = o.seenFirst / PXM, sdThen = stopDist(o.seenFirstV) / PXM;
+  const needLenThen = Math.ceil(sdThen + 5);
+  if (S.rain && drops2s >= 3)
+    return { title: "看到太晚：雨天漏讀", why: `雨天射線只剩 ${effLen.toFixed(0)} 公尺，撞前兩秒漏讀 ${drops2s} 次；第一次看到這${name}是 ${seenAt.toFixed(1)} 公尺，煞停距離 ${sdThen.toFixed(1)} 公尺。`,
+             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；或加射線數到 ${Math.min(15, S.rays + 4)}，一條漏了還有別條（這就是冗餘）。` };
+  if (seenAt < sdThen)
+    return { title: effLen < sdThen + 3 ? "看到太晚：射線太短" : "看到太晚：從側面切進來", why: `第一次看到這${name}時距離 ${seenAt.toFixed(1)} 公尺，但當時時速 ${Math.round(o.seenFirstV / PXM * 3.6)} 的煞停距離是 ${sdThen.toFixed(1)} 公尺。${effLen < sdThen + 3 ? `射線實際只有 ${effLen.toFixed(0)} 公尺。` : "它不是從正前方遠處來的，是從旁邊進到路徑上。"}`,
+             tip: effLen < sdThen + 3 ? `射線長度至少 ${needLenThen} 公尺（煞停距離＋5）${S.rain ? "，雨天要再除以 0.55" : ""}；或把目標車速降到 ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h 以下。` : `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；加大張角讓側面的東西更早被看到。` };
+  if (changing || side)
+    return { title: "變道中側撞", why: `撞的時候正在變道，這${name}在側面 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。兩側射線量到的距離夠遠，但它也在動。`,
+             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；加大張角（${Math.min(180, S.spread + 30)}°）讓側面射線看得更遠。這是「預測」的問題：真車會猜它下一秒在哪，這裡沒有。` };
+  return { title: "看到了但來不及", why: `第一次看到這${name}在 ${seenAt.toFixed(1)} 公尺（煞停距離 ${sdThen.toFixed(1)} 公尺），但它也在動（減速、靠近，或像行人一樣橫向走進路徑），規則只看「現在的距離」，不會預測它下一秒在哪，最後距離不夠。`,
+           tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；或射線加長到 ${needLenThen + 10} 公尺，讓「跟車」規則更早啟動。` };
+}
+function crash(why, o) {
+  S.crashed = true; S.crashWhy = why; S.stats.crash++;
+  const d = diagnose(why, o);
+  $("crashBox").innerHTML = `<h3>碰撞　Va chạm：${why}</h3>
+    <div class="dx"><b>診斷：${d.title}</b><br><span class="why">${d.why}</span></div>
+    <div class="dx tip"><b>建議：</b>${d.tip}</div>
+    <div class="kbd">按 R 重新開始・按 H 看參數說明與診斷規則</div>`;
+  $("crash").style.display = "flex";
+  log(`<b style="color:#D9463E">${why}</b>　診斷：${d.title}`);
+  log(`建議：${d.tip}`);
+}
+
+// ───────────────────────── 繪圖 ─────────────────────────
+function draw() {
+  const W = cv.width, H = cv.height;
+  const camX = W / 2, camY = H * 0.8;
+  const Z = Math.max(1, Math.min(2.0, W * 0.5 / (ROAD_W + 2 * SHOULDER)));   // 依畫面寬度放大
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = S.night ? "#0c1410" : "#2b3a2e"; ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(Z, 0, 0, Z, camX, camY - ego.y * Z);       // 世界座標 → 畫面
+  const tx = (x) => x, ty = (y) => y;
+  const top = ego.y - camY / Z, bottom = ego.y + (H - camY) / Z;
+  // 路面
+  ctx.fillStyle = S.night ? "#1d2127" : (S.rain ? "#3a4048" : "#4a4f57");
+  ctx.fillRect(-ROAD_W / 2 - SHOULDER, top, ROAD_W + 2 * SHOULDER, bottom - top);
+  // 路肩線
+  ctx.strokeStyle = "#e8e8e8"; ctx.lineWidth = 2 / Z; ctx.setLineDash([]);
+  [-ROAD_W / 2, ROAD_W / 2].forEach((x) => { ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke(); });
+  // 車道線
+  ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1.5 / Z; ctx.setLineDash([3 * PXM, 4 * PXM]);
+  for (let i = 1; i < LANES; i++) { const x = -ROAD_W / 2 + LANE_W * i; ctx.beginPath(); ctx.moveTo(x, Math.floor(top / (7 * PXM)) * 7 * PXM); ctx.lineTo(x, bottom); ctx.stroke(); }
+  ctx.setLineDash([]);
+  // 障礙
+  const drawBox = (o, color) => {
+    ctx.save(); ctx.translate(tx(o.x), ty(o.y)); ctx.rotate(o.angle || 0);
+    ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-o.w / 2, -o.l / 2, o.w, o.l, 3); ctx.fill();
+    if (o.kind === "car" || o.kind === "truck") { ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.fillRect(-o.w / 2 + 2, -o.l / 2 + o.l * 0.18, o.w - 4, o.l * 0.2); }
+    ctx.restore();
+  };
+  parkedTrucks.forEach((o) => drawBox(o, o.color));
+  traffic.forEach((o) => drawBox(o, o.color));
+  peds.forEach((p) => { ctx.fillStyle = "#FF6B6B"; ctx.beginPath(); ctx.arc(tx(p.x), ty(p.y), p.w * 0.8, 0, Math.PI * 2); ctx.fill(); });
+  // 射線
+  if (S.showRays) {
+    const spin = S.mount === "spin", period = spin ? 1 / S.spin : 1;
+    for (const r of readings) {
+      // 旋轉式：這個方位多久沒更新了。0 = 剛掃過，1 = 快滿一圈
+      const age = spin ? Math.max(0, Math.min(1, (S.t - r.t0) / period)) : 0;
+      const f = 1 - age * 0.8;
+      const ex = r.t === null ? r.to[0] : r.from[0] + (r.to[0] - r.from[0]) * r.t;
+      const ey = r.t === null ? r.to[1] : r.from[1] + (r.to[1] - r.from[1]) * r.t;
+      ctx.strokeStyle = r.dropped ? `rgba(255,80,80,${0.35 * f})` : `rgba(255,230,120,${0.7 * f})`;
+      ctx.lineWidth = 1.2 / Z;
+      ctx.beginPath(); ctx.moveTo(tx(r.from[0]), ty(r.from[1])); ctx.lineTo(tx(ex), ty(ey)); ctx.stroke();
+      if (r.t !== null) {
+        // 量測點：剛量到是紅的，愈舊愈灰——車子相信的東西，有些是上一圈的
+        const g = Math.round(77 + age * 60), b = Math.round(77 + age * 90);
+        ctx.fillStyle = r.hit && r.hit.kind === "border" ? `rgba(159,182,200,${f})` : `rgba(${Math.round(255 - age * 90)},${g},${b},${0.35 + 0.65 * f})`;
+        ctx.beginPath(); ctx.arc(tx(ex), ty(ey), (spin ? 3.2 : 3.5) / Z, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.strokeStyle = `rgba(255,230,120,${0.2 * f})`;
+        ctx.beginPath(); ctx.moveTo(tx(ex), ty(ey)); ctx.lineTo(tx(r.to[0]), ty(r.to[1])); ctx.stroke();
+      }
+    }
+    if (spin) {
+      const L = effLen();
+      // 目前掃到的方位：亮白色的那一條
+      const ba = ego.angle + ((((S.beam + 180) % 360) - 180) * Math.PI / 180);
+      const bx = ego.x + Math.sin(ba) * L, by = ego.y - Math.cos(ba) * L;
+      const grd = ctx.createLinearGradient(tx(ego.x), ty(ego.y), tx(bx), ty(by));
+      grd.addColorStop(0, "rgba(255,255,255,.9)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.strokeStyle = grd; ctx.lineWidth = 2.4 / Z;
+      ctx.beginPath(); ctx.moveTo(tx(ego.x), ty(ego.y)); ctx.lineTo(tx(bx), ty(by)); ctx.stroke();
+      // 車頂盲區：車身周圍這一圈，車頂的光達打不到
+      ctx.setLineDash([4 / Z, 4 / Z]); ctx.strokeStyle = "rgba(255,120,120,.55)"; ctx.lineWidth = 1.2 / Z;
+      ctx.beginPath(); ctx.arc(tx(ego.x), ty(ego.y), BLIND * PXM * Z, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  // 自車
+  ctx.save(); ctx.translate(tx(ego.x), ty(ego.y)); ctx.rotate(ego.angle);
+  ctx.fillStyle = S.crashed ? "#D9463E" : "#00A896"; ctx.beginPath(); ctx.roundRect(-ego.w / 2, -ego.l / 2, ego.w, ego.l, 4); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(-ego.w / 2 + 2, -ego.l / 2 + 8, ego.w - 4, 9);
+  ctx.fillStyle = "#FFB020"; ctx.fillRect(-ego.w / 2 + 1, -ego.l / 2, 4, 3); ctx.fillRect(ego.w / 2 - 5, -ego.l / 2, 4, 3);
+  ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // 雨
+  if (S.rain) { ctx.strokeStyle = "rgba(200,220,255,.25)"; ctx.lineWidth = 1; for (let i = 0; i < 90; i++) { const x = Math.random() * W, y = Math.random() * H; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 10); ctx.stroke(); } }
+  if (S.night) { const sx = camX + ego.x * Z, sy = camY - 30 * Z; const g = ctx.createRadialGradient(sx, sy, 30 * Z, sx, sy, 260 * Z); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.72)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+  // 比例尺
+  ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(W - 40 - 10 * PXM * Z, H - 28, 10 * PXM * Z, 3); ctx.font = "12px sans-serif"; ctx.fillText("10 m", W - 40 - 10 * PXM * Z, H - 34);
+}
+
+// ───────────────────────── HUD ─────────────────────────
+function hud() {
+  const v = ego.speed;
+  $("hSpeed").textContent = Math.round(v / PXM * 3.6);
+  const d = readings.reduce((m, r) => (r.t !== null && r.hit && r.hit.kind !== "border") ? Math.min(m, r.t * r.len) : m, Infinity);
+  $("hDist").textContent = d === Infinity ? "—" : (d / PXM).toFixed(1);
+  const fwdR = readings.filter((r) => Math.abs(r.a) < 16 * Math.PI / 180);
+  const ageMs = S.mount === "spin" && fwdR.length
+    ? Math.min(1000 / S.spin, Math.max(...fwdR.map((r) => S.t - r.t0)) * 1000) : 0;
+  $("hAge").textContent = Math.round(ageMs);
+  $("hAct").textContent = S.act;
+  $("hBrake").textContent = ((v * REACT + v * v / (2 * BRAKE)) / PXM).toFixed(1);
+  $("sDist").textContent = Math.round(S.stats.dist);
+  $("sTime").textContent = S.t.toFixed(0);
+  $("sCrash").textContent = S.stats.crash; $("sHard").textContent = S.stats.hard;
+  $("sLane").textContent = S.stats.lane; $("sDrop").textContent = S.stats.drop;
+  $("sAbort").textContent = S.stats.abort;
+}
+
+// ───────────────────────── 迴圈 ─────────────────────────
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!S.paused) update(dt);
+  draw(); hud();
+  requestAnimationFrame(frame);
+}
+function resize() { cv.width = stage.clientWidth; cv.height = stage.clientHeight; }
+window.addEventListener("resize", resize);
+
+// ───────────────────────── 控制項 ─────────────────────────
+const bind = (id, key, out, fmt = (x) => x) => { const el = $(id); const f = () => { S[key] = +el.value; if (out) $(out).textContent = fmt(S[key]); }; el.addEventListener("input", f); f(); };
+bind("rays", "rays", "vRays"); bind("len", "len", "vLen"); bind("spread", "spread", "vSpread");
+bind("azm", "azm", "vAzm"); bind("spin", "spin", "vSpin");
+bind("density", "density", "vDensity"); bind("target", "target", "vTarget");
+
+// ── 光達型式切換 ──────────────────────────────────────────────────
+function setMount(m) {
+  S.mount = m; S.mem = []; S.beam = 0;
+  $("mtFixed").classList.toggle("on", m === "fixed");
+  $("mtSpin").classList.toggle("on", m === "spin");
+  $("fixedCtl").style.display = m === "fixed" ? "" : "none";
+  $("spinCtl").style.display = m === "spin" ? "" : "none";
+  $("mountHint").innerHTML = m === "fixed"
+    ? "所有射線<b>同一瞬間</b>發射，資料永遠是最新的；但張角以外完全看不到，包含側後方。"
+    : `一條射線繞著車頂轉，<b>掃到哪裡才更新哪裡</b>。沒輪到的方向拿的是上一圈的舊資料；車身周圍 ${BLIND} m 是盲區。`;
+  updateHints();
+  log(m === "fixed" ? "改用固定式光達（車頭前向）" : "改用旋轉式光達（車頂 360°）");
+}
+$("mtFixed").onclick = () => setMount("fixed");
+$("mtSpin").onclick = () => setMount("spin");
+
+// ── 每個滑桿直接顯示它造成的後果，不用自己換算 ──────────────────────
+function updateHints() {
+  const gap = (d, stepDeg) => 2 * d * Math.sin(stepDeg / 2 * Math.PI / 180);
+  // 固定式：張角把射線攤開，而自駕只用前方 ±16° 的射線判斷煞車
+  const stepF = S.rays > 1 ? S.spread / (S.rays - 1) : 0;
+  let nFwd = 0;
+  for (let i = 0; i < S.rays; i++) { const a = S.rays === 1 ? 0 : -S.spread / 2 + S.spread * i / (S.rays - 1); if (Math.abs(a) < 16) nFwd++; }
+  $("hRays").innerHTML = S.rays === 1
+    ? "只有一條，只看得到正前方一條線。"
+    : `分在 ${S.spread}° 裡，每 ${stepF.toFixed(1)}° 一條 → 25 m 處相鄰射線相隔 <b>${gap(25, stepF).toFixed(1)} m</b>。機車寬約 0.8 m。`;
+  $("hSpread").innerHTML = `自駕只用前方 ±16° 的射線判斷煞車 → 目前只有 <b>${nFwd} 條</b>在管前方。張角開太大，前方反而變空。`;
+  // 旋轉式：轉速同時決定更新率與角解析度
+  const stepS = 360 / S.azm, T = 1 / S.spin;
+  $("hAzm").innerHTML = `每 ${stepS.toFixed(1)}° 取樣一次 → 25 m 處相鄰點相隔 <b>${gap(25, stepS).toFixed(1)} m</b>。`;
+  const realistic = S.spin >= 5;
+  $("hSpin").innerHTML = `一圈 <b>${(T * 1000).toFixed(0)} ms</b>。這段時間本車以 ${S.target} km/h 前進 <b>${((S.target / 3.6) * T).toFixed(2)} m</b>，橫向機車移動約 ${(8 * T).toFixed(2)} m —— 還沒輪到的方向，資料就是這麼舊。<br>`
+    + (realistic
+        ? `真車常見 <b>10–20 Hz</b>（10 Hz ＝ 每分鐘 600 轉），目前這一檔是實際會用的。快到肉眼看不出它在輪流，但那 ${(T * 1000).toFixed(0)} ms 是真的。`
+        : `<b style="color:#D9463E">真車不會轉這麼慢</b>（量產機種少於 5 Hz 就不用了）。這一檔只是為了讓掃描線和褪色看得清楚，看懂之後請切回 10 Hz。`);
+  // 長度：直接判定夠不夠
+  let eff = S.len; if (S.rain) eff *= 0.55; if (S.night) eff *= 0.85;
+  const v = S.target / 3.6, sd = v * REACT + v * v / (2 * 6);
+  const ok = eff >= sd + 5;
+  $("hLen").innerHTML = `目前有效 <b>${eff.toFixed(1)} m</b>${S.rain || S.night ? "（雨天 ×0.55、夜晚 ×0.85）" : ""}　｜　`
+    + `${S.target} km/h 的煞停距離 ${sd.toFixed(1)} m → <b style="color:${ok ? "#007F72" : "#D9463E"}">${ok ? "夠用" : "不夠，看到就煞不住"}</b>`;
+}
+["rays", "spread", "len", "azm", "spin", "target"].forEach((id) => $(id).addEventListener("input", updateHints));
+["rain", "night"].forEach((id) => $(id).addEventListener("change", updateHints));
+["showRays", "motos", "parked", "peds", "rain", "night"].forEach((k) => { const el = $(k); const f = () => { S[k] = el.checked; }; el.addEventListener("change", () => { f(); if (k !== "showRays") log(`${el.parentElement.textContent.trim().split("\n")[0]}：${el.checked ? "開" : "關"}`); }); f(); });
+const setMode = (auto) => { S.auto = auto; $("mAuto").classList.toggle("on", auto); $("mManual").classList.toggle("on", !auto); log(auto ? "切到自動駕駛　Tự lái" : "切到手動　Lái tay"); };
+$("mAuto").onclick = () => setMode(true); $("mManual").onclick = () => setMode(false);
+$("restart").onclick = reset;
+$("pause").onclick = () => { S.paused = !S.paused; };
+$("helpBtn").onclick = () => { $("help").style.display = "flex"; };
+$("helpClose").onclick = () => { $("help").style.display = "none"; };
+const setUI = (o) => {
+  if (o.mount) setMount(o.mount);
+  for (const [k, v] of Object.entries(o)) { const el = $(k); if (!el) continue; if (el.type === "checkbox") { el.checked = v; el.dispatchEvent(new Event("change")); } else { el.value = v; el.dispatchEvent(new Event("input")); } }
+  updateHints();
+};
+const PRESETS = {
+  one:   { mount: "fixed", rays: 1, len: 25, spread: 90, density: 4, motos: true, parked: false, peds: false, rain: false, night: false, target: 50 },
+  std:   { mount: "fixed", rays: 7, len: 25, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50 },
+  narrow:{ mount: "fixed", rays: 7, len: 25, spread: 20, density: 4, motos: false, parked: true, peds: false, rain: false, night: false, target: 50 },
+  short: { mount: "fixed", rays: 7, len: 8, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 60 },
+  hanoi: { mount: "fixed", rays: 9, len: 25, spread: 120, density: 7, motos: true, parked: true, peds: true, rain: false, night: false, target: 40 },
+  rainnight: { mount: "fixed", rays: 9, len: 25, spread: 120, density: 4, motos: true, parked: false, peds: true, rain: true, night: true, target: 50 },
+  spin:     { mount: "spin", azm: 24, spin: 10, len: 25, density: 4, motos: false, parked: false, peds: false, rain: false, night: false, target: 50 },
+  spinslow: { mount: "spin", azm: 24, spin: 2,  len: 25, density: 4, motos: true,  parked: false, peds: false, rain: false, night: false, target: 60 },
+};
+document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => { setUI(PRESETS[b.dataset.preset]); reset(); log(`情境：${b.textContent}`); });
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox") return;
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
+  S.keys[e.key] = true;
+  if (e.key === " ") S.paused = !S.paused;
+  if (e.key === "r" || e.key === "R") reset();
+  if (e.key === "a" || e.key === "A") setMode(!S.auto);
+  if (e.key === "h" || e.key === "H") $("help").style.display = $("help").style.display === "flex" ? "none" : "flex";
+});
+window.addEventListener("keyup", (e) => { S.keys[e.key] = false; });
+
+setMount("fixed");
+resize(); reset(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
