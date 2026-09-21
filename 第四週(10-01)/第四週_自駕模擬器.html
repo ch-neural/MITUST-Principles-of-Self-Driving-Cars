@@ -323,6 +323,17 @@ function reset() {
   log("出發　Xuất phát");
 }
 
+// 改了路況（機車流、車流密度、違停、行人）之後，立刻把前方的車流重新生成，
+// 否則要等本車再往前開幾十公尺才會補生成，學生會以為勾了沒反應。
+function respawnAhead() {
+  const keep = ego.y - 12 * PXM;           // 只保留眼前兩三個車身，免得車子憑空消失
+  traffic = traffic.filter((c) => c.y > keep);
+  parkedTrucks = parkedTrucks.filter((c) => c.y > keep);
+  peds = peds.filter((c) => c.y > keep);
+  nextSpawnY = keep; nextParkY = keep; nextPedY = keep;
+  spawnAhead();
+}
+
 // ───────────────────────── 生成車流 ─────────────────────────
 function spawnAhead() {
   const horizon = ego.y - 140 * PXM;
@@ -778,6 +789,8 @@ const bind = (id, key, out, fmt = (x) => x) => { const el = $(id); const f = () 
 bind("rays", "rays", "vRays"); bind("len", "len", "vLen"); bind("spread", "spread", "vSpread");
 bind("azm", "azm", "vAzm"); bind("spin", "spin", "vSpin");
 bind("density", "density", "vDensity"); bind("target", "target", "vTarget");
+// 車流密度改了也要立刻重新生成，否則同樣要等車開過去才看得出差別
+$("density").addEventListener("change", respawnAhead);
 
 // ── 光達型式切換 ──────────────────────────────────────────────────
 function setMount(m) {
@@ -823,7 +836,15 @@ function updateHints() {
 }
 ["rays", "spread", "len", "azm", "spin", "target"].forEach((id) => $(id).addEventListener("input", updateHints));
 ["rain", "night"].forEach((id) => $(id).addEventListener("change", updateHints));
-["showRays", "motos", "parked", "peds", "rain", "night"].forEach((k) => { const el = $(k); const f = () => { S[k] = el.checked; }; el.addEventListener("change", () => { f(); if (k !== "showRays") log(`${el.parentElement.textContent.trim().split("\n")[0]}：${el.checked ? "開" : "關"}`); }); f(); });
+["showRays", "motos", "parked", "peds", "rain", "night"].forEach((k) => {
+  const el = $(k); const f = () => { S[k] = el.checked; };
+  el.addEventListener("change", () => {
+    f();
+    if (k === "motos" || k === "parked" || k === "peds") respawnAhead();
+    if (k !== "showRays") log(`${el.parentElement.textContent.trim().split("\n")[0]}：${el.checked ? "開" : "關"}`);
+  });
+  f();
+});
 const setMode = (auto) => { S.auto = auto; $("mAuto").classList.toggle("on", auto); $("mManual").classList.toggle("on", !auto); log(auto ? "切到自動駕駛　Tự lái" : "切到手動　Lái tay"); };
 $("mAuto").onclick = () => setMode(true); $("mManual").onclick = () => setMode(false);
 $("restart").onclick = reset;
