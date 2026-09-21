@@ -332,6 +332,7 @@ function respawnAhead() {
   peds = peds.filter((c) => c.y > keep);
   nextSpawnY = keep; nextParkY = keep; nextPedY = keep;
   spawnAhead();
+  log(`車流已重新生成：前方 ${traffic.length} 台（機車 ${traffic.filter((c) => c.kind === "moto").length} 台）`);
 }
 
 // ───────────────────────── 生成車流 ─────────────────────────
