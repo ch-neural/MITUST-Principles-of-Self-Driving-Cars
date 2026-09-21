@@ -323,6 +323,10 @@ function reset() {
   log("出發　Xuất phát");
 }
 
+// 勾「機車流」時，除了一般車流之外每批再多生成的機車台數（再加 0 或 1 的隨機）。
+// 調高會更像機車海，但第 3 節的上機任務會變得幾乎不可能過關。
+let MOTO_EXTRA = 1;
+
 // 改了路況（機車流、車流密度、違停、行人）之後，立刻把前方的車流重新生成，
 // 否則要等本車再往前開幾十公尺才會補生成，學生會以為勾了沒反應。
 function respawnAhead() {
@@ -357,8 +361,8 @@ function spawnAhead() {
         });
       }
       // 機車流：在一般車流之外再塞幾台機車，而且會並排在同一個車道裡——這才像機車海
-      if (S.motos) {
-        const extra = 2 + Math.floor(Math.random() * 3);          // 每批多 2–4 台
+      if (S.motos && MOTO_EXTRA > 0) {
+        const extra = MOTO_EXTRA + Math.floor(Math.random() * 2); // 每批額外幾台機車
         for (let m = 0; m < extra; m++) {
           const lane = Math.floor(Math.random() * LANES);
           traffic.push({
