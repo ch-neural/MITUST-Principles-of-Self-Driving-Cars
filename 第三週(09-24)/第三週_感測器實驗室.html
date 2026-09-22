@@ -308,7 +308,8 @@ function radar(o) {
   const vx = tSpeed * Math.sin(tDir * R), vy = -tSpeed * Math.cos(tDir * R);
   const ux = o.x / d, uy = o.y / d;                        // 本車→目標的單位向量
   const vr = vx * ux + vy * uy;                            // 正＝遠離，負＝接近
-  return { d, vr, err: 0.1, cls: L("未分類障礙物", "Vật cản chưa phân loại"), dres: p.dres };
+  // 把距離切成 dres 一格：兩個東西同在一格裡就分不開，量出來的距離最壞也差半格
+  return { d, vr, err: p.dres / 2, cls: L("未分類障礙物", "Vật cản chưa phân loại"), dres: p.dres };
 }
 
 // 超音波：只有幾公尺，停車用。
@@ -384,13 +385,13 @@ function cards() {
      <div class="sub">${r.cls}</div>`,
     r.no ? "" : (Math.abs(r.vr) < 0.1
       ? L(`徑向速度接近 0：它可能靜止，也可能正在橫向移動。<br>
-           距離解析度 ${r.dres.toFixed(1)} m 指的是「兩個東西靠得比這還近就分不開」，不是準不準。`,
+           距離解析度 ${r.dres.toFixed(1)} m ＝ 把距離切成 ${r.dres.toFixed(1)} m 一格：同一格裡的兩個東西分不開，量出來的距離最壞也差半格。`,
           `Tốc độ xuyên tâm ≈ 0: có thể đứng yên, cũng có thể đang đi ngang.<br>
-           Phân giải ${r.dres.toFixed(1)} m nghĩa là hai vật gần nhau hơn mức đó sẽ bị gộp làm một — không phải độ chính xác.`)
+           Phân giải ${r.dres.toFixed(1)} m = chia khoảng cách thành từng ô ${r.dres.toFixed(1)} m: hai vật trong cùng một ô thì không tách được, và sai số xấu nhất là nửa ô.`)
       : L(`${r.vr < 0 ? "距離正在縮短" : "距離正在拉開"}。這是沿連線的分量，不是它自己的速度。<br>
-           距離解析度 ${r.dres.toFixed(1)} m 指的是「兩個東西靠得比這還近就分不開」，不是準不準。`,
+           距離解析度 ${r.dres.toFixed(1)} m ＝ 把距離切成 ${r.dres.toFixed(1)} m 一格：同一格裡的兩個東西分不開，量出來的距離最壞也差半格。`,
           `${r.vr < 0 ? "Khoảng cách đang ngắn lại" : "Đang xa ra"}. Đây là thành phần dọc đường nối, không phải tốc độ của nó.<br>
-           Phân giải ${r.dres.toFixed(1)} m nghĩa là hai vật gần nhau hơn mức đó sẽ bị gộp làm một — không phải độ chính xác.`)));
+           Phân giải ${r.dres.toFixed(1)} m = chia khoảng cách thành từng ô ${r.dres.toFixed(1)} m: hai vật trong cùng một ô thì không tách được, và sai số xấu nhất là nửa ô.`)));
 
   const u = ultra(o);
   h += mk("uss", u.no ? noBox(u) :
