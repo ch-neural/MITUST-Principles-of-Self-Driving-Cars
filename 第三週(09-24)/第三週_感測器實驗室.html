@@ -242,7 +242,7 @@ const SEN = {
          p: { acc: 2.5, block: 0 } },
   // 熱像：車用 LWIR 夜間行人偵測，文獻報告可達約 165 m
   thm: { zh: "熱像", vi: "Ảnh nhiệt", color: "#FF7A59", on: true,
-         p: { px: 320, fov: 50, range: 150 } },
+         p: { px: 320, fov: 50, h: 1.2, range: 150 } },
 };
 let openSen = "cam";
 // 原廠設定：學生改壞了可以一鍵回來，不必重新整理頁面（重新整理會連觀察目標和環境一起清掉）
@@ -293,6 +293,7 @@ function lidar(o) {
   if (dirt) n = Math.floor(n * 0.35);
   if (e.lid < 1) n = Math.floor(n * e.lid);
   return { d, n, dv, mh, blind, gap: 2 * d * Math.sin(p.hres / 2 * R), vgap: d * Math.tan(dv * R),
+           err: 0.02,                                     // 計時電路決定，跟距離幾乎無關
            cls: L("未分類障礙物", "Vật cản chưa phân loại") };
 }
 
@@ -307,7 +308,7 @@ function radar(o) {
   const vx = tSpeed * Math.sin(tDir * R), vy = -tSpeed * Math.cos(tDir * R);
   const ux = o.x / d, uy = o.y / d;                        // 本車→目標的單位向量
   const vr = vx * ux + vy * uy;                            // 正＝遠離，負＝接近
-  return { d, vr, cls: L("未分類障礙物", "Vật cản chưa phân loại"), dres: p.dres };
+  return { d, vr, err: 0.1, cls: L("未分類障礙物", "Vật cản chưa phân loại"), dres: p.dres };
 }
 
 // 超音波：只有幾公尺，停車用。
@@ -317,7 +318,7 @@ function ultra(o) {
   const range = p.range * e.uss;
   if (b > p.fov / 2) return { no: L("不在視野內（±" + (p.fov / 2) + "°）", "Ngoài góc nhìn (±" + (p.fov / 2) + "°)") };
   if (d > range) return { no: L("太遠了，超音波只到 " + range.toFixed(1) + " m", "Quá xa, siêu âm chỉ tới " + range.toFixed(1) + " m") };
-  return { d };
+  return { d, err: 0.01 };
 }
 
 // GNSS：只知道自己在哪，對前方物體完全沒有資訊。
@@ -336,9 +337,10 @@ function thermal(o) {
   if (d > range) return { no: L("超出有效距離 " + range.toFixed(0) + " m", "Vượt tầm " + range.toFixed(0) + " m") };
   const t = K(o).thermal;
   const theta = (p.fov / p.px) * R;
+  const err = d * d * theta / p.h;                         // 跟相機同一條公式，但像素粗得多
   const px = Math.max(0, Math.floor(2 * Math.atan(K(o).h / 2 / d) / theta));   // 物體在畫面上佔幾個像素高
   if (t < 0.15) return { weak: true, px, cls: L("幾乎沒有熱訊號", "Hầu như không có tín hiệu nhiệt") };
-  return { d, t, px, cls: t >= 0.9 ? L("人體熱訊號", "Tín hiệu nhiệt người") : L("熱訊號（引擎／排氣）", "Tín hiệu nhiệt (động cơ)") };
+  return { d, t, px, err, cls: t >= 0.9 ? L("人體熱訊號", "Tín hiệu nhiệt người") : L("熱訊號（引擎／排氣）", "Tín hiệu nhiệt (động cơ)") };
 }
 
 // ═══════════════ 資料卡 ═══════════════
@@ -364,27 +366,36 @@ function cards() {
 
   const l = lidar(o);
   h += mk("lid", l.no ? noBox(l) :
-    `<div class="big">${l.d.toFixed(1)} m　<span style="font-size:13px">${l.n} ${L("點", "điểm")}</span></div>
+    `<div class="big">${l.d.toFixed(1)} ± ${l.err.toFixed(2)} m　<span style="font-size:13px">${l.n} ${L("點", "điểm")}</span></div>
      <div class="sub">${l.cls}</div>`,
-    l.no ? "" : L(`這個距離：左右點距 ${l.gap.toFixed(2)} m、上下線距 ${l.vgap.toFixed(2)} m<br>
+    l.no ? "" : L(`測距靠計時電路：不管多遠都是 ±0.02 m 左右。<br>
+                   這個距離：左右點距 ${l.gap.toFixed(2)} m、上下線距 ${l.vgap.toFixed(2)} m<br>
                    裝在${SEN.lid.p.mount ? "車頂" : "車頭"}（約 ${l.mh} m 高）：車身周圍 <b>${l.blind} m</b> 是盲區`,
-                  `Ở khoảng cách này: ngang ${l.gap.toFixed(2)} m, dọc ${l.vgap.toFixed(2)} m<br>
+                  `Đo xa bằng mạch đếm thời gian: xa hay gần đều khoảng ±0,02 m.<br>
+                   Ở khoảng cách này: ngang ${l.gap.toFixed(2)} m, dọc ${l.vgap.toFixed(2)} m<br>
                    Lắp ${SEN.lid.p.mount ? "trên nóc" : "đầu xe"} (cao ~${l.mh} m): vùng mù quanh xe <b>${l.blind} m</b>`));
 
   const r = radar(o);
   h += mk("rad", r.no ? noBox(r) :
-    `<div class="big">${r.d.toFixed(1)} m<span style="font-size:11px;font-weight:400;color:#5F7183">　${L("距離", "khoảng cách")}</span>
+    `<div class="big">${r.d.toFixed(1)} ± ${r.err.toFixed(2)} m<span style="font-size:11px;font-weight:400;color:#5F7183">　${L("距離", "khoảng cách")}</span>
        <span style="font-size:13px;color:${r.vr < -0.1 ? "#D9463E" : r.vr > 0.1 ? "#4FA8FF" : "#5F7183"}">　${r.vr >= 0 ? "+" : ""}${r.vr.toFixed(1)} m/s</span>
        <span style="font-size:11px;font-weight:400;color:${r.vr < -0.1 ? "#D9463E" : r.vr > 0.1 ? "#4FA8FF" : "#5F7183"}">${
          r.vr < -0.1 ? L("正在接近", "đang lại gần") : r.vr > 0.1 ? L("正在遠離", "đang ra xa") : L("幾乎沒在接近", "gần như không lại gần")}</span></div>
      <div class="sub">${r.cls}</div>`,
     r.no ? "" : (Math.abs(r.vr) < 0.1
-      ? L("徑向速度接近 0：它可能靜止，也可能正在橫向移動。", "Tốc độ xuyên tâm ≈ 0: có thể đứng yên, cũng có thể đang đi ngang.")
-      : L(`${r.vr < 0 ? "距離正在縮短" : "距離正在拉開"}。這是沿連線的分量，不是它自己的速度。`,
-          `${r.vr < 0 ? "Khoảng cách đang ngắn lại" : "Đang xa ra"}. Đây là thành phần dọc đường nối, không phải tốc độ của nó.`)));
+      ? L(`徑向速度接近 0：它可能靜止，也可能正在橫向移動。<br>
+           距離解析度 ${r.dres.toFixed(1)} m 指的是「兩個東西靠得比這還近就分不開」，不是準不準。`,
+          `Tốc độ xuyên tâm ≈ 0: có thể đứng yên, cũng có thể đang đi ngang.<br>
+           Phân giải ${r.dres.toFixed(1)} m nghĩa là hai vật gần nhau hơn mức đó sẽ bị gộp làm một — không phải độ chính xác.`)
+      : L(`${r.vr < 0 ? "距離正在縮短" : "距離正在拉開"}。這是沿連線的分量，不是它自己的速度。<br>
+           距離解析度 ${r.dres.toFixed(1)} m 指的是「兩個東西靠得比這還近就分不開」，不是準不準。`,
+          `${r.vr < 0 ? "Khoảng cách đang ngắn lại" : "Đang xa ra"}. Đây là thành phần dọc đường nối, không phải tốc độ của nó.<br>
+           Phân giải ${r.dres.toFixed(1)} m nghĩa là hai vật gần nhau hơn mức đó sẽ bị gộp làm một — không phải độ chính xác.`)));
 
   const u = ultra(o);
-  h += mk("uss", u.no ? noBox(u) : `<div class="big">${u.d.toFixed(2)} m</div><div class="sub">${L("近距離障礙", "Vật cản gần")}</div>`);
+  h += mk("uss", u.no ? noBox(u) :
+    `<div class="big">${u.d.toFixed(2)} ± ${u.err.toFixed(2)} m</div><div class="sub">${L("近距離障礙", "Vật cản gần")}</div>`,
+    u.no ? "" : L("距離短，聲波來回的時間量得很準——公分等級。", "Cự ly ngắn nên đo rất chuẩn — cỡ centimet."));
 
   const g = gnss();
   h += mk("gns", g.no ? noBox(g) :
@@ -395,10 +406,13 @@ function cards() {
   const t = thermal(o);
   h += mk("thm", t.no ? noBox(t) : t.weak ?
     `<div class="big no">—</div><div class="sub">${t.cls}</div>` :
-    `<div class="big">${t.d.toFixed(1)} m　<span style="font-size:13px">${t.px} px</span></div>
+    `<div class="big">${t.d.toFixed(1)} ± ${t.err.toFixed(2)} m　<span style="font-size:13px">${t.px} px</span></div>
      <div class="sub">${t.cls}</div>`,
     t.no || t.weak ? L("金屬、號誌燈與標線的溫度跟背景差不多，熱像看不出來。", "Kim loại, đèn và vạch kẻ gần bằng nhiệt nền nên ảnh nhiệt không thấy.")
-                   : L("夜間不受影響，但它讀不出燈色，也看不到標線。", "Ban đêm không bị ảnh hưởng, nhưng không đọc được màu đèn hay vạch kẻ."));
+                   : L(`它跟相機一樣是用看的去算距離，但像素粗五倍，所以誤差大得多。<br>
+                        夜間不受影響，但它讀不出燈色，也看不到標線。`,
+                       `Nó cũng tính khoảng cách bằng hình ảnh như camera nhưng điểm ảnh thô hơn nhiều nên sai số lớn hơn.<br>
+                        Ban đêm không bị ảnh hưởng, nhưng không đọc được màu đèn hay vạch kẻ.`));
   box.innerHTML = h;
 
   // 底下一行總結：這一刻有幾種感測器拿得到這個目標
