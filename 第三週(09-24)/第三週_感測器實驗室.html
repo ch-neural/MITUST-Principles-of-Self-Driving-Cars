@@ -565,13 +565,15 @@ function syncSenBtns() {
 // 每個滑桿都直接顯示它造成的後果，學生不必自己換算
 const SLIDERS = {
   cam: [
-    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang", min: 320, max: 3840, step: 160 },
+    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang",
+      stops: [640, 1280, 1920, 2896, 3840],
+      tags: ["0.3MP", "1MP", "2MP", "5MP", "8MP"] },
     { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 20, max: 120, step: 5 },
     { k: "h", zh: "安裝高度（公尺）", vi: "Chiều cao lắp", min: 0.6, max: 2.4, step: 0.1 },
     { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 150, step: 5 },
   ],
   lid: [
-    { k: "ch", zh: "線束數（垂直）", vi: "Số kênh dọc", min: 8, max: 128, step: 8 },
+    { k: "ch", zh: "線束數（垂直）", vi: "Số kênh dọc", stops: [8, 16, 32, 64, 128] },
     { k: "vfov", zh: "垂直視野（度）", vi: "Góc nhìn dọc", min: 10, max: 60, step: 1 },
     { k: "hres", zh: "水平角解析度（度）", vi: "Phân giải góc ngang", min: 0.1, max: 2, step: 0.1 },
     { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 200, step: 10 },
@@ -591,21 +593,39 @@ const SLIDERS = {
     { k: "block", zh: "訊號遮蔽（0 正常／1 中斷）", vi: "Mất tín hiệu (0/1)", min: 0, max: 1, step: 1 },
   ],
   thm: [
-    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang", min: 160, max: 640, step: 80 },
+    { k: "px", zh: "水平解析度（像素）", vi: "Độ phân giải ngang",
+      stops: [160, 320, 640], tags: ["160×120", "320×240", "640×480"] },
     { k: "fov", zh: "水平視野（度）", vi: "Góc nhìn ngang", min: 20, max: 90, step: 5 },
     { k: "range", zh: "晴天有效距離（公尺）", vi: "Tầm hiệu dụng", min: 20, max: 200, step: 10 },
   ],
 };
 
+// 有 stops 的滑桿只停在真的買得到的規格上：拉到 3680 這種數字學生會以為市面上有
+const stopIdx = (d, v) => d.stops.reduce((b, x, i) =>
+  Math.abs(x - v) < Math.abs(d.stops[b] - v) ? i : b, 0);
+const stopText = (d, v) => {
+  const i = d.stops.indexOf(v);
+  return d.tags && d.tags[i] ? `${v}（${d.tags[i]}）` : String(v);
+};
+
 function params() {
   const s = SEN[openSen], list = SLIDERS[openSen];
-  $("params").innerHTML = list.map((d) =>
-    `<div class="row"><span>${L(d.zh, d.vi)}</span><b id="v_${d.k}">${s.p[d.k]}</b></div>
-     <input type="range" id="p_${d.k}" min="${d.min}" max="${d.max}" step="${d.step}" value="${s.p[d.k]}">`).join("")
+  $("params").innerHTML = list.map((d) => {
+    const shown = d.stops ? stopText(d, s.p[d.k]) : s.p[d.k];
+    const rng = d.stops
+      ? `min="0" max="${d.stops.length - 1}" step="1" value="${stopIdx(d, s.p[d.k])}"`
+      : `min="${d.min}" max="${d.max}" step="${d.step}" value="${s.p[d.k]}"`;
+    return `<div class="row"><span>${L(d.zh, d.vi)}</span><b id="v_${d.k}">${shown}</b></div>
+     <input type="range" id="p_${d.k}" ${rng}>`;
+  }).join("")
     + `<div class="hint" id="senHint"></div>`;
   list.forEach((d) => {
     const el = $("p_" + d.k);
-    el.addEventListener("input", () => { s.p[d.k] = +el.value; $("v_" + d.k).textContent = +el.value; refresh(); });
+    el.addEventListener("input", () => {
+      s.p[d.k] = d.stops ? d.stops[+el.value] : +el.value;
+      $("v_" + d.k).textContent = d.stops ? stopText(d, s.p[d.k]) : s.p[d.k];
+      refresh();
+    });
   });
 }
 
