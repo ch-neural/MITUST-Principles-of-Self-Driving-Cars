@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>規格判讀台　Bàn đọc thông số</title>
+<title>規格判讀台</title>
 <style>
   :root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
         --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
@@ -84,19 +84,23 @@
 <div id="app">
   <!-- 左：型號與規格表 -->
   <div class="panel" id="pDs">
-    <h1 data-zh="規格判讀台" data-vi="Bàn đọc thông số"><span class="vi">Tuần 5 · Đọc datasheet cảm biến</span></h1>
-    <div class="note" data-zh="選一個型號，右邊的規格表就是它真正的資料。黃色底的那幾行，是等一下要你自己找出來的。"
-         data-vi="Chọn một model; bảng bên dưới là thông số thật của nó. Những dòng nền vàng là thứ bạn phải tự tìm ra."></div>
+    <h1 data-zh="規格判讀台" data-vi="Bàn đọc thông số"></h1>
+    <div class="note" data-zh="黃色底的那幾行，是等一下要你自己找出來的。"
+         data-vi="Những dòng nền vàng là thứ bạn phải tự tìm ra."></div>
     <h2 data-zh="選一個型號" data-vi="Chọn model"></h2>
     <div class="grid g2" id="mdlBtns"></div>
-    <div id="ds" style="margin-top:10px"></div>
+    <div class="grid g2" style="margin-top:10px">
+      <button id="btnTr" class="on" data-zh="原文＋中文對照" data-vi="Kèm tiếng Việt"></button>
+      <button id="btnEn" data-zh="只看英文原文" data-vi="Chỉ tiếng Anh"></button>
+    </div>
+    <div id="ds" style="margin-top:8px"></div>
   </div>
 
   <!-- 中：判讀表與情境試算 -->
   <div class="panel" id="pRead">
     <h2 data-zh="一、從規格表上找出四個數字" data-vi="1. Tìm bốn con số trong bảng"></h2>
-    <div class="note" data-zh="不要用猜的，每一個答案都在左邊那張表上（也可能表上根本沒有）。"
-         data-vi="Đừng đoán: mọi đáp án đều nằm trong bảng bên trái — hoặc bảng đó không hề có."></div>
+    <div class="note" data-zh="答案都在左邊那張表上——也可能表上根本沒有。"
+         data-vi="Đáp án nằm trong bảng bên trái — hoặc bảng không hề có."></div>
     <div id="quiz"></div>
     <div class="grid g2" style="margin-top:6px">
       <button id="btnCheck" data-zh="檢查我的答案" data-vi="Kiểm tra"></button>
@@ -135,8 +139,8 @@
       <div id="oR" class="out"></div>
     </div>
 
-    <div class="foot" data-zh="規格數字取自各廠公開的規格書或產品頁，來源與版本標在每張表下面。教學用型號的數字是自訂的，會特別註明。衍生值（角解析度、行人點數、煞停距離）是本課用第三、四週的算式推出來的，不是廠商保證值。"
-         data-vi="Số liệu lấy từ tài liệu công khai của từng hãng, nguồn ghi dưới mỗi bảng. Model dùng để dạy là số tự đặt. Các giá trị suy ra là tính theo công thức của tuần 3–4, không phải cam kết của hãng."></div>
+    <div class="foot" data-zh="規格取自各廠公開文件，來源標在每張表下面。算出來的點數與煞停距離是課堂算式，不是廠商保證值。"
+         data-vi="Thông số từ tài liệu công khai; nguồn ghi dưới mỗi bảng. Giá trị tính ra là công thức lớp học."></div>
   </div>
 </div>
 
@@ -169,7 +173,8 @@ const MODELS = {
       ["Weight", "430 g (without cap)", "重量 430 公克", "Khối lượng", 0],
       ["Connection", "UDP over gigabit Ethernet", "介面：網路線", "Giao tiếp", 0],
     ],
-    src: "Ouster OS1 datasheet, hardware rev7 / firmware 3.1（廠商官方 PDF，下載日 2026-09-22）",
+    src: "Ouster OS1 datasheet, hardware rev7 / firmware 3.1（官方 PDF，下載日 2026-09-22）",
+    srcVi: "Ouster OS1 datasheet, hardware rev7 / firmware 3.1 (PDF chính hãng, tải 22-09-2026)",
     ans: { fov: "42.4", rng: "90", res: "64", rate: "10" },
     calc: { type: "lidar", ch: 64, vfov: 42.4, cols: 1024, hfov: 360, hz: 10, range10: 90,
             modes: { cols: [512, 1024, 2048], hz: [10, 20] } },
@@ -190,7 +195,8 @@ const MODELS = {
       ["Dimensions", "136 × 114 × 49 mm", "尺寸", "Kích thước", 0],
       ["Functional Safety", "ISO 26262 ASIL B", "功能安全等級", "An toàn chức năng", 0],
     ],
-    src: "Hesai AT128 產品頁公開規格（hesaitech.com，讀取日 2026-09-22）。更新率那一行是課堂用點數推算的：1,536,000 ÷ (128 × 1200) = 10 Hz。",
+    src: "Hesai AT128 產品頁公開規格（hesaitech.com，讀取日 2026-09-22）。更新率是課堂推算的：1,536,000 ÷ (128 × 1200) ＝ 10 Hz。",
+    srcVi: "Thông số công khai trang Hesai AT128 (hesaitech.com, 22-09-2026). Tốc độ khung hình là suy ra: 1.536.000 ÷ (128 × 1200) = 10 Hz.",
     ans: { fov: "25.4", rng: "210", res: "0.1", rate: "no" },
     calc: { type: "lidar", ch: 128, vfov: 25.4, cols: 1200, hfov: 120, hz: 10, range10: 210, dh: 0.1, dv: 0.2 },
   },
@@ -210,12 +216,13 @@ const MODELS = {
       ["Range", "— (a camera does not measure distance)", "測距：相機不量距離", "Không có: camera không đo khoảng cách", 1],
     ],
     src: "onsemi AR0233AT 產品概要（Hayabusa CMOS Image Sensor, 2.6 MP, 1/2.5\", HDR + LFM，公開 PDF，下載日 2026-09-22）",
+    srcVi: "Tóm tắt sản phẩm onsemi AR0233AT (Hayabusa CMOS, 2,6 MP, 1/2,5\", HDR + LFM; PDF công khai, tải 22-09-2026)",
     ans: { fov: "no", rng: "no", res: "2048", rate: "60" },
     calc: { type: "cam", px: 2048, pitch: 3.0, f: 8, h: 1.5 },
   },
   ld16: {
     real: false, kind: "lidar",
-    name: "LD-16（教學用）", zh: "便宜的 16 線光達", vi: "Lidar 16 kênh giá rẻ",
+    name: "LD-16", zh: "便宜的 16 線光達（教學用）", vi: "Lidar 16 kênh giá rẻ (tự đặt)",
     rows: [
       ["Channels", "16", "通道數", "Số kênh", 1],
       ["Field of View", "360° (H) × 30° (V)", "視野", "Góc nhìn", 1],
@@ -226,7 +233,8 @@ const MODELS = {
       ["Power", "8 W", "功耗", "Công suất", 0],
       ["Price", "about 1/10 of the sensors above", "價格：大約是上面那兩顆的十分之一", "Giá", 0],
     ],
-    src: "這一顆是**教學用的虛擬型號**，數字由授課教師設定，不對應任何實際產品。放進來是為了讓便宜與昂貴的差別有東西可以比。",
+    src: "教學用的虛擬型號，數字由授課教師設定，不對應任何實際產品——放進來是為了有便宜的可以比。",
+    srcVi: "Model ảo dùng để dạy: số do giảng viên đặt, không tương ứng sản phẩm thật — để có cái rẻ đem so sánh.",
     ans: { fov: "30", rng: "40", res: "16", rate: "10" },
     calc: { type: "lidar", ch: 16, vfov: 30, cols: 900, hfov: 360, hz: 10, range10: 40 },
   },
@@ -265,28 +273,24 @@ const OPT_TEXT = {
   "2,621,440": ["每秒 2,621,440 點", "2.621.440 điểm/giây"],
   "1,536,000": ["每秒 1,536,000 點", "1.536.000 điểm/giây"],
   "144,000": ["每秒 144,000 點", "144.000 điểm/giây"],
-  "10": ["10 Hz", "10 Hz"], "20": ["20 Hz", "20 Hz"],
+  "10": ["10 Hz", "10 Hz"], "20": ["20 Hz", "20 Hz"], "8": ["8 瓦（功耗）", "8 W (công suất)"],
 };
 const WHY = {
-  fov: { os1: ["垂直 42.4°、水平一整圈 360°。360 是左右，不是上下。", "Dọc 42,4°, ngang 360°."],
-         at128: ["垂直 25.4°。120° 是水平那一個。", "Dọc 25,4°; 120° là ngang."],
-         ar0233: ["感測器的規格表上沒有視野——視野是鏡頭決定的。右邊第①個小工具就在算這件事。",
-                  "Bảng cảm biến không có góc nhìn — góc nhìn do ống kính quyết định."],
+  fov: { os1: ["垂直 42.4°。360° 是左右，不是上下。", "Dọc 42,4°. 360° là ngang."],
+         at128: ["垂直 25.4°。120° 是水平。", "Dọc 25,4°. 120° là ngang."],
+         ar0233: ["規格表沒有視野——那是鏡頭決定的，看右邊小工具①。", "Không có: góc nhìn do ống kính."],
          ld16: ["垂直 30°。", "Dọc 30°."] },
-  rng: { os1: ["90 公尺。170 是對 80% 反射率（白色物體）的數字，兩個要看清楚。", "90 m. 170 m là với vật 80%."],
+  rng: { os1: ["90 公尺。170 是對白色（80%）量的。", "90 m. 170 m là với vật 80%."],
          at128: ["210 公尺。", "210 m."],
-         ar0233: ["相機不量距離，規格表上不會有。距離是算出來的——第三週第 2 節算過。",
-                  "Camera không đo khoảng cách nên bảng không có dòng này."],
-         ld16: ["40 公尺，只有 OS1 的一半不到。", "40 m."] },
-  res: { os1: ["64 線。2,621,440 是每秒點數，512 是每圈的水平點數，三個都是解析度但意思不同。",
-               "64 kênh. Hai số kia là điểm/giây và điểm ngang mỗi vòng."],
-         at128: ["0.1° × 0.2°，這一顆直接把角度寫出來了，不用自己除。", "0,1° × 0,2° — hãng ghi thẳng góc."],
-         ar0233: ["2048 × 1280。3.0 微米是一個像素多大，不是解析度。", "2048 × 1280. 3,0 µm là cỡ một điểm ảnh."],
+         ar0233: ["相機不量距離，是算出來的。", "Camera không đo khoảng cách."],
+         ld16: ["40 公尺，不到 OS1 的一半。", "40 m, chưa bằng nửa OS1."] },
+  res: { os1: ["64 線。另外兩個是每秒點數和每圈點數。", "64 kênh."],
+         at128: ["0.1° × 0.2°，角度直接寫出來了。", "0,1° × 0,2°."],
+         ar0233: ["2048 × 1280。3.0 微米是像素大小。", "2048 × 1280."],
          ld16: ["16 線。", "16 kênh."] },
-  rate: { os1: ["10 Hz 或 20 Hz，可以設定。", "10 hoặc 20 Hz."],
-          at128: ["產品頁上沒有寫更新率。用點數除出來是 10 Hz：1,536,000 ÷ (128 × 1200)。規格表沒寫的東西，有時候推得出來。",
-                  "Trang sản phẩm không ghi. Chia ra được 10 Hz."],
-          ar0233: ["60 fps（1080p）。", "60 fps (1080p)."],
+  rate: { os1: ["10 或 20 Hz，可以設定。", "10 hoặc 20 Hz."],
+          at128: ["產品頁沒寫。1,536,000 ÷ (128 × 1200) ＝ 10 Hz。", "Không ghi. Chia ra 10 Hz."],
+          ar0233: ["60 fps。", "60 fps."],
           ld16: ["10 Hz。", "10 Hz."] },
 };
 
@@ -302,7 +306,7 @@ const SCENES = {
             tgt: { w: 1.8, h: 1.5, zh: "汽車", vi: "ô tô" },
             zhNote: "時速 100，要在 150 公尺外看到車", viNote: "100 km/h, thấy xe ở 150 m" },
 };
-let model = "os1", scene = "hanoi", cols = 1024, hzNow = 10;
+let model = "os1", scene = "hanoi", cols = 1024, hzNow = 10, TR = true;
 
 const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
 
@@ -310,7 +314,7 @@ const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
 function modelBtns() {
   $("mdlBtns").innerHTML = Object.entries(MODELS).map(([k, m]) =>
     `<button data-mdl="${k}" class="${k === model ? "on" : ""}">${m.name}
-      <span class="vi">${L(m.zh, m.vi)}${m.real ? "" : L("・自訂", "・tự đặt")}</span></button>`).join("");
+      <span class="vi">${L(m.zh, m.vi)}</span></button>`).join("");
   $("mdlBtns").querySelectorAll("[data-mdl]").forEach((b) =>
     b.onclick = () => { model = b.dataset.mdl; render(); });
 }
@@ -319,16 +323,17 @@ function dsTable() {
   $("ds").innerHTML = `<div class="ds">
     <div class="hd">${m.name}<small>${L(m.zh, m.vi)}${m.real ? L("・廠商公開規格", "・thông số công khai") : L("・教學用，非實際產品", "・dùng để dạy, không phải sản phẩm thật")}</small></div>
     ${m.rows.map(([k, v, zh, vi, key]) => `<div class="row${key ? " key" : ""}">
-       <div class="k">${k}<small>${L(zh, vi)}</small></div><div class="v">${v}</div></div>`).join("")}
-    <div class="src">${L("來源｜", "Nguồn｜")}${m.src}</div></div>`;
+       <div class="k">${k}${TR ? `<small>${L(zh, vi)}</small>` : ""}</div><div class="v">${v}</div></div>`).join("")}
+    <div class="src">${L("來源｜", "Nguồn｜")}${L(m.src, m.srcVi)}</div></div>`;
 }
 function quiz() {
   const m = MODELS[model];
   $("quiz").innerHTML = QUIZ.map((q) => `<div class="q">
     <label>${L(q.zh, q.vi)}<small>${L(q.zhs, q.vis)}</small></label>
     <select id="q_${q.k}"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
-      ${q.opts[model].slice().sort().map((o) =>
-        `<option value="${o}">${L(OPT_TEXT[o][0], OPT_TEXT[o][1])}</option>`).join("")}
+      ${q.opts[model].slice().sort().map((o) => {
+        const t = OPT_TEXT[o] || [o, o];
+        return `<option value="${o}">${L(t[0], t[1])}</option>`; }).join("")}
     </select><div class="fb" id="f_${q.k}"></div></div>`).join("");
 }
 function check() {
@@ -419,39 +424,36 @@ function miniF() {
   const fov = 2 * Math.atan(w / 2 / f) / R;
   $("vF").textContent = f.toFixed(1);
   $("oF").innerHTML = L(
-    `視野 <b>${fov.toFixed(1)}°</b>，每像素 <b>${(fov / 2048).toFixed(4)}°</b>。<br>
-     焦距加倍 → 視野大約減半 → 每像素的角度也減半，看得更準但看得更窄。`,
-    `Góc nhìn <b>${fov.toFixed(1)}°</b>, mỗi điểm ảnh <b>${(fov / 2048).toFixed(4)}°</b>.<br>
-     Tiêu cự gấp đôi → góc nhìn giảm một nửa.`);
+    `視野 <b>${fov.toFixed(1)}°</b>　每像素 <b>${(fov / 2048).toFixed(4)}°</b><br>焦距加倍 → 視野減半，看得準但看得窄。`,
+    `Góc nhìn <b>${fov.toFixed(1)}°</b>　mỗi điểm ảnh <b>${(fov / 2048).toFixed(4)}°</b><br>Tiêu cự gấp đôi → góc nhìn giảm nửa.`);
 }
 function miniP() {
   const ch = CHS[+$("sCh").value], col = COLS[+$("sCol").value], hz = HZS[+$("sHz").value];
   $("vCh").textContent = ch; $("vCol").textContent = col; $("vHz").textContent = hz;
   const pts = ch * col * hz, dh = 360 / col;
   $("oP").innerHTML = L(
-    `每秒 <b>${pts.toLocaleString()}</b> 點。<br>水平角解析度 ＝ 360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>，
-     在 40 公尺處相鄰兩點相距 <b>${(40 * dh * R).toFixed(2)} m</b>。`,
-    `<b>${pts.toLocaleString()}</b> điểm/giây. Phân giải ngang ＝ 360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>,
-     ở 40 m hai điểm cách nhau <b>${(40 * dh * R).toFixed(2)} m</b>.`);
+    `每秒 <b>${pts.toLocaleString()}</b> 點<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　40 公尺處兩點相距 <b>${(40 * dh * R).toFixed(2)} m</b>`,
+    `<b>${pts.toLocaleString()}</b> điểm/giây<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　ở 40 m cách <b>${(40 * dh * R).toFixed(2)} m</b>`);
 }
 function miniR() {
   $("oR").innerHTML = L(
-    `OS1 的規格表寫了兩個測距：對 <b>80%</b> 反射率的目標 <b>170 m</b>，對 <b>10%</b> 的只剩 <b>90 m</b>。<br>
-     白色的車、亮色的衣服反射得多；黑色的車、深色的雨衣反射得少。<br>
-     所以規格表上只寫「測距 170 m」的產品，要追問一句：<b>那是對什麼顏色量的？</b>`,
-    `OS1 ghi hai tầm đo: vật phản xạ <b>80%</b> → <b>170 m</b>; vật <b>10%</b> → <b>90 m</b>.<br>
-     Xe trắng phản xạ nhiều, xe đen phản xạ ít. Thấy ghi «170 m» thì phải hỏi: đo với vật màu gì?`);
+    `OS1：白色（80%）<b>170 m</b>，黑色（10%）只剩 <b>90 m</b>。<br>看到「測距 170 m」要追問：<b>對什麼顏色量的？</b>`,
+    `OS1: vật trắng (80%) <b>170 m</b>, vật đen (10%) chỉ <b>90 m</b>.<br>Thấy «170 m» phải hỏi: đo với màu gì?`);
 }
 
 function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); }
 function applyLang() {
   document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
+  document.title = L("規格判讀台", "Bàn đọc thông số");
+  $("btnTr").classList.toggle("on", TR); $("btnEn").classList.toggle("on", !TR);
   $("btnZh").classList.toggle("on", LANG === "zh");
   $("btnVi").classList.toggle("on", LANG === "vi");
   render(); miniF(); miniP(); miniR();
 }
 $("btnZh").onclick = () => { LANG = "zh"; applyLang(); };
 $("btnVi").onclick = () => { LANG = "vi"; applyLang(); };
+$("btnTr").onclick = () => { TR = true; $("btnTr").classList.add("on"); $("btnEn").classList.remove("on"); dsTable(); };
+$("btnEn").onclick = () => { TR = false; $("btnEn").classList.add("on"); $("btnTr").classList.remove("on"); dsTable(); };
 $("btnCheck").onclick = check;
 $("btnClear").onclick = () => quiz();
 ["sF"].forEach((id) => $(id).addEventListener("input", miniF));
