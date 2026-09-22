@@ -119,6 +119,9 @@
     <h2 data-zh="感測器（點一下開關，再點展開參數）" data-vi="Cảm biến (bật/tắt, bấm để mở tham số)"></h2>
     <div class="grid g2" id="senBtns"></div>
     <div id="params"></div>
+    <button id="btnReset" style="width:100%;margin-top:8px"
+            data-zh="↺ 六種感測器的參數全部回復預設值"
+            data-vi="↺ Khôi phục tham số mặc định cho cả sáu cảm biến"></button>
 
     <h2 data-zh="目標的移動" data-vi="Chuyển động của mục tiêu"></h2>
     <div class="grid g2">
@@ -242,6 +245,9 @@ const SEN = {
          p: { px: 320, fov: 50, range: 150 } },
 };
 let openSen = "cam";
+// 原廠設定：學生改壞了可以一鍵回來，不必重新整理頁面（重新整理會連觀察目標和環境一起清掉）
+const SEN_DEFAULT = JSON.parse(JSON.stringify(
+  Object.fromEntries(Object.entries(SEN).map(([k, v]) => [k, v.p]))));
 
 // ═══════════════ 感測器模型 ═══════════════
 // 全部是一階近似的教學模型：看得出趨勢就好，不模擬真實光學、波形與演算法。
@@ -757,6 +763,15 @@ document.querySelectorAll("#mtabs button").forEach((b) => {
 
 $("btnZh").onclick = () => { LANG = "zh"; applyLang(); };
 $("btnVi").onclick = () => { LANG = "vi"; applyLang(); };
+$("btnReset").onclick = () => {
+  Object.keys(SEN_DEFAULT).forEach((k) => { SEN[k].p = JSON.parse(JSON.stringify(SEN_DEFAULT[k])); });
+  params(); refresh();
+  const b = $("btnReset");
+  b.textContent = L("已回復預設值", "Đã khôi phục");
+  b.classList.add("on");
+  // 還原時直接讀 data 屬性，中途切換語言也不會被回填成舊語言
+  setTimeout(() => { b.textContent = b.dataset[LANG]; b.classList.remove("on"); }, 1200);
+};
 $("btnDrop").onclick = () => { drop = !drop; syncEnvBtns(); refresh(); };
 $("btnDirt").onclick = () => { dirt = !dirt; syncEnvBtns(); refresh(); };
 $("spd").addEventListener("input", (e) => { tSpeed = +e.target.value; $("vSpd").textContent = tSpeed; refresh(); });
