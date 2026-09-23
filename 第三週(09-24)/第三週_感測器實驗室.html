@@ -445,7 +445,7 @@ function resize() {
   const r = cv.parentElement.getBoundingClientRect();
   cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio;
   ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  Z = Math.min(r.width / 40, r.height / 62);       // 視野大約 40 m 寬、62 m 深
+  Z = Math.min(r.width / 40, r.height / 100);      // 深度看到 100 m：第二節要把行人拖到 80 m
   CX = r.width / 2; CY = r.height - 60;
   draw();
 }
@@ -471,7 +471,7 @@ function draw() {
   ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.fillStyle = "rgba(255,255,255,.35)";
   ctx.font = "10px system-ui";
   ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  for (let d = 10; d <= 60; d += 10) {
+  for (let d = 10; d <= 90; d += 10) {
     const R0 = d * Z;
     ctx.beginPath(); ctx.arc(TX(0), TY(0), R0, Math.PI, 2 * Math.PI); ctx.stroke();
     // 標籤壓在自己那一圈上：從左前 60° 往前找第一個還在畫面內的點
@@ -569,7 +569,7 @@ const onMove = (ev) => {
   if (dragging < 0) return;
   const p = posOf(ev);
   objs[dragging].x = Math.max(-19, Math.min(19, p.x));
-  objs[dragging].y = Math.max(0.5, Math.min(60, p.y));
+  objs[dragging].y = Math.max(0.5, Math.min(90, p.y));   // 90 m：第二節要拖到 80 m
   refresh(); ev.preventDefault();
 };
 const onUp = () => { dragging = -1; cv.classList.remove("drag"); };
