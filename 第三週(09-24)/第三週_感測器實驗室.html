@@ -488,6 +488,13 @@ function draw() {
   }
   ctx.restore();
 
+  // 正在吸附的那一圈加亮，讓人一眼看到「停在 20 m 上了」
+  if (snapD > 0 && dragging >= 0) {
+    ctx.strokeStyle = "rgba(126,217,87,.85)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(TX(0), TY(0), snapD * Z, Math.PI, 2 * Math.PI); ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+
   // 各感測器的涵蓋範圍（扇形）
   const cone = (key, range, fov, col) => {
     if (!SEN[key].on) return;
@@ -565,14 +572,32 @@ const onDown = (ev) => {
   const p = posOf(ev), i = pick(p);
   if (i >= 0) { dragging = i; target = i; cv.classList.add("drag"); syncObjBtns(); refresh(); ev.preventDefault(); }
 };
+// 吸附：拖到整數距離附近就自動停在上面，不然 20 m、40 m 這種課堂常用的值很難對準。
+// 容許範圍固定 7 個螢幕像素，所以畫面縮放時手感一樣；超出範圍就完全不干涉。
+let snapD = 0;                                  // 這一刻吸在哪個距離，0＝沒吸附（畫面上會標出來）
+function snap(p) {
+  const d = Math.hypot(p.x, p.y);
+  if (d < 0.5) return { x: p.x, y: p.y };
+  const step = d < 10 ? 1 : 5;                  // 近距離 1 m 一格，10 m 以上 5 m 一格
+  const t = Math.round(d / step) * step;
+  const tol = 7 / Z;                            // 7 px 換算成公尺
+  let x = p.x, y = p.y, hit = 0;
+  if (Math.abs(d - t) < tol && t >= 1) { const k = t / d; x = p.x * k; y = p.y * k; hit = t; }
+  // 方位也吸：正前方 0° 很常用，差 2° 以內就拉正
+  const b = Math.atan2(x, y) / R;
+  if (Math.abs(b) < 2) { const r = Math.hypot(x, y); x = 0; y = r; }
+  snapD = hit;
+  return { x, y };
+}
+
 const onMove = (ev) => {
   if (dragging < 0) return;
-  const p = posOf(ev);
+  const p = snap(posOf(ev));
   objs[dragging].x = Math.max(-19, Math.min(19, p.x));
   objs[dragging].y = Math.max(0.5, Math.min(90, p.y));   // 90 m：第二節要拖到 80 m
   refresh(); ev.preventDefault();
 };
-const onUp = () => { dragging = -1; cv.classList.remove("drag"); };
+const onUp = () => { dragging = -1; snapD = 0; cv.classList.remove("drag"); refresh(); };
 cv.addEventListener("mousedown", onDown); window.addEventListener("mousemove", onMove); window.addEventListener("mouseup", onUp);
 cv.addEventListener("touchstart", onDown, { passive: false }); window.addEventListener("touchmove", onMove, { passive: false }); window.addEventListener("touchend", onUp);
 
