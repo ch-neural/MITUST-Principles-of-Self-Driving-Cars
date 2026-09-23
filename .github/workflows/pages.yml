@@ -6,6 +6,8 @@ on:
     paths:
       - '第二週(09-17)/第1節_分級練習_30題隨機抽題.html'
       - '第三週(09-24)/第三週_感測器實驗室.html'
+      - '第三週(09-24)/自動駕駛原理_第三週_課程講義.pdf'
+      - '第三週(09-24)/Nguyên lý xe tự lái_Tuần 3_Tài liệu học tập.pdf'
       - '第四週(10-01)/第四週_自駕模擬器.html'
       - '第五週(10-08)/第五週_規格判讀台.html'
       - '.github/workflows/pages.yml'
@@ -34,6 +36,8 @@ jobs:
           sparse-checkout: |
             第二週(09-17)/第1節_分級練習_30題隨機抽題.html
             第三週(09-24)/第三週_感測器實驗室.html
+            第三週(09-24)/自動駕駛原理_第三週_課程講義.pdf
+            第三週(09-24)/Nguyên lý xe tự lái_Tuần 3_Tài liệu học tập.pdf
             第四週(10-01)/第四週_自駕模擬器.html
             第五週(10-08)/第五週_規格判讀台.html
           sparse-checkout-cone-mode: false
@@ -48,6 +52,9 @@ jobs:
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/index.html
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/week2/levels/index.html
           cp -- '第三週(09-24)/第三週_感測器實驗室.html' _site/week3/lab/index.html
+          # 學生講義：檔名用 ASCII，方便在課堂上唸出來、也方便手機輸入
+          cp -- '第三週(09-24)/自動駕駛原理_第三週_課程講義.pdf' _site/week3/note-zh.pdf
+          cp -- '第三週(09-24)/Nguyên lý xe tự lái_Tuần 3_Tài liệu học tập.pdf' _site/week3/note-vi.pdf
           cp -- '第四週(10-01)/第四週_自駕模擬器.html' _site/week4/sim/index.html
           cp -- '第五週(10-08)/第五週_規格判讀台.html' _site/week5/spec/index.html
 
