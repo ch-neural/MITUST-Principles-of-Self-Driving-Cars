@@ -470,10 +470,23 @@ function draw() {
   // 距離圈：每 10 公尺
   ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.fillStyle = "rgba(255,255,255,.35)";
   ctx.font = "10px system-ui";
+  ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (let d = 10; d <= 60; d += 10) {
-    ctx.beginPath(); ctx.arc(TX(0), TY(0), d * Z, Math.PI, 2 * Math.PI); ctx.stroke();
-    ctx.fillText(d + " m", 10, TY(d) + 4);            // 貼左邊緣，避免跟物體名稱重疊
+    const R0 = d * Z;
+    ctx.beginPath(); ctx.arc(TX(0), TY(0), R0, Math.PI, 2 * Math.PI); ctx.stroke();
+    // 標籤壓在自己那一圈上：從左前 60° 往前找第一個還在畫面內的點
+    let px = null, py = null;
+    for (let a = 60; a >= 16; a -= 2) {
+      const x = TX(0) - R0 * Math.sin(a * R), y = TY(0) - R0 * Math.cos(a * R);
+      if (x >= 24 && y >= 12 && y <= r.height - 12) { px = x; py = y; break; }
+    }
+    if (px === null) continue;                        // 這一圈在畫面裡沒有放得下的位置
+    ctx.strokeStyle = "rgba(4,12,24,.75)"; ctx.lineWidth = 3;
+    ctx.strokeText(d + " m", px, py);
+    ctx.fillText(d + " m", px, py);
+    ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 1;
   }
+  ctx.restore();
 
   // 各感測器的涵蓋範圍（扇形）
   const cone = (key, range, fov, col) => {
