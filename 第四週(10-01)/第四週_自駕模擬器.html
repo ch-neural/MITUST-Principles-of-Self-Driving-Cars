@@ -109,6 +109,13 @@
     input[type=range] { height:30px; }
     .mount { gap:8px; }
     h1 { font-size:15px; }
+    /* 手機的畫布本來就矮，HUD 五格照桌機尺寸排會吃掉一半高度，車子看不到。
+       改成扁一點、中文標題收掉，只留越南文與數字 */
+    #hud { left:6px; top:6px; gap:5px; }
+    .tile { padding:3px 7px; min-width:0; border-radius:6px; }
+    .tile .k { font-size:9px; line-height:1.15; }
+    .tile .v { font-size:14px; line-height:1.1; }
+    .tile .u { font-size:9.5px; }
   }
   @media (max-width: 420px) {
     :root { --stageH: max(38vh, 200px); }
