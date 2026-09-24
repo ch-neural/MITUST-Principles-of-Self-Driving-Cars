@@ -9,7 +9,7 @@
           --ink:#1A2733; --mute:#5F7183; --line:#DBE3EA; --card:#F4F7FA; --bg:#E9EEF2; --red:#D9463E; }
   * { box-sizing: border-box; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
-    font-family: "微軟正黑體","Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",Arial,sans-serif; }
+    font-family: system-ui,"Segoe UI",Arial,"PingFang TC","Noto Sans TC","微軟正黑體","Microsoft JhengHei",sans-serif; }
   #app { display:grid; grid-template-columns: 300px 1fr 250px; height:100vh; gap:0; }
   .panel { background:#fff; border-right:1px solid var(--line); overflow-y:auto; padding:14px 16px; }
   .panel.right { border-right:none; border-left:1px solid var(--line); }
@@ -23,6 +23,15 @@
   .tog { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:13px; cursor:pointer; }
   .tog input { accent-color: var(--teal); width:16px; height:16px; }
   .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .pgrp { font-size:11px; color:var(--mute); margin:9px 0 5px; }
+  .pgrp:first-of-type { margin-top:2px; }
+  .pbtns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .pbtns button { display:block; text-align:left; padding:7px 9px; line-height:1.35; }
+  .pbtns button b { display:block; font-size:12px; }
+  .pbtns button span { display:block; font-size:10.5px; color:var(--mute); }
+  .pbtns button span i { display:block; font-style:normal; color:var(--tealD); margin-top:2px; }
+  .pbtns button.on { background:var(--tealD); border-color:var(--tealD); }
+  .pbtns button.on b, .pbtns button.on span, .pbtns button.on span i { color:#fff; }
   button { border:1px solid var(--line); background:var(--card); color:var(--navy); border-radius:7px;
            padding:6px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; }
   button.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
@@ -110,6 +119,29 @@
     <h1>自動駕駛原理　瀏覽器模擬器<span class="vi">Trình mô phỏng xe tự lái trên trình duyệt</span></h1>
     <div class="note">車上那台電腦只看得到射線碰到的東西。先用<b>固定式</b>玩一輪，再切到<b>旋轉式</b>跑同一個情境，比較兩者各自看不到什麼。</div>
 
+    <div class="sec" id="presetSec">
+      <h2>上課情境　Tình huống trên lớp</h2>
+      <div class="pgrp">第 1 節　三個滑桿各自的效果　Tiết 1 · ba thanh trượt</div>
+      <div class="pbtns">
+        <button data-preset="one"><b>只有一條射線</b><span>Chỉ một tia<i>看縫隙有多致命</i></span></button>
+        <button data-preset="std"><b>標準配置</b><span>Cấu hình chuẩn<i>當比較的基準</i></span></button>
+        <button data-preset="narrow"><b>張角太窄</b><span>Góc quét quá hẹp<i>側面切進來看不到</i></span></button>
+        <button data-preset="short"><b>射線太短</b><span>Tia quá ngắn<i>看到了也煞不住</i></span></button>
+      </div>
+      <div class="pgrp">第 3 節　課堂四題　Tiết 3 · bốn câu</div>
+      <div class="pbtns">
+        <button class="warn" data-preset="hanoi"><b>第一、二題　河內尖峰</b><span>Câu 1–2 · Hà Nội giờ cao điểm<i>9 條・25 m・120°，從這裡開始調</i></span></button>
+        <button class="warn" data-preset="rainonly"><b>第三題　只加雨天</b><span>Câu 3 · chỉ bật mưa<i>保留你調好的三個數字，只開雨</i></span></button>
+        <button data-preset="spin"><b>第四題　旋轉式</b><span>Câu 4 · LiDAR xoay<i>360°，但輪流掃</i></span></button>
+        <button class="warn" data-preset="spinslow"><b>旋轉式　2 Hz 慢動作</b><span>Xoay 2 Hz chậm<i>看清楚它在輪流</i></span></button>
+      </div>
+      <div class="pgrp">其他　Khác</div>
+      <div class="pbtns">
+        <button class="warn" data-preset="rainnight"><b>雨夜</b><span>Mưa đêm<i>兩種衰減疊在一起</i></span></button>
+      </div>
+      <div class="hint" id="presetHint">選一個情境，參數會自動設好並重新開始。之後想微調，直接動下面的滑桿就好。</div>
+    </div>
+
     <div class="sec">
       <h2>光達型式　Loại LiDAR</h2>
       <div class="mount">
@@ -120,7 +152,7 @@
 
       <div id="fixedCtl">
         <label class="row">射線數 <span class="vi">Số tia</span><b id="vRays">7</b></label>
-        <input type="range" id="rays" min="1" max="15" value="7">
+        <input type="range" id="rays" min="1" max="60" value="7">
         <div class="hint" id="hRays"></div>
         <label class="row">張角（度）<span class="vi">Góc quét (°)</span><b id="vSpread">90</b></label>
         <input type="range" id="spread" min="10" max="180" value="90">
@@ -137,7 +169,7 @@
       </div>
 
       <label class="row">射線長度（公尺）<span class="vi">Tầm đo (m)</span><b id="vLen">25</b></label>
-      <input type="range" id="len" min="3" max="40" value="25">
+      <input type="range" id="len" min="10" max="120" value="25">
       <div class="hint" id="hLen"></div>
       <label class="tog"><input type="checkbox" id="showRays" checked> 顯示射線 <span class="vi">Hiện tia</span></label>
     </div>
@@ -167,19 +199,6 @@
       </div>
     </div>
 
-    <div class="sec">
-      <h2>預設情境　Tình huống mẫu</h2>
-      <div class="btns">
-        <button data-preset="one">只有一條射線</button>
-        <button data-preset="std">標準配置</button>
-        <button data-preset="narrow">張角太窄</button>
-        <button data-preset="short">射線太短</button>
-        <button class="warn" data-preset="hanoi">河內尖峰</button>
-        <button class="warn" data-preset="rainnight">雨夜</button>
-        <button data-preset="spin">旋轉式・標準</button>
-        <button class="warn" data-preset="spinslow">旋轉式・2 Hz 慢動作</button>
-      </div>
-    </div>
   </div>
 
   <div id="stage">
@@ -636,15 +655,15 @@ function diagnose(why, o) {
       return { title: "看不到：只有一條射線", why: `只有一條射線，只看得到正前方一條線。這${name}偏離車頭約 ${angToObj.toFixed(0)}°，完全在視線外。`, tip: "加射線數到 5 以上，張角 60° 以上。一顆只看正前方的感測器，連最基本的變道都做不到。" };
     if (angToObj > halfSpread * 0.9 || side)
       return { title: "看不到：在視野外", why: `這${name}從側面進來（偏離車頭約 ${angToObj.toFixed(0)}°），張角只有 ${S.spread}°，沒有任何一條射線碰到它。`,
-               tip: `把張角加到至少 ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°；或加射線數到 ${Math.min(15, S.rays + 4)} 讓側面也有射線。${o.kind === "moto" ? "機車會鑽縫，是最考驗視野的目標。" : ""}` };
+               tip: `把張角加到至少 ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°；或加射線數到 ${Math.min(60, S.rays + 6)} 讓側面也有射線。${o.kind === "moto" ? "機車會鑽縫，是最考驗視野的目標。" : ""}` };
     return { title: "看不到：射線之間的縫隙太大", why: `這${name}在張角範圍內，但 ${S.rays} 條射線分在 ${S.spread}° 裡，相鄰射線在 ${effLen.toFixed(0)} 公尺處相隔約 ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} 公尺，它剛好從縫隙穿過。`,
-             tip: `加射線數到 ${Math.min(15, S.rays + 4)}；或把張角收窄一點讓射線密一些（但側面會看不到）。` };
+             tip: `加射線數到 ${Math.min(60, S.rays + 6)}；或把張角收窄一點讓射線密一些（但側面會看不到）。` };
   }
   const seenAt = o.seenFirst / PXM, sdThen = stopDist(o.seenFirstV) / PXM;
   const needLenThen = Math.ceil(sdThen + 5);
   if (S.rain && drops2s >= 3)
     return { title: "看到太晚：雨天漏讀", why: `雨天射線只剩 ${effLen.toFixed(0)} 公尺，撞前兩秒漏讀 ${drops2s} 次；第一次看到這${name}是 ${seenAt.toFixed(1)} 公尺，煞停距離 ${sdThen.toFixed(1)} 公尺。`,
-             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；或加射線數到 ${Math.min(15, S.rays + 4)}，一條漏了還有別條（這就是冗餘）。` };
+             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；或加射線數到 ${Math.min(60, S.rays + 6)}，一條漏了還有別條（這就是冗餘）。` };
   if (seenAt < sdThen)
     return { title: effLen < sdThen + 3 ? "看到太晚：射線太短" : "看到太晚：從側面切進來", why: `第一次看到這${name}時距離 ${seenAt.toFixed(1)} 公尺，但當時時速 ${Math.round(o.seenFirstV / PXM * 3.6)} 的煞停距離是 ${sdThen.toFixed(1)} 公尺。${effLen < sdThen + 3 ? `射線實際只有 ${effLen.toFixed(0)} 公尺。` : "它不是從正前方遠處來的，是從旁邊進到路徑上。"}`,
              tip: effLen < sdThen + 3 ? `射線長度至少 ${needLenThen} 公尺（煞停距離＋5）${S.rain ? "，雨天要再除以 0.55" : ""}；或把目標車速降到 ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h 以下。` : `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；加大張角讓側面的東西更早被看到。` };
@@ -897,13 +916,25 @@ const PRESETS = {
   one:   { mount: "fixed", rays: 1, len: 25, spread: 90, density: 4, motos: true, parked: false, peds: false, rain: false, night: false, target: 50 },
   std:   { mount: "fixed", rays: 7, len: 25, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50 },
   narrow:{ mount: "fixed", rays: 7, len: 25, spread: 20, density: 4, motos: false, parked: true, peds: false, rain: false, night: false, target: 50 },
-  short: { mount: "fixed", rays: 7, len: 8, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 60 },
+  short: { mount: "fixed", rays: 7, len: 10, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 60 },
   hanoi: { mount: "fixed", rays: 9, len: 25, spread: 120, density: 7, motos: true, parked: true, peds: true, rain: false, night: false, target: 40 },
   rainnight: { mount: "fixed", rays: 9, len: 25, spread: 120, density: 4, motos: true, parked: false, peds: true, rain: true, night: true, target: 50 },
   spin:     { mount: "spin", azm: 24, spin: 10, len: 25, density: 4, motos: false, parked: false, peds: false, rain: false, night: false, target: 50 },
   spinslow: { mount: "spin", azm: 24, spin: 2,  len: 25, density: 4, motos: true,  parked: false, peds: false, rain: false, night: false, target: 60 },
+  // 第三題要的是「三個數字不要動，只把雨天打開」，所以這一個只改天氣
+  rainonly:  { rain: true, night: false },
 };
-document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => { setUI(PRESETS[b.dataset.preset]); reset(); log(`情境：${b.textContent}`); });
+document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => {
+  setUI(PRESETS[b.dataset.preset]);
+  document.querySelectorAll("[data-preset]").forEach((x) => x.classList.toggle("on", x === b));
+  reset();
+  log(`情境：${b.querySelector("b").textContent}`);
+});
+// 自己動滑桿或開關，就不再算是「正在跑某個情境」
+["rays", "spread", "len", "azm", "spin", "target", "density"].forEach((id) =>
+  $(id).addEventListener("input", () => document.querySelectorAll("[data-preset].on").forEach((x) => x.classList.remove("on"))));
+["motos", "parked", "peds", "rain", "night"].forEach((id) =>
+  $(id).addEventListener("change", () => document.querySelectorAll("[data-preset].on").forEach((x) => x.classList.remove("on"))));
 window.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox") return;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
