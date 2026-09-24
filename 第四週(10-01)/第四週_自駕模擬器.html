@@ -23,6 +23,9 @@
   .tog { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:13px; cursor:pointer; }
   .tog input { accent-color: var(--teal); width:16px; height:16px; }
   .btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  #seedRow input { width:70px; padding:3px 6px; border:1px solid var(--line); border-radius:5px;
+                   font-family:inherit; font-size:12.5px; margin-left:auto; }
+  #seedRow.off { opacity:.4; pointer-events:none; }
   .pgrp { font-size:11px; color:var(--mute); margin:9px 0 5px; }
   .pgrp:first-of-type { margin-top:2px; }
   .pbtns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -192,6 +195,9 @@
       <label class="row">自動模式目標車速（km/h）<span class="vi">Tốc độ mục tiêu</span><b id="vTarget">50</b></label>
       <input type="range" id="target" min="10" max="80" value="50">
       <div class="hint">車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。</div>
+      <label class="tog"><input type="checkbox" id="fixSeed" checked> 固定車流（同一批車重播） <span class="vi">Cố định dòng xe</span></label>
+      <div class="row" id="seedRow">種子 <span class="vi">Seed</span><input type="number" id="seed" min="1" max="999" value="1"></div>
+      <div class="hint" id="hSeed"></div>
       <div class="btns"><button id="helpBtn">參數說明與診斷規則</button></div>
       <div class="btns">
         <button class="primary" id="restart">重新開始 <span class="vi" style="display:inline;color:#cfe">Bắt đầu lại</span></button>
@@ -303,6 +309,19 @@ const ACCEL = 2.5 * PXM, BRAKE = 6 * PXM, COAST = 0.6 * PXM;
 const REACT = 0.3;                    // 反應時間（秒）
 const BLIND = 3.5;                    // 旋轉式裝在車頂造成的近距離盲區半徑（公尺）
 
+// ── 可重播的亂數 ────────────────────────────────────────────
+// 固定車流打開時，同一個種子每次都生出一模一樣的車流，各組調參數才比得出差別。
+// 真實模擬工程也是這樣做的：先固定場景，再一次只掃一個變數。
+let RSEED = 1, rstate = 1, acc = 0, last = performance.now();
+function seedRng(n) { RSEED = n >>> 0; rstate = (RSEED || 1) >>> 0; }
+function RND() {                       // mulberry32
+  rstate = (rstate + 0x6D2B79F5) >>> 0;
+  let t = rstate;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
 const $ = (id) => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d");
 const stage = $("stage");
@@ -329,9 +348,14 @@ const log = (msg) => {
 function laneX(i) { return -ROAD_W / 2 + LANE_W * (i + 0.5); }
 
 function reset() {
+  // 固定車流：用畫面上那個種子重播同一批車；沒固定就每次換一個新的
+  const fixed = $("fixSeed") && $("fixSeed").checked;
+  const sd = fixed ? Math.max(1, Math.min(999, +$("seed").value || 1)) : (Math.floor(Math.random() * 999) + 1);
+  seedRng(sd); if (!fixed && $("seed")) $("seed").value = sd;
+  acc = 0; last = performance.now();   // 累積器與時間基準都歸零，不然上一趟剩下的時間會多跑半步，重播就不會一樣
   S.t = 0; S.crashed = false; S.crashWhy = ""; S.act = "—";
   S.stats = { dist: 0, crash: S.stats.crash, hard: 0, lane: 0, drop: 0, abort: 0 };
-  S.lastAbort = 0;
+  S.lastAbort = 0; S.lastHard = 0; readings = [];
   ego = { x: laneX(1), y: 0, angle: 0, speed: 0, w: EGO_W, l: EGO_L };
   S.laneTarget = 1; S.laneCooldown = 0; S.recentDrops = [];
   S.beam = 0; S.mem = []; S.lastRear = 0;
@@ -339,7 +363,7 @@ function reset() {
   nextSpawnY = -30 * PXM; nextPedY = -60 * PXM; nextParkY = -80 * PXM;
   $("crash").style.display = "none";
   $("log").innerHTML = "";
-  log("出發　Xuất phát");
+  log(`出發　Xuất phát　（種子 seed ${RSEED}${fixed ? "，固定" : "，隨機"}）`);
 }
 
 // 勾「機車流」時，除了一般車流之外每批再多生成的機車台數（再加 0 或 1 的隨機）。
@@ -364,33 +388,33 @@ function spawnAhead() {
   while (nextSpawnY > horizon) {
     const n = S.density;
     if (n > 0) {
-      const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
-      const count = Math.min(LANES - 1, Math.round(n / 8 * 3 + Math.random()));
+      const lanes = [0, 1, 2, 3].sort(() => RND() - 0.5);
+      const count = Math.min(LANES - 1, Math.round(n / 8 * 3 + RND()));
       for (let i = 0; i < count; i++) {
         const lane = lanes[i];
-        const moto = S.motos && Math.random() < 0.6;
+        const moto = S.motos && RND() < 0.6;
         traffic.push({
           kind: moto ? "moto" : "car",
-          x: laneX(lane) + (moto ? (Math.random() - 0.5) * LANE_W * 0.8 : 0),
-          y: nextSpawnY + (Math.random() - 0.5) * 12 * PXM,
+          x: laneX(lane) + (moto ? (RND() - 0.5) * LANE_W * 0.8 : 0),
+          y: nextSpawnY + (RND() - 0.5) * 12 * PXM,
           w: moto ? 0.8 * PXM : 1.8 * PXM, l: moto ? 2.0 * PXM : 4.4 * PXM,
-          speed: (moto ? (25 + Math.random() * 25) : (20 + Math.random() * 25)) / 3.6 * PXM,
-          drift: moto ? (Math.random() - 0.5) * 1.6 * PXM : 0, driftT: 0,
-          color: moto ? "#F5C242" : ["#C9D3DD", "#8FA3B5", "#5B7A99", "#E4E9EE", "#7B8FA1"][Math.floor(Math.random() * 5)],
+          speed: (moto ? (25 + RND() * 25) : (20 + RND() * 25)) / 3.6 * PXM,
+          drift: moto ? (RND() - 0.5) * 1.6 * PXM : 0, driftT: 0,
+          color: moto ? "#F5C242" : ["#C9D3DD", "#8FA3B5", "#5B7A99", "#E4E9EE", "#7B8FA1"][Math.floor(RND() * 5)],
         });
       }
       // 機車流：在一般車流之外再塞幾台機車，而且會並排在同一個車道裡——這才像機車海
       if (S.motos && MOTO_EXTRA > 0) {
-        const extra = MOTO_EXTRA + Math.floor(Math.random() * 2); // 每批額外幾台機車
+        const extra = MOTO_EXTRA + Math.floor(RND() * 2); // 每批額外幾台機車
         for (let m = 0; m < extra; m++) {
-          const lane = Math.floor(Math.random() * LANES);
+          const lane = Math.floor(RND() * LANES);
           traffic.push({
             kind: "moto",
-            x: laneX(lane) + (Math.random() - 0.5) * LANE_W * 0.9,
-            y: nextSpawnY + (Math.random() - 0.5) * 26 * PXM,
+            x: laneX(lane) + (RND() - 0.5) * LANE_W * 0.9,
+            y: nextSpawnY + (RND() - 0.5) * 26 * PXM,
             w: 0.8 * PXM, l: 2.0 * PXM,
-            speed: (25 + Math.random() * 25) / 3.6 * PXM,
-            drift: (Math.random() - 0.5) * 1.6 * PXM, driftT: 0,
+            speed: (25 + RND() * 25) / 3.6 * PXM,
+            drift: (RND() - 0.5) * 1.6 * PXM, driftT: 0,
             color: "#F5C242",
           });
         }
@@ -399,24 +423,24 @@ function spawnAhead() {
     nextSpawnY -= (n === 0 ? 60 : 44 - n * 3) * PXM;
   }
   if (S.parked) while (nextParkY > horizon) {
-    const side = Math.random() < 0.5 ? 0 : LANES - 1;
+    const side = RND() < 0.5 ? 0 : LANES - 1;
     parkedTrucks.push({ kind: "truck", x: laneX(side) + (side === 0 ? -0.35 : 0.35) * LANE_W, y: nextParkY,
                         w: 2.2 * PXM, l: 7 * PXM, speed: 0, color: "#3C6FB0" });
-    nextParkY -= (70 + Math.random() * 60) * PXM;
+    nextParkY -= (70 + RND() * 60) * PXM;
   } else nextParkY = horizon;
   if (S.peds) while (nextPedY > horizon) {
-    const fromLeft = Math.random() < 0.5;
+    const fromLeft = RND() < 0.5;
     peds.push({ kind: "ped", x: fromLeft ? -ROAD_W / 2 - SHOULDER : ROAD_W / 2 + SHOULDER, y: nextPedY,
-                w: 0.5 * PXM, l: 0.5 * PXM, vx: (fromLeft ? 1 : -1) * (1.5 + Math.random() * 1.0) * PXM, started: false });
-    nextPedY -= (50 + Math.random() * 50) * PXM;
+                w: 0.5 * PXM, l: 0.5 * PXM, vx: (fromLeft ? 1 : -1) * (1.5 + RND() * 1.0) * PXM, started: false });
+    nextPedY -= (50 + RND() * 50) * PXM;
   } else nextPedY = horizon;
   // 後方來車（比自車快）。固定式看不到它，旋轉式看得到——這是兩種型式唯一會跑出不同結果的地方
-  if (S.density > 0 && S.t > 4 && S.t - S.lastRear > 7 + Math.random() * 5) {
+  if (S.density > 0 && S.t > 4 && S.t - S.lastRear > 7 + RND() * 5) {
     S.lastRear = S.t;
-    traffic.push({ kind: "car", x: laneX(Math.floor(Math.random() * LANES)), y: ego.y + 52 * PXM,
-                   w: 1.8 * PXM, l: 4.4 * PXM, speed: (S.target + 12 + Math.random() * 10) / 3.6 * PXM,
+    traffic.push({ kind: "car", x: laneX(Math.floor(RND() * LANES)), y: ego.y + 52 * PXM,
+                   w: 1.8 * PXM, l: 4.4 * PXM, speed: (S.target + 12 + RND() * 10) / 3.6 * PXM,
                    drift: 0, driftT: 0, color: "#9AA9B8", fromRear: true,
-                   v0: (S.target + 12 + Math.random() * 10) / 3.6 * PXM });
+                   v0: (S.target + 12 + RND() * 10) / 3.6 * PXM });
   }
 }
 
@@ -479,9 +503,9 @@ function sense(dt) {
     const r = castRay(from, ego.angle + a, len, obs, borders);
     let best = r.t, hit = r.hit, dropped = false;
     if (best !== null && minD && best * len < minD) { best = null; hit = null; }      // 車頂盲區
-    if (best !== null && noise && Math.random() < noise * 0.5) { best = null; hit = null; dropped = true; S.stats.drop++; S.recentDrops.push(S.t); }
+    if (best !== null && noise && RND() < noise * 0.5) { best = null; hit = null; dropped = true; S.stats.drop++; S.recentDrops.push(S.t); }
     if (best !== null && hit && hit.kind !== "border") note(hit, best * len, a);
-    if (best !== null && noise) best = Math.min(1, Math.max(0.05, best + (Math.random() - 0.5) * noise * 0.4));
+    if (best !== null && noise) best = Math.min(1, Math.max(0.05, best + (RND() - 0.5) * noise * 0.4));
     return { t: best, hit, dropped, to: r.end };
   };
 
@@ -605,7 +629,7 @@ function update(dt) {
       if (sameLane && gap < 18 * PXM) c.speed = Math.max(0, Math.max(ego.speed * 0.95, c.speed - 7 * PXM * dt));
       else if (c.speed < c.v0) c.speed = Math.min(c.v0, c.speed + 2.5 * PXM * dt);
     }
-    if (c.kind === "moto") { c.driftT -= dt; if (c.driftT <= 0) { c.drift = (Math.random() - 0.5) * 2.2 * PXM; c.driftT = 1 + Math.random() * 2; } c.x += c.drift * dt;
+    if (c.kind === "moto") { c.driftT -= dt; if (c.driftT <= 0) { c.drift = (RND() - 0.5) * 2.2 * PXM; c.driftT = 1 + RND() * 2; } c.x += c.drift * dt;
       c.x = Math.max(-ROAD_W / 2 + c.w, Math.min(ROAD_W / 2 - c.w, c.x)); }
   }
   for (const p of peds) {
@@ -802,10 +826,11 @@ function hud() {
 }
 
 // ───────────────────────── 迴圈 ─────────────────────────
-let last = performance.now();
+
+const STEP = 1 / 60;          // 模擬固定用 1/60 秒一步，畫面再快再慢都不影響結果
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!S.paused) update(dt);
+  const dt = Math.min(0.25, (now - last) / 1000); last = now;
+  if (!S.paused) { acc += dt; let guard = 0; while (acc >= STEP && guard++ < 20) { update(STEP); acc -= STEP; } }
   draw(); hud();
   requestAnimationFrame(frame);
 }
@@ -903,6 +928,16 @@ function updateHints() {
 });
 const setMode = (auto) => { S.auto = auto; $("mAuto").classList.toggle("on", auto); $("mManual").classList.toggle("on", !auto); log(auto ? "切到自動駕駛　Tự lái" : "切到手動　Lái tay"); };
 $("mAuto").onclick = () => setMode(true); $("mManual").onclick = () => setMode(false);
+function syncSeed() {
+  const on = $("fixSeed").checked;
+  $("seedRow").classList.toggle("off", !on);
+  $("hSeed").innerHTML = on
+    ? "同一個種子 → <b>每次重新開始都是同一批車</b>。一次只改一個參數，差別才看得出來是參數造成的。換個種子就是換一個路況。"
+    : "每次重新開始都換一批車。這時候<b>跑一次的結果不能當結論</b>，要多跑幾次看中位數。";
+}
+$("fixSeed").onchange = () => { syncSeed(); reset(); };
+$("seed").onchange = reset;
+syncSeed();
 $("restart").onclick = reset;
 $("pause").onclick = () => { S.paused = !S.paused; };
 $("helpBtn").onclick = () => { $("help").style.display = "flex"; };
