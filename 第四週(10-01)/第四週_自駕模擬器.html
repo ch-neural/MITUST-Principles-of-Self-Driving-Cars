@@ -304,19 +304,14 @@
 
     <div class="sec">
       <h2><span data-zh="手動操作　Phím" data-vi="Phím　手動操作"></span></h2>
-      <div class="keys">
-        <kbd>↑</kbd> 加速　<kbd>↓</kbd> 煞車<br>
-        <kbd>←</kbd> <kbd>→</kbd> 轉向<br>
-        <kbd>空白鍵</kbd> 暫停　<kbd>R</kbd> 重新開始<br>
-        <kbd>A</kbd> 切換自動／手動
-      </div>
+      <div class="keys" data-html="1"
+        data-zh="&lt;kbd&gt;↑&lt;/kbd&gt; 加速　&lt;kbd&gt;↓&lt;/kbd&gt; 煞車&lt;br&gt;&lt;kbd&gt;←&lt;/kbd&gt; &lt;kbd&gt;→&lt;/kbd&gt; 轉向&lt;br&gt;&lt;kbd&gt;空白鍵&lt;/kbd&gt; 暫停　&lt;kbd&gt;R&lt;/kbd&gt; 重新開始&lt;br&gt;&lt;kbd&gt;A&lt;/kbd&gt; 切換自動／手動"
+        data-vi="&lt;kbd&gt;↑&lt;/kbd&gt; Tăng tốc　&lt;kbd&gt;↓&lt;/kbd&gt; Phanh&lt;br&gt;&lt;kbd&gt;←&lt;/kbd&gt; &lt;kbd&gt;→&lt;/kbd&gt; Rẽ&lt;br&gt;&lt;kbd&gt;Space&lt;/kbd&gt; Tạm dừng　&lt;kbd&gt;R&lt;/kbd&gt; Chạy lại&lt;br&gt;&lt;kbd&gt;A&lt;/kbd&gt; Tự động / lái tay"></div>
     </div>
 
-    <div class="sec note">
-      比例：1 公尺 = 10 像素。車道寬 3.5 公尺，自駕車 1.8 × 4.5 公尺。<br>
-      煞停距離 = 反應距離（0.3 秒）＋ 煞車距離（減速度 6 m/s²）。<br>
-      本模擬器為《自動駕駛原理》課程自製教材，第 3、4 週上機使用。
-    </div>
+    <div class="sec note" data-html="1"
+      data-zh="比例：1 公尺 = 10 像素。車道寬 3.5 公尺，自駕車 1.8 × 4.5 公尺。&lt;br&gt;煞停距離 = 反應距離（0.3 秒）＋ 煞車距離（減速度 6 m/s²）。&lt;br&gt;本模擬器為《自動駕駛原理》課程自製教材，第 3、4 週上機使用。"
+      data-vi="Tỉ lệ: 1 m = 10 pixel. Làn rộng 3,5 m, xe tự lái 1,8 × 4,5 m.&lt;br&gt;Quãng đường dừng = quãng đường phản ứng (0,3 giây) + quãng đường phanh (gia tốc hãm 6 m/s²).&lt;br&gt;Mô phỏng tự làm cho môn «Nguyên lý xe tự lái», dùng ở tiết thực hành tuần 3 và 4."></div>
   </div>
 </div>
 
@@ -389,7 +384,7 @@ function reset() {
   nextSpawnY = -30 * PXM; nextPedY = -60 * PXM; nextParkY = -80 * PXM;
   $("crash").style.display = "none";
   $("log").innerHTML = "";
-  log(`出發　Xuất phát　（種子 seed ${RSEED}${fixed ? "，固定" : "，隨機"}）`);
+  log(`出發　Xuất phát　（種子 seed ${RSEED}${fixed ? "，固定 cố định" : "，隨機 ngẫu nhiên"}）`);
 }
 
 // 勾「機車流」時，除了一般車流之外每批再多生成的機車台數（再加 0 或 1 的隨機）。
@@ -405,7 +400,7 @@ function respawnAhead() {
   peds = peds.filter((c) => c.y > keep);
   nextSpawnY = keep; nextParkY = keep; nextPedY = keep;
   spawnAhead();
-  log(`車流已重新生成：前方 ${traffic.length} 台（機車 ${traffic.filter((c) => c.kind === "moto").length} 台）`);
+  log(`車流已重新生成　Sinh lại dòng xe：前方 phía trước ${traffic.length} 台（機車 xe máy ${traffic.filter((c) => c.kind === "moto").length} 台）`);
 }
 
 // ───────────────────────── 生成車流 ─────────────────────────
@@ -628,12 +623,12 @@ function tryLaneChange(dL, dR, dF, dRL, dRR) {
   let canL = cur > 0 && dL > clear && !blockL, canR = cur < LANES - 1 && dR > clear && !blockR;
   if ((blockL || blockR) && S.t - (S.lastAbort || 0) > 2) {
     S.lastAbort = S.t; S.stats.abort++;
-    log(`放棄變道：側後方有車 ${(Math.min(dRL, dRR) / PXM).toFixed(1)} m　Hủy đổi làn`);
+    log(`放棄變道　Hủy đổi làn：側後方有車 phía sau bên hông ${(Math.min(dRL, dRR) / PXM).toFixed(1)} m`);
   }
   if (!canL && !canR) return;
   let to = cur;
   if (canL && canR) to = dL >= dR ? cur - 1 : cur + 1; else to = canL ? cur - 1 : cur + 1;
-  if (to !== S.laneTarget) { S.laneTarget = to; S.laneCooldown = 2.5; S.stats.lane++; log(`${to < cur ? "左" : "右"}變道　Đổi làn ${to < cur ? "trái" : "phải"}（前方 ${(dF / PXM).toFixed(1)} m）`); }
+  if (to !== S.laneTarget) { S.laneTarget = to; S.laneCooldown = 2.5; S.stats.lane++; log(`${to < cur ? "左" : "右"}變道　Đổi làn ${to < cur ? "trái" : "phải"}（前方 phía trước ${(dF / PXM).toFixed(1)} m）`); }
 }
 
 // ───────────────────────── 手動 ─────────────────────────
@@ -762,8 +757,8 @@ function crash(why, o) {
     <div class="dx tip"><b>建議：</b>${d.tip}</div>
     <div class="kbd">按 R 重新開始・按 H 看參數說明與診斷規則</div>`;
   $("crash").style.display = "flex";
-  log(`<b style="color:#D9463E">${why}</b>　診斷：${d.title}`);
-  log(`建議：${d.tip}`);
+  log(`<b style="color:#D9463E">${why}</b>　診斷 Chẩn đoán：${d.title}`);
+  log(`建議 Gợi ý：${d.tip}`);
 }
 
 // ───────────────────────── 繪圖 ─────────────────────────
@@ -979,7 +974,7 @@ function updateHints() {
   el.addEventListener("change", () => {
     f();
     if (k === "motos" || k === "parked" || k === "peds") respawnAhead();
-    if (k !== "showRays") log(`${el.parentElement.textContent.trim().split("\n")[0]}：${el.checked ? "開" : "關"}`);
+    if (k !== "showRays") log(`${el.parentElement.textContent.trim().split("\n")[0]}：${el.checked ? "開 bật" : "關 tắt"}`);
   });
   f();
 });
@@ -1025,7 +1020,7 @@ presetSel.onchange = () => {
   setUI(PRESETS[k]);
   presetSel.value = k;          // setUI 會觸發下面的「自己動滑桿就歸零」，這裡補回來
   reset();
-  log(`情境：${label}`);
+  log(`情境 Tình huống：${label}`);
   // 選單裝不下整行字，所以把選到的那一項完整寫在下面的提示；
   // 兩種語言都存進 dataset，切語言的時候才不會跳回預設說明。
   const hint = $("presetHint");
