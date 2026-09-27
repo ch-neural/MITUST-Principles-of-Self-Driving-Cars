@@ -686,76 +686,123 @@ function update(dt) {
   peds = peds.filter((p) => p.y < ego.y + 60 * PXM && Math.abs(p.x) < ROAD_W / 2 + SHOULDER + 2 * PXM);
   // 碰撞
   const ep = rectPoly(ego);
-  const names = { car: "撞到車輛　Đâm vào xe", moto: "撞到機車　Đâm vào xe máy", truck: "撞到違停貨車　Đâm vào xe tải đỗ", ped: "撞到行人　Đâm vào người đi bộ" };
+  const names = { car: T("撞到車輛", "Đâm vào xe"), moto: T("撞到機車", "Đâm vào xe máy"),
+                  truck: T("撞到違停貨車", "Đâm vào xe tải đỗ sai"), ped: T("撞到行人", "Đâm vào người đi bộ") };
   for (const o of obstacles()) if (polysHit(ep, rectPoly(o))) return crash(names[o.kind], o);
   if (Math.abs(ego.x) + ego.w / 2 > ROAD_W / 2 + SHOULDER) return crash("衝出路面　Lao ra khỏi đường", null);
 }
 function stopDist(v) { return v * REACT + v * v / (2 * BRAKE); }
+// 診斷視窗的文字依目前語言挑一種。window.__L 由下面那個 script 區塊維護。
+const T = (zh, vi) => (window.__L === "zh" ? zh : vi);
+const Cap = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);   // 越南文句首的名詞要大寫
 function diagnose(why, o) {
   const v = ego.speed, sd = stopDist(v) / PXM, vk = Math.round(v / PXM * 3.6);
   let effLen = S.len; if (S.rain) effLen *= 0.55; if (S.night) effLen *= 0.85;
   const needLen = Math.ceil(sd + 5);
   const drops2s = S.recentDrops.filter((t) => S.t - t < 2).length;
   const changing = Math.abs(laneX(S.laneTarget) - ego.x) > 0.4 * PXM;
-  if (!S.auto) return { title: "手動駕駛", why: `你自己開的，時速 ${vk}。碰撞前的煞停距離約 ${sd.toFixed(1)} 公尺。`, tip: "這不是參數問題，是反應時間。切回自動駕駛（A 鍵）看規則式自駕怎麼處理同一個情況。" };
-  if (!o) return { title: "衝出路面", why: `變道或轉向過猛，時速 ${vk}。`, tip: "降目標車速；或加射線數讓兩側射線更早看到路肩。" };
+  if (!S.auto) return { title: T("手動駕駛", "Lái tay"),
+    why: T(`你自己開的，時速 ${vk}。碰撞前的煞停距離約 ${sd.toFixed(1)} 公尺。`,
+           `Bạn tự lái, tốc độ ${vk} km/h. Quãng đường dừng ngay trước va chạm khoảng ${sd.toFixed(1)} m.`),
+    tip: T("這不是參數問題，是反應時間。切回自動駕駛（A 鍵）看規則式自駕怎麼處理同一個情況。",
+           "Đây không phải vấn đề tham số mà là thời gian phản ứng. Bấm A về chế độ tự động để xem quy tắc xử lý cùng tình huống.") };
+  if (!o) return { title: T("衝出路面", "Lao ra khỏi đường"),
+    why: T(`變道或轉向過猛，時速 ${vk}。`, `Đổi làn hoặc bẻ lái quá gắt, tốc độ ${vk} km/h.`),
+    tip: T("降目標車速；或加射線數讓兩側射線更早看到路肩。",
+           "Giảm tốc độ mục tiêu; hoặc thêm tia để hai bên sớm thấy lề đường.") };
   const rel = o.x - ego.x, side = Math.abs(rel) > 0.6 * LANE_W;
   const halfSpread = S.spread / 2;
   const angToObj = Math.abs(Math.atan2(rel, Math.max(1, ego.y - o.y)) * 180 / Math.PI);
-  const name = { car: "台車", moto: "台機車", truck: "台違停貨車", ped: "個行人" }[o.kind];
+  const name = T({ car: "台車", moto: "台機車", truck: "台違停貨車", ped: "個行人" }[o.kind],
+                  { car: "chiếc ô tô", moto: "chiếc xe máy", truck: "chiếc xe tải đỗ sai", ped: "người đi bộ" }[o.kind]);
   const behind = o.y > ego.y + ego.l * 0.3;
   // 來自側後方：固定式根本沒有那個方向的資料
   if (behind) {
     if (S.mount === "fixed")
-      return { title: "看不到：固定式沒有後方視野",
-               why: `這${name}在自車後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺、側向 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。固定式裝在車頭、張角 ${S.spread}°，後方沒有任何一條射線，所以變道時等於閉著眼睛切出去。`,
-               tip: "切到旋轉式（車頂 360°）跑同一個情境：它變道前會先看側後方，來不及就放棄變道。真車的作法是另外加裝後方感測器或盲點雷達。" };
-    return { title: "側後方：資料是上一圈的",
-             why: `這${name}在後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺。旋轉式看得到後方，但那個方位的資料最舊可能是 ${(1000 / S.spin).toFixed(0)} ms 前的；這段時間它已經移動了一段距離。`,
-             tip: `把轉速從 ${S.spin} Hz 調高，後方的資料就比較新；代價是每圈取樣數要跟著降，角解析度變差。或降目標車速，把變道的時間壓力拿掉。` };
+      return { title: T("看不到：固定式沒有後方視野", "Không thấy: loại cố định không có tầm nhìn phía sau"),
+               why: T(`這${name}在自車後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺、側向 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。固定式裝在車頭、張角 ${S.spread}°，後方沒有任何一條射線，所以變道時等於閉著眼睛切出去。`,
+                      `${Cap(name)} này ở phía sau khoảng ${((o.y - ego.y) / PXM).toFixed(1)} m, lệch ngang ${(Math.abs(rel) / PXM).toFixed(1)} m. Loại cố định gắn ở đầu xe, góc quét ${S.spread}°, phía sau không có một tia nào — đổi làn giống như nhắm mắt tạt ra.`),
+               tip: T("切到旋轉式（車頂 360°）跑同一個情境：它變道前會先看側後方，來不及就放棄變道。真車的作法是另外加裝後方感測器或盲點雷達。",
+                      "Chuyển sang loại xoay (360° trên nóc xe) chạy lại cùng tình huống: nó nhìn phía sau bên hông trước khi đổi làn, không kịp thì huỷ. Xe thật thì lắp thêm cảm biến sau hoặc radar điểm mù.") };
+    return { title: T("側後方：資料是上一圈的", "Phía sau bên hông: dữ liệu của vòng trước"),
+             why: T(`這${name}在後方約 ${((o.y - ego.y) / PXM).toFixed(1)} 公尺。旋轉式看得到後方，但那個方位的資料最舊可能是 ${(1000 / S.spin).toFixed(0)} ms 前的；這段時間它已經移動了一段距離。`,
+                    `${Cap(name)} này ở phía sau khoảng ${((o.y - ego.y) / PXM).toFixed(1)} m. Loại xoay thấy được phía sau, nhưng dữ liệu hướng đó có thể đã cũ tới ${(1000 / S.spin).toFixed(0)} ms; trong khoảng đó nó đã đi thêm một đoạn.`),
+             tip: T(`把轉速從 ${S.spin} Hz 調高，後方的資料就比較新；代價是每圈取樣數要跟著降，角解析度變差。或降目標車速，把變道的時間壓力拿掉。`,
+                    `Tăng tốc độ quay từ ${S.spin} Hz lên, dữ liệu phía sau sẽ mới hơn; đổi lại mỗi vòng lấy được ít mẫu hơn, độ phân giải góc kém đi. Hoặc giảm tốc độ mục tiêu để bớt áp lực thời gian khi đổi làn.`) };
   }
   // 旋轉式：明明量到過，但決策當下用的是舊資料
   if (S.mount === "spin" && o.seenFirst !== undefined && S.t - (o.seenLast || 0) > 0.6 / S.spin)
-    return { title: "旋轉式：決策當下的資料已經過期",
-             why: `最後一次量到這${name}是 ${((S.t - o.seenLast) * 1000).toFixed(0)} ms 前，距離 ${(o.seenLastD / PXM).toFixed(1)} 公尺。掃描線還沒轉回它那個方位，車子手上只有那筆舊的。`,
-             tip: `轉速調高（目前 ${S.spin} Hz，一圈 ${(1000 / S.spin).toFixed(0)} ms）；或降目標車速，讓一圈的時間內世界變化少一點。` };
+    return { title: T("旋轉式：決策當下的資料已經過期", "Loại xoay: lúc ra quyết định thì dữ liệu đã cũ"),
+             why: T(`最後一次量到這${name}是 ${((S.t - o.seenLast) * 1000).toFixed(0)} ms 前，距離 ${(o.seenLastD / PXM).toFixed(1)} 公尺。掃描線還沒轉回它那個方位，車子手上只有那筆舊的。`,
+                    `Lần cuối đo được ${name} này là ${((S.t - o.seenLast) * 1000).toFixed(0)} ms trước, ở ${(o.seenLastD / PXM).toFixed(1)} m. Tia quét chưa xoay lại hướng đó, xe chỉ có số liệu cũ ấy.`),
+             tip: T(`轉速調高（目前 ${S.spin} Hz，一圈 ${(1000 / S.spin).toFixed(0)} ms）；或降目標車速，讓一圈的時間內世界變化少一點。`,
+                    `Tăng tốc độ quay (hiện ${S.spin} Hz, một vòng ${(1000 / S.spin).toFixed(0)} ms); hoặc giảm tốc độ mục tiêu để trong một vòng thế giới thay đổi ít hơn.`) };
   if (o.seenFirst === undefined) {
     if (S.rays === 1)
-      return { title: "看不到：只有一條射線", why: `只有一條射線，只看得到正前方一條線。這${name}偏離車頭約 ${angToObj.toFixed(0)}°，完全在視線外。`, tip: "加射線數到 5 以上，張角 60° 以上。一顆只看正前方的感測器，連最基本的變道都做不到。" };
+      return { title: T("看不到：只有一條射線", "Không thấy: chỉ có một tia"),
+               why: T(`只有一條射線，只看得到正前方一條線。這${name}偏離車頭約 ${angToObj.toFixed(0)}°，完全在視線外。`,
+                      `Chỉ có một tia, chỉ thấy đúng một đường ngay trước mũi xe. ${name} này lệch khoảng ${angToObj.toFixed(0)}° so với đầu xe, hoàn toàn ngoài tầm nhìn.`),
+               tip: T("加射線數到 5 以上，張角 60° 以上。一顆只看正前方的感測器，連最基本的變道都做不到。",
+                      "Tăng số tia lên từ 5 trở lên, góc quét từ 60° trở lên. Một cảm biến chỉ nhìn thẳng phía trước thì ngay cả đổi làn cơ bản cũng không làm được.") };
     if (angToObj > halfSpread * 0.9 || side)
-      return { title: "看不到：在視野外", why: `這${name}從側面進來（偏離車頭約 ${angToObj.toFixed(0)}°），張角只有 ${S.spread}°，沒有任何一條射線碰到它。`,
-               tip: `把張角加到至少 ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°；或加射線數到 ${Math.min(60, S.rays + 6)} 讓側面也有射線。${o.kind === "moto" ? "機車會鑽縫，是最考驗視野的目標。" : ""}` };
-    return { title: "看不到：射線之間的縫隙太大", why: `這${name}在張角範圍內，但 ${S.rays} 條射線分在 ${S.spread}° 裡，相鄰射線在 ${effLen.toFixed(0)} 公尺處相隔約 ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} 公尺，它剛好從縫隙穿過。`,
-             tip: `加射線數到 ${Math.min(60, S.rays + 6)}；或把張角收窄一點讓射線密一些（但側面會看不到）。` };
+      return { title: T("看不到：在視野外", "Không thấy: nằm ngoài góc quét"),
+               why: T(`這${name}從側面進來（偏離車頭約 ${angToObj.toFixed(0)}°），張角只有 ${S.spread}°，沒有任何一條射線碰到它。`,
+                      `${Cap(name)} này vào từ bên hông (lệch khoảng ${angToObj.toFixed(0)}° so với đầu xe), góc quét chỉ ${S.spread}°, không tia nào chạm tới nó.`),
+               tip: T(`把張角加到至少 ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°；或加射線數到 ${Math.min(60, S.rays + 6)} 讓側面也有射線。${o.kind === "moto" ? "機車會鑽縫，是最考驗視野的目標。" : ""}`,
+                      `Mở góc quét lên ít nhất ${Math.min(180, Math.ceil(angToObj * 2 + 20))}°; hoặc tăng số tia lên ${Math.min(60, S.rays + 6)} để hai bên cũng có tia.${o.kind === "moto" ? " Xe máy hay lách khe, là mục tiêu thử thách góc quét nhất." : ""}`) };
+    return { title: T("看不到：射線之間的縫隙太大", "Không thấy: khe giữa hai tia quá rộng"),
+             why: T(`這${name}在張角範圍內，但 ${S.rays} 條射線分在 ${S.spread}° 裡，相鄰射線在 ${effLen.toFixed(0)} 公尺處相隔約 ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} 公尺，它剛好從縫隙穿過。`,
+                    `${Cap(name)} này nằm trong góc quét, nhưng ${S.rays} tia chia cho ${S.spread}°, ở ${effLen.toFixed(0)} m hai tia liền nhau cách khoảng ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} m — nó lọt đúng qua khe đó.`),
+             tip: T(`加射線數到 ${Math.min(60, S.rays + 6)}；或把張角收窄一點讓射線密一些（但側面會看不到）。`,
+                    `Tăng số tia lên ${Math.min(60, S.rays + 6)}; hoặc thu hẹp góc quét cho tia dày hơn (đổi lại hai bên sẽ không thấy).`) };
   }
   const seenAt = o.seenFirst / PXM, sdThen = stopDist(o.seenFirstV) / PXM;
   const needLenThen = Math.ceil(sdThen + 5);
   if (S.rain && drops2s >= 3)
-    return { title: "看到太晚：雨天漏讀", why: `雨天射線只剩 ${effLen.toFixed(0)} 公尺，撞前兩秒漏讀 ${drops2s} 次；第一次看到這${name}是 ${seenAt.toFixed(1)} 公尺，煞停距離 ${sdThen.toFixed(1)} 公尺。`,
-             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；或加射線數到 ${Math.min(60, S.rays + 6)}，一條漏了還有別條（這就是冗餘）。` };
+    return { title: T("看到太晚：雨天漏讀", "Thấy quá muộn: trời mưa đọc sót"),
+             why: T(`雨天射線只剩 ${effLen.toFixed(0)} 公尺，撞前兩秒漏讀 ${drops2s} 次；第一次看到這${name}是 ${seenAt.toFixed(1)} 公尺，煞停距離 ${sdThen.toFixed(1)} 公尺。`,
+                    `Trời mưa tia chỉ còn ${effLen.toFixed(0)} m, hai giây trước va chạm đọc sót ${drops2s} lần; lần đầu thấy ${name} này là ở ${seenAt.toFixed(1)} m, trong khi quãng đường dừng là ${sdThen.toFixed(1)} m.`),
+             tip: T(`降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；或加射線數到 ${Math.min(60, S.rays + 6)}，一條漏了還有別條（這就是冗餘）。`,
+                    `Giảm tốc độ mục tiêu xuống ${Math.max(10, Math.round(vk * 0.7))} km/h; hoặc tăng số tia lên ${Math.min(60, S.rays + 6)} — một tia sót thì còn tia khác (đó là dự phòng).`) };
   if (seenAt < sdThen)
-    return { title: effLen < sdThen + 3 ? "看到太晚：射線太短" : "看到太晚：從側面切進來", why: `第一次看到這${name}時距離 ${seenAt.toFixed(1)} 公尺，但當時時速 ${Math.round(o.seenFirstV / PXM * 3.6)} 的煞停距離是 ${sdThen.toFixed(1)} 公尺。${effLen < sdThen + 3 ? `射線實際只有 ${effLen.toFixed(0)} 公尺。` : "它不是從正前方遠處來的，是從旁邊進到路徑上。"}`,
-             tip: effLen < sdThen + 3 ? `射線長度至少 ${needLenThen} 公尺（煞停距離＋5）${S.rain ? "，雨天要再除以 0.55" : ""}；或把目標車速降到 ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h 以下。` : `降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；加大張角讓側面的東西更早被看到。` };
+    return { title: effLen < sdThen + 3 ? T("看到太晚：射線太短", "Thấy quá muộn: tia quá ngắn")
+                                        : T("看到太晚：從側面切進來", "Thấy quá muộn: tạt vào từ bên hông"),
+             why: T(`第一次看到這${name}時距離 ${seenAt.toFixed(1)} 公尺，但當時時速 ${Math.round(o.seenFirstV / PXM * 3.6)} 的煞停距離是 ${sdThen.toFixed(1)} 公尺。${effLen < sdThen + 3 ? `射線實際只有 ${effLen.toFixed(0)} 公尺。` : "它不是從正前方遠處來的，是從旁邊進到路徑上。"}`,
+                    `Lần đầu thấy ${name} này ở ${seenAt.toFixed(1)} m, nhưng với tốc độ ${Math.round(o.seenFirstV / PXM * 3.6)} km/h lúc đó, quãng đường dừng là ${sdThen.toFixed(1)} m.${effLen < sdThen + 3 ? ` Tia thực tế chỉ dài ${effLen.toFixed(0)} m.` : " Nó không đến từ xa phía trước, mà tạt vào đường đi từ bên hông."}`),
+             tip: effLen < sdThen + 3
+               ? T(`射線長度至少 ${needLenThen} 公尺（煞停距離＋5）${S.rain ? "，雨天要再除以 0.55" : ""}；或把目標車速降到 ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h 以下。`,
+                   `Tia phải dài ít nhất ${needLenThen} m (quãng đường dừng + 5)${S.rain ? ", trời mưa còn phải chia cho 0,55" : ""}; hoặc hạ tốc độ mục tiêu xuống dưới ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h.`)
+               : T(`降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；加大張角讓側面的東西更早被看到。`,
+                   `Giảm tốc độ mục tiêu xuống ${Math.max(10, Math.round(vk * 0.7))} km/h; mở rộng góc quét để thấy sớm hơn những gì đến từ bên hông.`) };
   if (changing || side)
-    return { title: "變道中側撞", why: `撞的時候正在變道，這${name}在側面 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。兩側射線量到的距離夠遠，但它也在動。`,
-             tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；加大張角（${Math.min(180, S.spread + 30)}°）讓側面射線看得更遠。這是「預測」的問題：真車會猜它下一秒在哪，這裡沒有。` };
+    return { title: T("變道中側撞", "Va chạm ngang khi đang đổi làn"),
+             why: T(`撞的時候正在變道，這${name}在側面 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。兩側射線量到的距離夠遠，但它也在動。`,
+                    `Lúc va chạm xe đang đổi làn, ${name} này ở bên hông ${(Math.abs(rel) / PXM).toFixed(1)} m. Tia hai bên đo ra khoảng cách đủ xa, nhưng nó cũng đang di chuyển.`),
+             tip: T(`降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；加大張角（${Math.min(180, S.spread + 30)}°）讓側面射線看得更遠。這是「預測」的問題：真車會猜它下一秒在哪，這裡沒有。`,
+                    `Giảm tốc độ mục tiêu xuống ${Math.max(10, Math.round(vk * 0.8))} km/h; mở góc quét (${Math.min(180, S.spread + 30)}°) để tia bên hông nhìn xa hơn. Đây là vấn đề «dự đoán»: xe thật sẽ đoán giây sau nó ở đâu, ở đây thì không.`) };
   // 跟車規則的上限是「煞停距離＋12」，超過這個距離規則根本不讀（見上面的 else if）。
   // 舊版這裡建議「射線加長到 煞停距離＋15」，等於叫學生把規格加到規則看不到的地方：
   // 調了也不會有任何改變，而且跟第一節教的「煞停距離 × 1.25」對不上。
   const followCap = Math.ceil(sdThen + 12);
   const slower = Math.max(10, Math.round(vk * 0.8));
-  return { title: "看到了但來不及", why: `第一次看到這${name}在 ${seenAt.toFixed(1)} 公尺（煞停距離 ${sdThen.toFixed(1)} 公尺），但它也在動（減速、靠近，或像行人一樣橫向走進路徑），規則只看「現在的距離」，不會預測它下一秒在哪，最後距離不夠。`,
+  return { title: T("看到了但來不及", "Thấy rồi nhưng không kịp"),
+           why: T(`第一次看到這${name}在 ${seenAt.toFixed(1)} 公尺（煞停距離 ${sdThen.toFixed(1)} 公尺），但它也在動（減速、靠近，或像行人一樣橫向走進路徑），規則只看「現在的距離」，不會預測它下一秒在哪，最後距離不夠。`,
+                  `Lần đầu thấy ${name} này ở ${seenAt.toFixed(1)} m (quãng đường dừng ${sdThen.toFixed(1)} m), nhưng nó cũng đang chuyển động (giảm tốc, tiến lại gần, hoặc như người đi bộ bước ngang vào đường đi). Quy tắc chỉ nhìn «khoảng cách hiện tại», không dự đoán giây sau nó ở đâu, nên cuối cùng không đủ chỗ.`),
            tip: effLen >= followCap - 1
-             ? `降目標車速到 ${slower} km/h。<b>射線加長沒有用</b>：跟車規則只看 ${followCap} 公尺以內，你現在 ${effLen.toFixed(0)} 公尺已經到頂，再長規則也不看。這一次不是看不夠遠，是規則不會預測它下一秒走到哪。`
-             : `降目標車速到 ${slower} km/h；或射線加長到 ${followCap} 公尺——那是跟車規則的上限，再長規則就不看了。` };
+             ? T(`降目標車速到 ${slower} km/h。<b>射線加長沒有用</b>：跟車規則只看 ${followCap} 公尺以內，你現在 ${effLen.toFixed(0)} 公尺已經到頂，再長規則也不看。這一次不是看不夠遠，是規則不會預測它下一秒走到哪。`,
+                 `Giảm tốc độ mục tiêu xuống ${slower} km/h. <b>Kéo dài tia vô ích</b>: quy tắc bám đuôi chỉ nhìn trong ${followCap} m, bạn đang ở ${effLen.toFixed(0)} m là đã kịch trần, dài thêm quy tắc cũng không đọc. Lần này không phải nhìn chưa đủ xa, mà là quy tắc không dự đoán giây sau nó đi tới đâu.`)
+             : T(`降目標車速到 ${slower} km/h；或射線加長到 ${followCap} 公尺——那是跟車規則的上限，再長規則就不看了。`,
+                 `Giảm tốc độ mục tiêu xuống ${slower} km/h; hoặc kéo tia dài tới ${followCap} m — đó là trần của quy tắc bám đuôi, dài hơn nữa quy tắc không đọc.`) };
 }
 function crash(why, o) {
   S.crashed = true; S.crashWhy = why; S.stats.crash++;
   const d = diagnose(why, o);
-  $("crashBox").innerHTML = `<h3>碰撞　Va chạm：${why}</h3>
-    <div class="dx"><b>診斷：${d.title}</b><br><span class="why">${d.why}</span></div>
-    <div class="dx tip"><b>建議：</b>${d.tip}</div>
-    <div class="kbd">按 R 重新開始・按 H 看參數說明與診斷規則</div>`;
+  const C = T("：", ": ");
+  $("crashBox").innerHTML = `<h3>${T("碰撞", "Va chạm")}${C}${why}</h3>
+    <div class="dx"><b>${T("診斷", "Chẩn đoán")}${C}${d.title}</b><br><span class="why">${d.why}</span></div>
+    <div class="dx tip"><b>${T("建議", "Gợi ý")}${C}</b>${d.tip}</div>
+    <div class="kbd">${T("按 R 重新開始・按 H 看參數說明與診斷規則",
+                          "Bấm R để chạy lại · bấm H để xem giải thích tham số và quy tắc chẩn đoán")}</div>`;
   $("crash").style.display = "flex";
   log(`<b style="color:#D9463E">${why}</b>　診斷 Chẩn đoán：${d.title}`);
   log(`建議 Gợi ý：${d.tip}`);
@@ -1052,10 +1099,12 @@ resize(); reset(); requestAnimationFrame(frame);
 <script>
 // 語言切換：面板與 HUD 上每個雙語節點都帶 data-zh / data-vi，切換時整批換掉。
 // 預設越南文（這是越南籍專班）。選擇記在 localStorage，重新整理不會跑掉。
-// 註：滑桿下方會變動的提示文字與診斷視窗仍是中文，還沒翻。
+// 診斷視窗在上面那個區塊，透過 window.__L 讀目前語言（見該區塊的 T() ）。
+// 註：滑桿下方會變動的提示文字仍是中文，還沒翻。
 (function () {
   const KEY = "w4sim_lang";
   let lang = localStorage.getItem(KEY) === "zh" ? "zh" : "vi";
+  window.__L = lang;
   const bVi = document.getElementById("langVi"), bZh = document.getElementById("langZh");
   function apply() {
     document.querySelectorAll("[data-zh]").forEach((e) => {
@@ -1065,6 +1114,7 @@ resize(); reset(); requestAnimationFrame(frame);
       else if (e.dataset.html === "1") e.innerHTML = v;
       else e.textContent = v;
     });
+    window.__L = lang;
     document.documentElement.lang = lang === "vi" ? "vi" : "zh-Hant";
     bVi.classList.toggle("on", lang === "vi");
     bZh.classList.toggle("on", lang === "zh");
