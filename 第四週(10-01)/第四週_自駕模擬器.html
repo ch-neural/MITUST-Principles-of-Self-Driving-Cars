@@ -422,11 +422,16 @@ function spawnAhead() {
       for (let i = 0; i < count; i++) {
         const lane = lanes[i];
         const moto = S.motos && RND() < 0.6;
+        const nx = laneX(lane) + (moto ? (RND() - 0.5) * LANE_W * 0.8 : 0);
+        const ny = nextSpawnY + (RND() - 0.5) * 12 * PXM;
+        const nl = moto ? 2.0 * PXM : 4.4 * PXM, nw = moto ? 0.8 * PXM : 1.8 * PXM;
+        // 生成時就不要疊在別人身上：y 有 ±6 公尺抖動，同車道連續兩批很容易生在一起，
+        // 疊住之後跟車規則也救不回來（它只看前方、不處理已經重疊的），畫面上就是兩台車穿在一起。
+        if (traffic.some((o) => Math.abs(o.x - nx) < (o.w + nw) / 2 + 0.3 * PXM
+                             && Math.abs(o.y - ny) < (o.l + nl) / 2 + 2.0 * PXM)) continue;
         traffic.push({
           kind: moto ? "moto" : "car",
-          x: laneX(lane) + (moto ? (RND() - 0.5) * LANE_W * 0.8 : 0),
-          y: nextSpawnY + (RND() - 0.5) * 12 * PXM,
-          w: moto ? 0.8 * PXM : 1.8 * PXM, l: moto ? 2.0 * PXM : 4.4 * PXM,
+          x: nx, y: ny, w: nw, l: nl,
           speed: (moto ? (25 + RND() * 25) : (20 + RND() * 25)) / 3.6 * PXM,
           drift: moto ? (RND() - 0.5) * 1.6 * PXM : 0, driftT: 0,
           color: moto ? "#F5C242" : ["#C9D3DD", "#8FA3B5", "#5B7A99", "#E4E9EE", "#7B8FA1"][Math.floor(RND() * 5)],
@@ -652,16 +657,24 @@ function update(dt) {
   ego.y -= Math.cos(ego.angle) * ego.speed * dt;
   S.stats.dist += ego.speed * dt / PXM;
   // 車流
+  // 車流之間也要互相跟車。原本只有「後方來車」會閃自車，車流彼此完全不互動，
+  // 所以同車道上快車會直接穿過慢車（畫面上看得很清楚）。這裡讓每一台車都看
+  // 同車道正前方最近的一台（自車也算在內），太近就減速，讓開了再回到原本的速度。
+  // y 軸往前是遞減，所以「在前面」＝ y 比較小。
   for (const c of traffic) {
     c.y -= c.speed * dt;
-    if (c.fromRear) {
-      // 後方來車也有駕駛：追上就跟車，不會直接輾過去。
-      // 這樣一來，唯一會被追撞的情況就是自車切到它前面——那才是「有沒有看側後方」的問題。
-      const gap = (c.y - ego.y) - (c.l + ego.l) / 2;
-      const sameLane = Math.abs(c.x - ego.x) < LANE_W * 0.7;
-      if (sameLane && gap < 18 * PXM) c.speed = Math.max(0, Math.max(ego.speed * 0.95, c.speed - 7 * PXM * dt));
-      else if (c.speed < c.v0) c.speed = Math.min(c.v0, c.speed + 2.5 * PXM * dt);
-    }
+    if (c.v0 === undefined) c.v0 = c.speed;          // 舊資料相容：沒記過就以生成速度為準
+    let gap = Infinity, leadV = Infinity;
+    const look = (o, ol, oy, ox, ov) => {
+      if (Math.abs(ox - c.x) >= LANE_W * 0.7) return;   // 不同車道不算
+      const g = (c.y - oy) - (c.l + ol) / 2;
+      if (g >= 0 && g < gap) { gap = g; leadV = ov; }
+    };
+    for (const o of traffic) if (o !== c) look(o, o.l, o.y, o.x, o.speed);
+    look(ego, ego.l, ego.y, ego.x, ego.speed);
+    const keep = c.fromRear ? 18 * PXM : 12 * PXM;     // 後方來車留大一點，維持原本的行為
+    if (gap < keep) c.speed = Math.max(0, Math.max(leadV * 0.95, c.speed - 7 * PXM * dt));
+    else if (c.speed < c.v0) c.speed = Math.min(c.v0, c.speed + 2.5 * PXM * dt);
     if (c.kind === "moto") { c.driftT -= dt; if (c.driftT <= 0) { c.drift = (RND() - 0.5) * 2.2 * PXM; c.driftT = 1 + RND() * 2; } c.x += c.drift * dt;
       c.x = Math.max(-ROAD_W / 2 + c.w, Math.min(ROAD_W / 2 - c.w, c.x)); }
   }
