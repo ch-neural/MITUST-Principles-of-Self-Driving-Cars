@@ -206,6 +206,8 @@
       <label class="row"><span data-zh="自動模式目標車速（km/h）" data-vi="Tốc độ mục tiêu"></span> <span class="vi" data-zh="Tốc độ mục tiêu" data-vi="自動模式目標車速（km/h）"></span><b id="vTarget">50</b></label>
       <input type="range" id="target" min="10" max="80" value="50">
       <div class="hint" data-zh="車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。" data-vi="Tốc độ quyết định quãng đường phanh (HUD phía trên). Chiều dài tia phải dài hơn nó ít nhất 5 m."></div>
+      <label class="tog"><input type="checkbox" id="predPed"> <span data-zh="變道前先預測行人路徑（1.5 秒）" data-vi="Dự đoán đường đi người đi bộ (1,5 giây)"></span> <span class="vi" data-zh="Dự đoán đường đi người đi bộ (1,5 giây)" data-vi="變道前先預測行人路徑（1.5 秒）"></span></label>
+      <div class="hint" data-zh="預設關閉。關的時候，規則只問「他現在在不在我要去的車道裡」——旁邊 3.7 公尺的行人不算，車子就切過去，一秒半後他走進來。打開之後會用橫向速度推算他 1.5 秒後在哪。" data-vi="Mặc định tắt. Khi tắt, quy tắc chỉ hỏi «bây giờ người đó có trong làn ta sắp sang không» — người đi bộ cách 3,7 m bên hông không tính, xe tạt sang, 1,5 giây sau người đó bước vào. Bật lên thì dùng vận tốc ngang để tính trước 1,5 giây."></div>
       <label class="tog"><input type="checkbox" id="fixSeed" checked> <span data-zh="固定車流（同一批車重播）" data-vi="Cố định dòng xe"></span> <span class="vi" data-zh="Cố định dòng xe" data-vi="固定車流（同一批車重播）"></span></label>
       <div class="row" id="seedRow"><span data-zh="種子" data-vi="Seed"></span> <span class="vi" data-zh="Seed" data-vi="種子"></span><input type="number" id="seed" min="1" max="999" value="1"></div>
       <div class="hint" id="hSeed"></div>
@@ -246,6 +248,7 @@
         <tr><td>違停貨車</td><td>佔半個車道的靜止障礙</td><td>張角窄的時候很晚才發現</td><td>—</td></tr>
         <tr><td>行人穿越</td><td>從路邊橫向進入的目標</td><td>從側面進來，考驗張角與射線數</td><td>—</td></tr>
         <tr><td>雨天</td><td>感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊</td><td>同樣的參數會撐不住，要降速或加射線補冗餘</td><td>—</td></tr>
+        <tr><td>變道前先預測行人路徑</td><td>真車規劃器最基本的一步：把行人的橫向速度往前推，猜他 1.5 秒後在哪</td><td>不再切進「現在空、等一下會有人走進來」的車道</td><td>關掉的時候，旁邊 3.7 公尺的行人不算「在車道裡」，車子照樣切過去</td></tr>
         <tr><td>夜晚</td><td>射線再縮 15%，畫面變暗</td><td>—</td><td>—</td></tr>
       </table>
       <h3>自動駕駛用的三條規則（很簡單，這是故意的）</h3>
@@ -363,6 +366,7 @@ const S = {
   rays: 7, len: 25, spread: 90, showRays: true,
   azm: 24, spin: 10, beam: 0, mem: [], lastRear: 0,
   density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50,
+  predPed: false,                 // 變道前先預測行人 1.5 秒後的位置（預設關，開了答案會變）
   stats: { dist: 0, crash: 0, hard: 0, lane: 0, drop: 0, abort: 0 },
   keys: {}, act: "—", lastHard: 0, laneTarget: 1, laneCooldown: 0, recentDrops: [],
 };
@@ -597,6 +601,25 @@ function autopilot(dt) {
   // 所以隔壁車道上的東西會被算進 fwd，dL／dR 反而看不到它。結果是：車子一邊為那個
   // 東西煞車，一邊判定隔壁是空的，就朝它切過去（實測 39 次變道有 15 次切進已經有東西的車道）。
   // 改成把每條射線的命中點投影回車道，再問目標車道前方最近的障礙有多遠。
+  // 一步預測：行人與鑽縫的機車有橫向速度，用它推算 1.5 秒後會在哪一條車道。
+  // 關掉的時候規則只看「現在」——實測被撞的行人在變道當下就看得到了（前方 15 公尺、
+  // 旁邊 3.7 公尺），只是還沒踏進車道，所以不算數。加射線救不了，這不是看不看得到的問題。
+  const PRED = 1.5;
+  const willEnter = (li) => {
+    if (!S.predPed) return Infinity;
+    const lx = laneX(li); let best = Infinity;
+    for (const pp of peds) {
+      if (!pp.started) continue;
+      if (Math.abs(pp.x + pp.vx * PRED - lx) > LANE_W * 0.6) continue;
+      const fd = ego.y - pp.y; if (fd > 0 && fd < best) best = fd;
+    }
+    for (const c of traffic) {
+      if (c.kind !== "moto" || !c.drift) continue;
+      if (Math.abs(c.x + c.drift * PRED - lx) > LANE_W * 0.6) continue;
+      const fd = ego.y - c.y; if (fd > 0 && fd < best) best = fd;
+    }
+    return best;
+  };
   const laneClear = (li) => {
     if (li < 0 || li >= LANES) return -1;
     const lx = laneX(li); let best = Infinity;
@@ -612,7 +635,8 @@ function autopilot(dt) {
   };
   const curLane = laneOf(ego.x);
   const dF = minD(fwd), dRL = minD(rearL), dRR = minD(rearR);
-  const dL = laneClear(curLane - 1), dR = laneClear(curLane + 1);
+  const dL = Math.min(laneClear(curLane - 1), willEnter(curLane - 1)),
+        dR = Math.min(laneClear(curLane + 1), willEnter(curLane + 1));
   const v = ego.speed;
   const stopDist = v * REACT + v * v / (2 * BRAKE);   // 煞停距離
   const margin = 2.5 * PXM;
@@ -1050,7 +1074,7 @@ function updateHints() {
 }
 ["rays", "spread", "len", "azm", "spin", "target"].forEach((id) => $(id).addEventListener("input", updateHints));
 ["rain", "night"].forEach((id) => $(id).addEventListener("change", updateHints));
-["showRays", "motos", "parked", "peds", "rain", "night"].forEach((k) => {
+["showRays", "motos", "parked", "peds", "rain", "night", "predPed"].forEach((k) => {
   const el = $(k); const f = () => { S[k] = el.checked; };
   el.addEventListener("change", () => {
     f();
