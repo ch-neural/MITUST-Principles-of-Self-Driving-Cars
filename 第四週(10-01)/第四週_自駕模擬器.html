@@ -14,7 +14,10 @@
   .panel { background:#fff; border-right:1px solid var(--line); overflow-y:auto; padding:14px 16px; }
   .panel.right { border-right:none; border-left:1px solid var(--line); }
   h1 { font-size:17px; margin:0 0 2px; color:var(--navy); }
-  .vi { color:var(--mute); font-size:11px; font-weight:normal; display:block; }
+  /* 每個標籤都有兩個 span：主要語言，以及 class="vi" 的另一種語言（兩個 data 屬性是對調的）。
+     語言切換鈕要真的切換，所以次要那一行預設不顯示；想看雙語對照就在 <html> 上加 data-bi="1"。 */
+  .vi { color:var(--mute); font-size:11px; font-weight:normal; display:none; }
+  html[data-bi="1"] .vi { display:block; }
   .langbar { display:flex; gap:6px; margin:0 0 10px; }
   .langbar button { flex:1; padding:5px 0; font-size:12px; border-radius:6px; cursor:pointer;
                     border:1px solid var(--line,#2a3a4d); background:transparent; color:inherit; }
@@ -1073,6 +1076,8 @@ resize(); reset(); requestAnimationFrame(frame);
   bVi.onclick = () => { lang = "vi"; localStorage.setItem(KEY, lang); apply(); };
   bZh.onclick = () => { lang = "zh"; localStorage.setItem(KEY, lang); apply(); };
   window.__setLang = (l) => { lang = l; apply(); };   // 給截圖用
+  // 需要雙語對照時在主控台輸入 __setBilingual(true)
+  window.__setBilingual = (on) => { document.documentElement.dataset.bi = on ? "1" : ""; };
   apply();
 })();
 </script>
