@@ -272,6 +272,7 @@
         <tr><td>看不到：視野外</td><td>撞到的東西從來沒被任何射線碰到，而且它是從側面進來的</td><td>加大張角，或加射線數</td></tr>
         <tr><td>看不到：縫隙太大</td><td>從來沒被射線碰到，但它在張角範圍內</td><td>加射線數</td></tr>
         <tr><td>看到太晚：射線太短</td><td>第一次看到它時的距離，已經小於當時的煞停距離</td><td>射線長度加到煞停距離＋5 公尺，或降速</td></tr>
+        <tr><td>看到太晚：從側面切進來</td><td>同上，但射線長度其實夠——它是從旁邊進到路徑上的</td><td>降速（不花錢）；要動規格的話加射線數比加張角有效</td></tr>
         <tr><td>看到太晚：雨天漏讀</td><td>雨天，撞前兩秒有多次漏讀</td><td>降速；或加射線數補冗餘</td></tr>
         <tr><td>看到了但來不及：車速太快</td><td>看到時距離夠，但煞停距離大於當時距離（對方也在動）</td><td>降目標車速</td></tr>
         <tr><td>變道中側撞</td><td>撞的時候正在變道，對方在側面</td><td>張角加大讓側面射線看得更遠；或降速</td></tr>
@@ -772,8 +773,8 @@ function diagnose(why, o) {
              tip: effLen < sdThen + 3
                ? T(`射線長度至少 ${needLenThen} 公尺（煞停距離＋5）${S.rain ? "，雨天要再除以 0.55" : ""}；或把目標車速降到 ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h 以下。`,
                    `Tia phải dài ít nhất ${needLenThen} m (quãng đường dừng + 5)${S.rain ? ", trời mưa còn phải chia cho 0,55" : ""}; hoặc hạ tốc độ mục tiêu xuống dưới ${Math.max(10, Math.round(Math.sqrt(Math.max(1, (effLen - 5) * 2 * 6)) * 3.6))} km/h.`)
-               : T(`降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h；加大張角讓側面的東西更早被看到。`,
-                   `Giảm tốc độ mục tiêu xuống ${Math.max(10, Math.round(vk * 0.7))} km/h; mở rộng góc quét để thấy sớm hơn những gì đến từ bên hông.`) };
+               : T(`降目標車速到 ${Math.max(10, Math.round(vk * 0.7))} km/h——這一項不花錢。若要動規格，<b>加射線數</b>（目前 ${S.rays} 條）比加張角有效：射線之間在 ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} 公尺的縫隙，正是它晚被看到的原因；但射線數是成本最高的一項。`,
+                   `Giảm tốc độ mục tiêu xuống ${Math.max(10, Math.round(vk * 0.7))} km/h — cách này không tốn tiền. Nếu phải đổi thông số thì <b>thêm tia</b> (hiện ${S.rays} tia) hiệu quả hơn mở góc quét: khe giữa hai tia rộng ${(2 * effLen * Math.sin(S.spread / (S.rays - 1 || 1) / 2 * Math.PI / 180)).toFixed(1)} m chính là lý do nó bị thấy muộn; nhưng số tia là thứ đắt nhất.`) };
   if (changing || side)
     return { title: T("變道中側撞", "Va chạm ngang khi đang đổi làn"),
              why: T(`撞的時候正在變道，這${name}在側面 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。兩側射線量到的距離夠遠，但它也在動。`,
