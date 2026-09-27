@@ -395,7 +395,14 @@ function spawnAhead() {
   while (nextSpawnY > horizon) {
     const n = S.density;
     if (n > 0) {
-      const lanes = [0, 1, 2, 3].sort(() => RND() - 0.5);
+      // 不能用 sort(() => RND() - 0.5)：比較函式不一致，同一串亂數在不同時候會排出不同結果
+      // （實測同一個種子重跑，車子會被分到不同車道，撞擊時間就跟著跳），而且各瀏覽器也不一樣。
+      // 改用 Fisher–Yates：同一個種子保證洗出同一個順序。
+      const lanes = [0, 1, 2, 3];
+      for (let i = lanes.length - 1; i > 0; i--) {
+        const j = Math.floor(RND() * (i + 1));
+        [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+      }
       const count = Math.min(LANES - 1, Math.round(n / 8 * 3 + RND()));
       for (let i = 0; i < count; i++) {
         const lane = lanes[i];
