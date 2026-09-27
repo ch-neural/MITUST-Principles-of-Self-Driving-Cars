@@ -15,6 +15,11 @@
   .panel.right { border-right:none; border-left:1px solid var(--line); }
   h1 { font-size:17px; margin:0 0 2px; color:var(--navy); }
   .vi { color:var(--mute); font-size:11px; font-weight:normal; display:block; }
+  .langbar { display:flex; gap:6px; margin:0 0 10px; }
+  .langbar button { flex:1; padding:5px 0; font-size:12px; border-radius:6px; cursor:pointer;
+                    border:1px solid var(--line,#2a3a4d); background:transparent; color:inherit; }
+  .langbar button.on { background:#00a896; border-color:#00a896; color:#fff; font-weight:bold; }
+
   .sec { margin-top:14px; padding-top:10px; border-top:1px solid var(--line); }
   .sec h2 { font-size:12.5px; color:var(--tealD); margin:0 0 8px; letter-spacing:.5px; }
   label.row { display:block; margin:8px 0 2px; font-size:13px; }
@@ -26,15 +31,9 @@
   #seedRow input { width:70px; padding:3px 6px; border:1px solid var(--line); border-radius:5px;
                    font-family:inherit; font-size:12.5px; margin-left:auto; }
   #seedRow.off { opacity:.4; pointer-events:none; }
-  .pgrp { font-size:11px; color:var(--mute); margin:9px 0 5px; }
-  .pgrp:first-of-type { margin-top:2px; }
-  .pbtns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-  .pbtns button { display:block; text-align:left; padding:7px 9px; line-height:1.35; }
-  .pbtns button b { display:block; font-size:12px; }
-  .pbtns button span { display:block; font-size:10.5px; color:var(--mute); }
-  .pbtns button span i { display:block; font-style:normal; color:var(--tealD); margin-top:2px; }
-  .pbtns button.on { background:var(--tealD); border-color:var(--tealD); }
-  .pbtns button.on b, .pbtns button.on span, .pbtns button.on span i { color:#fff; }
+  #presetSel { width:100%; padding:7px 8px; font-size:12px; font-family:inherit; color:inherit;
+               background:var(--card,#fff); border:1px solid var(--line,#d7dee6); border-radius:6px; }
+  #presetSel:focus { outline:2px solid var(--tealD); outline-offset:1px; }
   button { border:1px solid var(--line); background:var(--card); color:var(--navy); border-radius:7px;
            padding:6px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; }
   button.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
@@ -126,89 +125,90 @@
 <body>
 <div id="app">
   <div class="panel">
-    <h1>自動駕駛原理　瀏覽器模擬器<span class="vi">Trình mô phỏng xe tự lái trên trình duyệt</span></h1>
-    <div class="note">車上那台電腦只看得到射線碰到的東西。先用<b>固定式</b>玩一輪，再切到<b>旋轉式</b>跑同一個情境，比較兩者各自看不到什麼。</div>
+    <h1><span data-zh="自動駕駛原理　瀏覽器模擬器" data-vi="Trình mô phỏng xe tự lái trên trình duyệt"></span><span class="vi" data-zh="Trình mô phỏng xe tự lái trên trình duyệt" data-vi="自動駕駛原理　瀏覽器模擬器"></span></h1>
+    <div class="langbar"><button id="langVi">Tiếng Việt</button><button id="langZh">中文</button></div>
+    <div class="note" data-html="1" data-zh="車上那台電腦只看得到射線碰到的東西。先用&lt;b&gt;固定式&lt;/b&gt;玩一輪，再切到&lt;b&gt;旋轉式&lt;/b&gt;跑同一個情境，比較兩者各自看不到什麼。" data-vi="Máy tính trên xe chỉ thấy được những gì tia chạm tới. Hãy chơi một vòng với &lt;b&gt;loại cố định&lt;/b&gt;, rồi chuyển sang &lt;b&gt;loại xoay&lt;/b&gt; chạy cùng tình huống, so xem mỗi loại bỏ sót cái gì."></div>
 
     <div class="sec" id="presetSec">
-      <h2>上課情境　Tình huống trên lớp</h2>
-      <div class="pgrp">第 1 節　三個滑桿各自的效果　Tiết 1 · ba thanh trượt</div>
-      <div class="pbtns">
-        <button data-preset="one"><b>只有一條射線</b><span>Chỉ một tia<i>看縫隙有多致命</i></span></button>
-        <button data-preset="std"><b>標準配置</b><span>Cấu hình chuẩn<i>當比較的基準</i></span></button>
-        <button data-preset="narrow"><b>張角太窄</b><span>Góc quét quá hẹp<i>側面切進來看不到</i></span></button>
-        <button data-preset="short"><b>射線太短</b><span>Tia quá ngắn<i>看到了也煞不住</i></span></button>
-      </div>
-      <div class="pgrp">第 3 節　課堂四題　Tiết 3 · bốn câu</div>
-      <div class="pbtns">
-        <button class="warn" data-preset="hanoi"><b>第一、二題　河內尖峰</b><span>Câu 1–2 · Hà Nội giờ cao điểm<i>9 條・25 m・120°，從這裡開始調</i></span></button>
-        <button class="warn" data-preset="rainonly"><b>第三題　只加雨天</b><span>Câu 3 · chỉ bật mưa<i>保留你調好的三個數字，只開雨</i></span></button>
-        <button data-preset="spin"><b>第四題　旋轉式</b><span>Câu 4 · LiDAR xoay<i>360°，但輪流掃</i></span></button>
-        <button class="warn" data-preset="spinslow"><b>旋轉式　2 Hz 慢動作</b><span>Xoay 2 Hz chậm<i>看清楚它在輪流</i></span></button>
-      </div>
-      <div class="pgrp">其他　Khác</div>
-      <div class="pbtns">
-        <button class="warn" data-preset="rainnight"><b>雨夜</b><span>Mưa đêm<i>兩種衰減疊在一起</i></span></button>
-      </div>
-      <div class="hint" id="presetHint">選一個情境，參數會自動設好並重新開始。之後想微調，直接動下面的滑桿就好。</div>
+      <h2><span data-zh="上課情境" data-vi="Tình huống trên lớp"></span></h2>
+      <select id="presetSel">
+        <option value="" data-zh="— 選一個情境 —" data-vi="— Chọn một tình huống —"></option>
+        <optgroup data-zh="第 1 節　三個滑桿各自的效果" data-vi="Tiết 1 · ba thanh trượt">
+          <option value="one" data-zh="只有一條射線——看縫隙有多致命" data-vi="Chỉ một tia — thấy khe hở nguy hiểm đến mức nào"></option>
+          <option value="std" data-zh="標準配置——當比較的基準" data-vi="Cấu hình chuẩn — làm mốc để so sánh"></option>
+          <option value="narrow" data-zh="張角太窄——側面切進來看不到" data-vi="Góc quét quá hẹp — xe tạt ngang không thấy"></option>
+          <option value="short" data-zh="射線太短——看到了也煞不住" data-vi="Tia quá ngắn — thấy rồi cũng phanh không kịp"></option>
+        </optgroup>
+        <optgroup data-zh="第 3 節　課堂四題" data-vi="Tiết 3 · bốn câu">
+          <option value="hanoi" data-zh="第一、二題　河內尖峰——9 條・25 m・120°" data-vi="Câu 1–2 · Hà Nội giờ cao điểm — 9 tia · 25 m · 120°"></option>
+          <option value="rainonly" data-zh="第三題　只加雨天——保留你的三個數字" data-vi="Câu 3 · chỉ bật mưa — giữ nguyên ba con số của bạn"></option>
+          <option value="spin" data-zh="第四題　旋轉式——360°，但輪流掃" data-vi="Câu 4 · LiDAR xoay — 360°, nhưng quét lần lượt"></option>
+          <option value="spinslow" data-zh="旋轉式　2 Hz 慢動作——看清楚它在輪流" data-vi="Xoay 2 Hz chậm — nhìn rõ nó đang quét lần lượt"></option>
+        </optgroup>
+        <optgroup data-zh="其他" data-vi="Khác">
+          <option value="rainnight" data-zh="雨夜——兩種衰減疊在一起" data-vi="Mưa đêm — hai kiểu suy giảm chồng lên nhau"></option>
+        </optgroup>
+      </select>
+      <div class="hint" id="presetHint" data-zh="選一個情境，參數會自動設好並重新開始。之後想微調，直接動下面的滑桿就好。" data-vi="Chọn một tình huống, tham số sẽ tự đặt và chạy lại. Muốn chỉnh thêm thì kéo thanh trượt bên dưới."></div>
     </div>
 
     <div class="sec">
-      <h2>光達型式　Loại LiDAR</h2>
+      <h2><span data-zh="光達型式" data-vi="Loại LiDAR"></span></h2>
       <div class="mount">
-        <button id="mtFixed" class="on"><b>固定式</b><span>裝在車頭・只看前方<br>Cố định · phía trước</span></button>
-        <button id="mtSpin"><b>旋轉式</b><span>裝在車頂・360° 輪流<br>Xoay · trên nóc xe</span></button>
+        <button id="mtFixed" class="on"><b data-zh="固定式" data-vi="Cố định"></b><span><span data-zh="裝在車頭・只看前方" data-vi="Gắn ở đầu xe · chỉ nhìn phía trước"></span><br><span data-zh="Cố định · phía trước" data-vi="固定式・只看前方"></span></span></button>
+        <button id="mtSpin"><b data-zh="旋轉式" data-vi="Xoay"></b><span><span data-zh="裝在車頂・360° 輪流" data-vi="Gắn trên nóc xe · quét 360° lần lượt"></span><br><span data-zh="Xoay · trên nóc xe" data-vi="旋轉式・裝在車頂"></span></span></button>
       </div>
       <div class="hint" id="mountHint"></div>
 
       <div id="fixedCtl">
-        <label class="row">射線數 <span class="vi">Số tia</span><b id="vRays">7</b></label>
+        <label class="row"><span data-zh="射線數" data-vi="Số tia"></span> <span class="vi" data-zh="Số tia" data-vi="射線數"></span><b id="vRays">7</b></label>
         <input type="range" id="rays" min="1" max="60" value="7">
         <div class="hint" id="hRays"></div>
-        <label class="row">張角（度）<span class="vi">Góc quét (°)</span><b id="vSpread">90</b></label>
+        <label class="row"><span data-zh="張角（度）" data-vi="Góc quét (°)"></span> <span class="vi" data-zh="Góc quét (°)" data-vi="張角（度）"></span><b id="vSpread">90</b></label>
         <input type="range" id="spread" min="10" max="180" value="90">
         <div class="hint" id="hSpread"></div>
       </div>
 
       <div id="spinCtl" style="display:none">
-        <label class="row">每圈取樣數 <span class="vi">Số điểm mỗi vòng</span><b id="vAzm">24</b></label>
+        <label class="row"><span data-zh="每圈取樣數" data-vi="Số điểm mỗi vòng"></span> <span class="vi" data-zh="Số điểm mỗi vòng" data-vi="每圈取樣數"></span><b id="vAzm">24</b></label>
         <input type="range" id="azm" min="8" max="72" step="4" value="24">
         <div class="hint" id="hAzm"></div>
-        <label class="row">轉速（Hz）<span class="vi">Tốc độ quay</span><b id="vSpin">10</b></label>
+        <label class="row"><span data-zh="轉速（Hz）" data-vi="Tốc độ quay"></span> <span class="vi" data-zh="Tốc độ quay" data-vi="轉速（Hz）"></span><b id="vSpin">10</b></label>
         <input type="range" id="spin" min="2" max="20" step="1" value="10">
         <div class="hint" id="hSpin"></div>
       </div>
 
-      <label class="row">射線長度（公尺）<span class="vi">Tầm đo (m)</span><b id="vLen">25</b></label>
+      <label class="row"><span data-zh="射線長度（公尺）" data-vi="Tầm đo (m)"></span> <span class="vi" data-zh="Tầm đo (m)" data-vi="射線長度（公尺）"></span><b id="vLen">25</b></label>
       <input type="range" id="len" min="10" max="120" value="25">
       <div class="hint" id="hLen"></div>
-      <label class="tog"><input type="checkbox" id="showRays" checked> 顯示射線 <span class="vi">Hiện tia</span></label>
+      <label class="tog"><input type="checkbox" id="showRays" checked> <span data-zh="顯示射線" data-vi="Hiện tia"></span> <span class="vi" data-zh="Hiện tia" data-vi="顯示射線"></span></label>
     </div>
 
     <div class="sec">
-      <h2>路況　Điều kiện đường</h2>
-      <label class="row">車流密度 <span class="vi">Mật độ xe</span><b id="vDensity">3</b></label>
+      <h2><span data-zh="路況" data-vi="Điều kiện đường"></span></h2>
+      <label class="row"><span data-zh="車流密度" data-vi="Mật độ xe"></span> <span class="vi" data-zh="Mật độ xe" data-vi="車流密度"></span><b id="vDensity">3</b></label>
       <input type="range" id="density" min="0" max="8" value="3">
-      <div class="hint">車愈多，變道空間愈少，愈常跟車。</div>
-      <label class="tog"><input type="checkbox" id="motos"> 機車流（會鑽縫） <span class="vi">Xe máy</span></label>
-      <label class="tog"><input type="checkbox" id="parked"> 違停貨車 <span class="vi">Xe tải đỗ trái phép</span></label>
-      <label class="tog"><input type="checkbox" id="peds"> 行人穿越 <span class="vi">Người đi bộ băng qua</span></label>
-      <label class="tog"><input type="checkbox" id="rain"> 雨天（射線變短、有雜訊） <span class="vi">Trời mưa</span></label>
-      <label class="tog"><input type="checkbox" id="night"> 夜晚 <span class="vi">Ban đêm</span></label>
+      <div class="hint" data-zh="車愈多，變道空間愈少，愈常跟車。" data-vi="Càng nhiều xe, càng ít chỗ đổi làn, càng phải bám đuôi."></div>
+      <label class="tog"><input type="checkbox" id="motos"> <span data-zh="機車流（會鑽縫）" data-vi="Xe máy"></span> <span class="vi" data-zh="Xe máy" data-vi="機車流（會鑽縫）"></span></label>
+      <label class="tog"><input type="checkbox" id="parked"> <span data-zh="違停貨車" data-vi="Xe tải đỗ trái phép"></span> <span class="vi" data-zh="Xe tải đỗ trái phép" data-vi="違停貨車"></span></label>
+      <label class="tog"><input type="checkbox" id="peds"> <span data-zh="行人穿越" data-vi="Người đi bộ băng qua"></span> <span class="vi" data-zh="Người đi bộ băng qua" data-vi="行人穿越"></span></label>
+      <label class="tog"><input type="checkbox" id="rain"> <span data-zh="雨天（射線變短、有雜訊）" data-vi="Trời mưa"></span> <span class="vi" data-zh="Trời mưa" data-vi="雨天（射線變短、有雜訊）"></span></label>
+      <label class="tog"><input type="checkbox" id="night"> <span data-zh="夜晚" data-vi="Ban đêm"></span> <span class="vi" data-zh="Ban đêm" data-vi="夜晚"></span></label>
     </div>
 
     <div class="sec">
-      <h2>模式　Chế độ</h2>
-      <div class="mode"><button id="mAuto" class="on">自動駕駛 Tự lái</button><button id="mManual">手動 Lái tay</button></div>
-      <label class="row">自動模式目標車速（km/h）<span class="vi">Tốc độ mục tiêu</span><b id="vTarget">50</b></label>
+      <h2><span data-zh="模式" data-vi="Chế độ"></span></h2>
+      <div class="mode"><button id="mAuto" class="on" data-zh="自動駕駛 Tự lái" data-vi="Tự lái 自動駕駛"></button><button id="mManual" data-zh="手動 Lái tay" data-vi="Lái tay 手動"></button></div>
+      <label class="row"><span data-zh="自動模式目標車速（km/h）" data-vi="Tốc độ mục tiêu"></span> <span class="vi" data-zh="Tốc độ mục tiêu" data-vi="自動模式目標車速（km/h）"></span><b id="vTarget">50</b></label>
       <input type="range" id="target" min="10" max="80" value="50">
-      <div class="hint">車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。</div>
-      <label class="tog"><input type="checkbox" id="fixSeed" checked> 固定車流（同一批車重播） <span class="vi">Cố định dòng xe</span></label>
-      <div class="row" id="seedRow">種子 <span class="vi">Seed</span><input type="number" id="seed" min="1" max="999" value="1"></div>
+      <div class="hint" data-zh="車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。" data-vi="Tốc độ quyết định quãng đường phanh (HUD phía trên). Chiều dài tia phải dài hơn nó ít nhất 5 m."></div>
+      <label class="tog"><input type="checkbox" id="fixSeed" checked> <span data-zh="固定車流（同一批車重播）" data-vi="Cố định dòng xe"></span> <span class="vi" data-zh="Cố định dòng xe" data-vi="固定車流（同一批車重播）"></span></label>
+      <div class="row" id="seedRow"><span data-zh="種子" data-vi="Seed"></span> <span class="vi" data-zh="Seed" data-vi="種子"></span><input type="number" id="seed" min="1" max="999" value="1"></div>
       <div class="hint" id="hSeed"></div>
-      <div class="btns"><button id="helpBtn">參數說明與診斷規則</button></div>
+      <div class="btns"><button id="helpBtn" data-zh="參數說明與診斷規則" data-vi="Giải thích tham số và quy tắc chẩn đoán"></button></div>
       <div class="btns">
-        <button class="primary" id="restart">重新開始 <span class="vi" style="display:inline;color:#cfe">Bắt đầu lại</span></button>
-        <button id="pause">暫停 / 繼續</button>
+        <button class="primary" id="restart"><span data-zh="重新開始" data-vi="Bắt đầu lại"></span> <span class="vi" style="display:inline;color:#cfe" data-zh="Bắt đầu lại" data-vi="重新開始"></span></button>
+        <button id="pause" data-zh="暫停 / 繼續" data-vi="Tạm dừng / Tiếp tục"></button>
       </div>
     </div>
 
@@ -217,15 +217,15 @@
   <div id="stage">
     <canvas id="cv"></canvas>
     <div id="hud">
-      <div class="tile"><div class="k">車速 Tốc độ</div><div class="v"><span id="hSpeed">0</span><span class="u">km/h</span></div></div>
-      <div class="tile"><div class="k">最近障礙 Vật cản gần nhất</div><div class="v"><span id="hDist">—</span><span class="u">m</span></div></div>
-      <div class="tile"><div class="k">前方資料年齡 Tuổi dữ liệu</div><div class="v"><span id="hAge">0</span><span class="u">ms</span></div></div>
-      <div class="tile act"><div class="k">決策 Quyết định</div><div class="v" id="hAct">—</div></div>
-      <div class="tile"><div class="k">煞停距離 Quãng đường phanh</div><div class="v"><span id="hBrake">0</span><span class="u">m</span></div></div>
+      <div class="tile"><div class="k" data-zh="車速 Tốc độ" data-vi="Tốc độ 車速"></div><div class="v"><span id="hSpeed">0</span><span class="u">km/h</span></div></div>
+      <div class="tile"><div class="k" data-zh="最近障礙 Vật cản gần nhất" data-vi="Vật cản gần nhất 最近障礙"></div><div class="v"><span id="hDist">—</span><span class="u">m</span></div></div>
+      <div class="tile"><div class="k" data-zh="前方資料年齡 Tuổi dữ liệu" data-vi="Tuổi dữ liệu 前方資料年齡"></div><div class="v"><span id="hAge">0</span><span class="u">ms</span></div></div>
+      <div class="tile act"><div class="k" data-zh="決策 Quyết định" data-vi="Quyết định 決策"></div><div class="v" id="hAct">—</div></div>
+      <div class="tile"><div class="k" data-zh="煞停距離 Quãng đường phanh" data-vi="Quãng đường phanh 煞停距離"></div><div class="v"><span id="hBrake">0</span><span class="u">m</span></div></div>
     </div>
     <div id="crash"><div id="crashBox"></div></div>
     <div id="help"><div>
-      <button class="close" id="helpClose">關閉</button>
+      <button class="close" id="helpClose" data-zh="關閉" data-vi="Đóng"></button>
       <h3>參數說明　Giải thích tham số</h3>
       <table>
         <tr><th>參數</th><th>對應真車的什麼</th><th>調大會怎樣</th><th>調小會怎樣</th></tr>
@@ -265,26 +265,26 @@
   <!-- 手機才會出現的分頁列 -->
   <div id="mtabs">
     <button data-tab="set" class="on">調整參數　Tham số</button>
-    <button data-tab="read">這一趟　Chuyến này</button>
+    <button data-tab="read"><span data-zh="這一趟　Chuyến này" data-vi="Chuyến này　這一趟"></span></button>
   </div>
 
   <div class="panel right">
-    <h2 style="font-size:13px;color:var(--tealD);margin:0 0 6px">這一趟　Chuyến này</h2>
-    <div class="stat"><span>行駛距離 <span class="vi">Quãng đường</span></span><b><span id="sDist">0</span> m</b></div>
-    <div class="stat"><span>時間 <span class="vi">Thời gian</span></span><b><span id="sTime">0</span> s</b></div>
-    <div class="stat"><span>碰撞 <span class="vi">Va chạm</span></span><b id="sCrash">0</b></div>
-    <div class="stat"><span>緊急煞車 <span class="vi">Phanh gấp</span></span><b id="sHard">0</b></div>
-    <div class="stat"><span>變換車道 <span class="vi">Đổi làn</span></span><b id="sLane">0</b></div>
-    <div class="stat"><span>放棄變道（後方有車） <span class="vi">Hủy đổi làn</span></span><b id="sAbort">0</b></div>
-    <div class="stat"><span>感測器漏讀 <span class="vi">Tia mất tín hiệu</span></span><b id="sDrop">0</b></div>
+    <h2 style="font-size:13px;color:var(--tealD);margin:0 0 6px"><span data-zh="這一趟　Chuyến này" data-vi="Chuyến này　這一趟"></span></h2>
+    <div class="stat"><span><span data-zh="行駛距離" data-vi="Quãng đường"></span> <span class="vi" data-zh="Quãng đường" data-vi="行駛距離"></span></span><b><span id="sDist">0</span> m</b></div>
+    <div class="stat"><span><span data-zh="時間" data-vi="Thời gian"></span> <span class="vi" data-zh="Thời gian" data-vi="時間"></span></span><b><span id="sTime">0</span> s</b></div>
+    <div class="stat"><span><span data-zh="碰撞" data-vi="Va chạm"></span> <span class="vi" data-zh="Va chạm" data-vi="碰撞"></span></span><b id="sCrash">0</b></div>
+    <div class="stat"><span><span data-zh="緊急煞車" data-vi="Phanh gấp"></span> <span class="vi" data-zh="Phanh gấp" data-vi="緊急煞車"></span></span><b id="sHard">0</b></div>
+    <div class="stat"><span><span data-zh="變換車道" data-vi="Đổi làn"></span> <span class="vi" data-zh="Đổi làn" data-vi="變換車道"></span></span><b id="sLane">0</b></div>
+    <div class="stat"><span><span data-zh="放棄變道（後方有車）" data-vi="Hủy đổi làn"></span> <span class="vi" data-zh="Hủy đổi làn" data-vi="放棄變道（後方有車）"></span></span><b id="sAbort">0</b></div>
+    <div class="stat"><span><span data-zh="感測器漏讀" data-vi="Tia mất tín hiệu"></span> <span class="vi" data-zh="Tia mất tín hiệu" data-vi="感測器漏讀"></span></span><b id="sDrop">0</b></div>
 
     <div class="sec">
-      <h2>事件　Sự kiện</h2>
+      <h2><span data-zh="事件　Sự kiện" data-vi="Sự kiện　事件"></span></h2>
       <div class="log" id="log"></div>
     </div>
 
     <div class="sec">
-      <h2>手動操作　Phím</h2>
+      <h2><span data-zh="手動操作　Phím" data-vi="Phím　手動操作"></span></h2>
       <div class="keys">
         <kbd>↑</kbd> 加速　<kbd>↓</kbd> 煞車<br>
         <kbd>←</kbd> <kbd>→</kbd> 轉向<br>
@@ -701,8 +701,15 @@ function diagnose(why, o) {
   if (changing || side)
     return { title: "變道中側撞", why: `撞的時候正在變道，這${name}在側面 ${(Math.abs(rel) / PXM).toFixed(1)} 公尺。兩側射線量到的距離夠遠，但它也在動。`,
              tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；加大張角（${Math.min(180, S.spread + 30)}°）讓側面射線看得更遠。這是「預測」的問題：真車會猜它下一秒在哪，這裡沒有。` };
+  // 跟車規則的上限是「煞停距離＋12」，超過這個距離規則根本不讀（見上面的 else if）。
+  // 舊版這裡建議「射線加長到 煞停距離＋15」，等於叫學生把規格加到規則看不到的地方：
+  // 調了也不會有任何改變，而且跟第一節教的「煞停距離 × 1.25」對不上。
+  const followCap = Math.ceil(sdThen + 12);
+  const slower = Math.max(10, Math.round(vk * 0.8));
   return { title: "看到了但來不及", why: `第一次看到這${name}在 ${seenAt.toFixed(1)} 公尺（煞停距離 ${sdThen.toFixed(1)} 公尺），但它也在動（減速、靠近，或像行人一樣橫向走進路徑），規則只看「現在的距離」，不會預測它下一秒在哪，最後距離不夠。`,
-           tip: `降目標車速到 ${Math.max(10, Math.round(vk * 0.8))} km/h；或射線加長到 ${needLenThen + 10} 公尺，讓「跟車」規則更早啟動。` };
+           tip: effLen >= followCap - 1
+             ? `降目標車速到 ${slower} km/h。<b>射線加長沒有用</b>：跟車規則只看 ${followCap} 公尺以內，你現在 ${effLen.toFixed(0)} 公尺已經到頂，再長規則也不看。這一次不是看不夠遠，是規則不會預測它下一秒走到哪。`
+             : `降目標車速到 ${slower} km/h；或射線加長到 ${followCap} 公尺——那是跟車規則的上限，再長規則就不看了。` };
 }
 function crash(why, o) {
   S.crashed = true; S.crashWhy = why; S.stats.crash++;
@@ -966,17 +973,28 @@ const PRESETS = {
   // 第三題要的是「三個數字不要動，只把雨天打開」，所以這一個只改天氣
   rainonly:  { rain: true, night: false },
 };
-document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => {
-  setUI(PRESETS[b.dataset.preset]);
-  document.querySelectorAll("[data-preset]").forEach((x) => x.classList.toggle("on", x === b));
+const presetSel = $("presetSel");
+presetSel.onchange = () => {
+  const k = presetSel.value;
+  if (!k) return;
+  const opt = presetSel.options[presetSel.selectedIndex];
+  const label = opt.textContent;
+  setUI(PRESETS[k]);
+  presetSel.value = k;          // setUI 會觸發下面的「自己動滑桿就歸零」，這裡補回來
   reset();
-  log(`情境：${b.querySelector("b").textContent}`);
-});
+  log(`情境：${label}`);
+  // 選單裝不下整行字，所以把選到的那一項完整寫在下面的提示；
+  // 兩種語言都存進 dataset，切語言的時候才不會跳回預設說明。
+  const hint = $("presetHint");
+  hint.dataset.zh = opt.dataset.zh;
+  hint.dataset.vi = opt.dataset.vi;
+  hint.textContent = label;
+};
 // 自己動滑桿或開關，就不再算是「正在跑某個情境」
 ["rays", "spread", "len", "azm", "spin", "target", "density"].forEach((id) =>
-  $(id).addEventListener("input", () => document.querySelectorAll("[data-preset].on").forEach((x) => x.classList.remove("on"))));
+  $(id).addEventListener("input", () => { presetSel.value = ""; }));
 ["motos", "parked", "peds", "rain", "night"].forEach((id) =>
-  $(id).addEventListener("change", () => document.querySelectorAll("[data-preset].on").forEach((x) => x.classList.remove("on"))));
+  $(id).addEventListener("change", () => { presetSel.value = ""; }));
 window.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox") return;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
@@ -990,6 +1008,33 @@ window.addEventListener("keyup", (e) => { S.keys[e.key] = false; });
 
 setMount("fixed");
 resize(); reset(); requestAnimationFrame(frame);
+})();
+</script>
+
+<script>
+// 語言切換：面板與 HUD 上每個雙語節點都帶 data-zh / data-vi，切換時整批換掉。
+// 預設越南文（這是越南籍專班）。選擇記在 localStorage，重新整理不會跑掉。
+// 註：滑桿下方會變動的提示文字與診斷視窗仍是中文，還沒翻。
+(function () {
+  const KEY = "w4sim_lang";
+  let lang = localStorage.getItem(KEY) === "zh" ? "zh" : "vi";
+  const bVi = document.getElementById("langVi"), bZh = document.getElementById("langZh");
+  function apply() {
+    document.querySelectorAll("[data-zh]").forEach((e) => {
+      const v = lang === "vi" ? e.dataset.vi : e.dataset.zh;
+      if (v === undefined) return;
+      if (e.tagName === "OPTGROUP") e.label = v;
+      else if (e.dataset.html === "1") e.innerHTML = v;
+      else e.textContent = v;
+    });
+    document.documentElement.lang = lang === "vi" ? "vi" : "zh-Hant";
+    bVi.classList.toggle("on", lang === "vi");
+    bZh.classList.toggle("on", lang === "zh");
+  }
+  bVi.onclick = () => { lang = "vi"; localStorage.setItem(KEY, lang); apply(); };
+  bZh.onclick = () => { lang = "zh"; localStorage.setItem(KEY, lang); apply(); };
+  window.__setLang = (l) => { lang = l; apply(); };   // 給截圖用
+  apply();
 })();
 </script>
 </body>
