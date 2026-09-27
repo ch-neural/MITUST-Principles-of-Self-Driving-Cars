@@ -206,8 +206,6 @@
       <label class="row"><span data-zh="自動模式目標車速（km/h）" data-vi="Tốc độ mục tiêu"></span> <span class="vi" data-zh="Tốc độ mục tiêu" data-vi="自動模式目標車速（km/h）"></span><b id="vTarget">50</b></label>
       <input type="range" id="target" min="10" max="80" value="50">
       <div class="hint" data-zh="車速決定煞停距離（上方 HUD）。射線長度至少要比它長 5 公尺。" data-vi="Tốc độ quyết định quãng đường phanh (HUD phía trên). Chiều dài tia phải dài hơn nó ít nhất 5 m."></div>
-      <label class="tog"><input type="checkbox" id="predPed"> <span data-zh="變道前先預測行人路徑（1.5 秒）" data-vi="Dự đoán đường đi người đi bộ (1,5 giây)"></span> <span class="vi" data-zh="Dự đoán đường đi người đi bộ (1,5 giây)" data-vi="變道前先預測行人路徑（1.5 秒）"></span></label>
-      <div class="hint" data-zh="預設關閉。關的時候，規則只問「他現在在不在我要去的車道裡」——旁邊 3.7 公尺的行人不算，車子就切過去，一秒半後他走進來。打開之後會用橫向速度推算他 1.5 秒後在哪。" data-vi="Mặc định tắt. Khi tắt, quy tắc chỉ hỏi «bây giờ người đó có trong làn ta sắp sang không» — người đi bộ cách 3,7 m bên hông không tính, xe tạt sang, 1,5 giây sau người đó bước vào. Bật lên thì dùng vận tốc ngang để tính trước 1,5 giây."></div>
       <label class="tog"><input type="checkbox" id="fixSeed" checked> <span data-zh="固定車流（同一批車重播）" data-vi="Cố định dòng xe"></span> <span class="vi" data-zh="Cố định dòng xe" data-vi="固定車流（同一批車重播）"></span></label>
       <div class="row" id="seedRow"><span data-zh="種子" data-vi="Seed"></span> <span class="vi" data-zh="Seed" data-vi="種子"></span><input type="number" id="seed" min="1" max="999" value="1"></div>
       <div class="hint" id="hSeed"></div>
@@ -248,7 +246,7 @@
         <tr><td>違停貨車</td><td>佔半個車道的靜止障礙</td><td>張角窄的時候很晚才發現</td><td>—</td></tr>
         <tr><td>行人穿越</td><td>從路邊橫向進入的目標</td><td>從側面進來，考驗張角與射線數</td><td>—</td></tr>
         <tr><td>雨天</td><td>感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊</td><td>同樣的參數會撐不住，要降速或加射線補冗餘</td><td>—</td></tr>
-        <tr><td>變道前先預測行人路徑</td><td>真車規劃器最基本的一步：把行人的橫向速度往前推，猜他 1.5 秒後在哪</td><td>不再切進「現在空、等一下會有人走進來」的車道</td><td>關掉的時候，旁邊 3.7 公尺的行人不算「在車道裡」，車子照樣切過去</td></tr>
+        
         <tr><td>夜晚</td><td>射線再縮 15%，畫面變暗</td><td>—</td><td>—</td></tr>
       </table>
       <h3>自動駕駛用的三條規則（很簡單，這是故意的）</h3>
@@ -366,7 +364,6 @@ const S = {
   rays: 7, len: 25, spread: 90, showRays: true,
   azm: 24, spin: 10, beam: 0, mem: [], lastRear: 0,
   density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50,
-  predPed: false,                 // 變道前先預測行人 1.5 秒後的位置（預設關，開了答案會變）
   stats: { dist: 0, crash: 0, hard: 0, lane: 0, drop: 0, abort: 0 },
   keys: {}, act: "—", lastHard: 0, laneTarget: 1, laneCooldown: 0, recentDrops: [],
 };
@@ -601,25 +598,10 @@ function autopilot(dt) {
   // 所以隔壁車道上的東西會被算進 fwd，dL／dR 反而看不到它。結果是：車子一邊為那個
   // 東西煞車，一邊判定隔壁是空的，就朝它切過去（實測 39 次變道有 15 次切進已經有東西的車道）。
   // 改成把每條射線的命中點投影回車道，再問目標車道前方最近的障礙有多遠。
-  // 一步預測：行人與鑽縫的機車有橫向速度，用它推算 1.5 秒後會在哪一條車道。
-  // 關掉的時候規則只看「現在」——實測被撞的行人在變道當下就看得到了（前方 15 公尺、
-  // 旁邊 3.7 公尺），只是還沒踏進車道，所以不算數。加射線救不了，這不是看不看得到的問題。
-  const PRED = 1.5;
-  const willEnter = (li) => {
-    if (!S.predPed) return Infinity;
-    const lx = laneX(li); let best = Infinity;
-    for (const pp of peds) {
-      if (!pp.started) continue;
-      if (Math.abs(pp.x + pp.vx * PRED - lx) > LANE_W * 0.6) continue;
-      const fd = ego.y - pp.y; if (fd > 0 && fd < best) best = fd;
-    }
-    for (const c of traffic) {
-      if (c.kind !== "moto" || !c.drift) continue;
-      if (Math.abs(c.x + c.drift * PRED - lx) > LANE_W * 0.6) continue;
-      const fd = ego.y - c.y; if (fd > 0 && fd < best) best = fd;
-    }
-    return best;
-  };
+  // 這個規則只看「現在」，不預測。實測被撞的行人在變道當下就看得到了（前方 15 公尺、
+  // 旁邊 3.7 公尺），只是還沒踏進車道，所以不算數——車子往左閃，他正好往左走。
+  // 要避開這種撞法得先估出他的橫向速度，而那要求射線連續掃得到他：9 條射線在變道前
+  // 367 格裡只打到那個行人 1 格，根本追不住。射線數滑桿下面有這個判定。
   const laneClear = (li) => {
     if (li < 0 || li >= LANES) return -1;
     const lx = laneX(li); let best = Infinity;
@@ -635,8 +617,7 @@ function autopilot(dt) {
   };
   const curLane = laneOf(ego.x);
   const dF = minD(fwd), dRL = minD(rearL), dRR = minD(rearR);
-  const dL = Math.min(laneClear(curLane - 1), willEnter(curLane - 1)),
-        dR = Math.min(laneClear(curLane + 1), willEnter(curLane + 1));
+  const dL = laneClear(curLane - 1), dR = laneClear(curLane + 1);
   const v = ego.speed;
   const stopDist = v * REACT + v * v / (2 * BRAKE);   // 煞停距離
   const margin = 2.5 * PXM;
@@ -1058,12 +1039,12 @@ function updateHints() {
     : `分在 ${S.spread}° 裡，每 ${stepF.toFixed(1)}° 一條 → 25 m 處相鄰射線相隔 <b>${gap(25, stepF).toFixed(1)} m</b>。機車寬約 0.8 m。`;
   $("hSpread").innerHTML = `自駕只用前方 ±16° 的射線判斷煞車 → 目前只有 <b>${nFwd} 條</b>在管前方。張角開太大，前方反而變空。`;
   // 旋轉式：轉速同時決定更新率與角解析度
-  const stepS = 360 / S.azm, T = 1 / S.spin;
+  const stepS = 360 / S.azm, Trev = 1 / S.spin;   // 旋轉週期；別叫 T，會遮到外層的雙語函式 T()
   $("hAzm").innerHTML = `每 ${stepS.toFixed(1)}° 取樣一次 → 25 m 處相鄰點相隔 <b>${gap(25, stepS).toFixed(1)} m</b>。`;
   const realistic = S.spin >= 5;
-  $("hSpin").innerHTML = `一圈 <b>${(T * 1000).toFixed(0)} ms</b>。這段時間本車以 ${S.target} km/h 前進 <b>${((S.target / 3.6) * T).toFixed(2)} m</b>，橫向機車移動約 ${(8 * T).toFixed(2)} m —— 還沒輪到的方向，資料就是這麼舊。<br>`
+  $("hSpin").innerHTML = `一圈 <b>${(Trev * 1000).toFixed(0)} ms</b>。這段時間本車以 ${S.target} km/h 前進 <b>${((S.target / 3.6) * Trev).toFixed(2)} m</b>，橫向機車移動約 ${(8 * Trev).toFixed(2)} m —— 還沒輪到的方向，資料就是這麼舊。<br>`
     + (realistic
-        ? `真車常見 <b>10–20 Hz</b>（10 Hz ＝ 每分鐘 600 轉），目前這一檔是實際會用的。快到肉眼看不出它在輪流，但那 ${(T * 1000).toFixed(0)} ms 是真的。`
+        ? `真車常見 <b>10–20 Hz</b>（10 Hz ＝ 每分鐘 600 轉），目前這一檔是實際會用的。快到肉眼看不出它在輪流，但那 ${(Trev * 1000).toFixed(0)} ms 是真的。`
         : `<b style="color:#D9463E">真車不會轉這麼慢</b>（量產機種少於 5 Hz 就不用了）。這一檔只是為了讓掃描線和褪色看得清楚，看懂之後請切回 10 Hz。`);
   // 長度：直接判定夠不夠
   let eff = S.len; if (S.rain) eff *= 0.55; if (S.night) eff *= 0.85;
@@ -1071,10 +1052,19 @@ function updateHints() {
   const ok = eff >= sd + 5;
   $("hLen").innerHTML = `目前有效 <b>${eff.toFixed(1)} m</b>${S.rain || S.night ? "（雨天 ×0.55、夜晚 ×0.85）" : ""}　｜　`
     + `${S.target} km/h 的煞停距離 ${sd.toFixed(1)} m → <b style="color:${ok ? "#007F72" : "#D9463E"}">${ok ? "夠用" : "不夠，看到就煞不住"}</b>`;
+  // 追不追得住：「看得到」只要打到一次，「知道他往哪走」要連續好幾格都打到他，
+  // 才比得出前後兩格的位置差。相鄰射線的縫比他本身還寬時，他只會偶爾閃一格。
+  // 實測：9 條射線在車子變道前的 367 格裡，只打到那個行人 1 格；60 條 / 60° 是連續 115 格。
+  if (S.rays > 1) {
+    const dTrk = Math.min(eff, 0.5 / (2 * Math.sin(stepF / 2 * Math.PI / 180)));   // 行人 0.5 m 寬
+    const okT = dTrk >= sd;
+    $("hRays").innerHTML += `<br>要「知道他往哪走」，得連續掃得到他：0.5 m 的行人要進到 <b>${dTrk.toFixed(1)} m</b> 以內。`
+      + `煞停距離 ${sd.toFixed(1)} m → <b style="color:${okT ? "#007F72" : "#D9463E"}">${okT ? "追得住" : "追不住，只知道那裡有東西"}</b>`;
+  }
 }
 ["rays", "spread", "len", "azm", "spin", "target"].forEach((id) => $(id).addEventListener("input", updateHints));
 ["rain", "night"].forEach((id) => $(id).addEventListener("change", updateHints));
-["showRays", "motos", "parked", "peds", "rain", "night", "predPed"].forEach((k) => {
+["showRays", "motos", "parked", "peds", "rain", "night"].forEach((k) => {
   const el = $(k); const f = () => { S[k] = el.checked; };
   el.addEventListener("change", () => {
     f();
