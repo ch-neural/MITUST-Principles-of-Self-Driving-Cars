@@ -253,8 +253,16 @@
         <tr><th>狀態</th><th>什麼時候</th><th>做什麼</th></tr>
         <tr><td>直行</td><td>前方看不到東西，或比「煞停距離＋12 公尺」還遠</td><td>加速到目標車速</td></tr>
         <tr><td>跟車</td><td>前方有東西，距離在「煞停距離＋12 公尺」以內</td><td>輕踩煞車，<b>但不變道</b></td></tr>
-        <tr><td>煞車</td><td>前方距離小於「煞停距離＋2.5 公尺」</td><td>全力煞車；這時候才試變道</td></tr>
+        <tr><td>煞車</td><td>前方距離小於「煞停距離＋2.5 公尺」</td><td>全力煞車</td></tr>
+        <tr><td>變道</td><td>正在煞車，<b>而且自己這條車道真的被擋住</b></td><td>找左右哪一條車道前方有 8 公尺以上淨空</td></tr>
       </table>
+      <div class="hint"><b>為什麼煞車和變道用不一樣的判斷？</b>
+        煞車看的是車頭前方 ±16° 這個扇形。這個扇形在 15 公尺處橫向已經 ±4.3 公尺，比一個車道（3.5 公尺）還寬——
+        <b>隔壁車道的東西也會讓它煞車</b>。這是刻意保守：機車隨時可能鑽進來。<br>
+        但變道是有風險的動作（碰撞診斷裡就有「變道中側撞」），所以門檻更高：要<b>自己這條車道真的被擋住</b>才考慮，
+        而且左右兩邊是把射線的命中點投影回<b>車道</b>來判斷，不是用角度扇形。<br>
+        早期版本兩邊都用角度扇形，結果是車子為隔壁車道的東西煞車、然後在自己車道明明是空的時候變道，
+        甚至切進正在閃避的那個東西所在的車道。</div>
       <div class="hint"><b>為什麼只有煞車的時候才變道？</b>
         因為<b>變道本身就是風險</b>——碰撞診斷裡的「變道中側撞」就是這麼來的。沒有必要就應該直行。<br>
         「跟車」的門檻是煞停距離＋12 公尺，時速 40 時是 25.6 公尺，幾乎等於射線長度；
@@ -584,7 +592,27 @@ function autopilot(dt) {
   const rearL = readings.filter((r) => r.a < -SIDE);     // 固定式在這裡永遠是空的
   const rearR = readings.filter((r) => r.a > SIDE);
   const minD = (arr) => arr.reduce((m, r) => (r.t !== null && r.hit && r.hit.kind !== "border") ? Math.min(m, r.t * r.len) : m, Infinity);
-  const dF = minD(fwd), dL = minD(left), dR = minD(right), dRL = minD(rearL), dRR = minD(rearR);
+  // 「隔壁車道有沒有空」要問車道，不能問角度扇形。
+  // 前方扇形是 ±16°，在 15 公尺處橫向已達 ±4.3 公尺 —— 比一個車道（3.5 公尺）還寬，
+  // 所以隔壁車道上的東西會被算進 fwd，dL／dR 反而看不到它。結果是：車子一邊為那個
+  // 東西煞車，一邊判定隔壁是空的，就朝它切過去（實測 39 次變道有 15 次切進已經有東西的車道）。
+  // 改成把每條射線的命中點投影回車道，再問目標車道前方最近的障礙有多遠。
+  const laneClear = (li) => {
+    if (li < 0 || li >= LANES) return -1;
+    const lx = laneX(li); let best = Infinity;
+    for (const r of readings) {
+      if (r.t === null || !r.hit || r.hit.kind === "border") continue;
+      const d = r.t * r.len;
+      const px = ego.x + Math.sin(r.ang) * d, py = ego.y - Math.cos(r.ang) * d;
+      if (Math.abs(px - lx) > LANE_W * 0.6) continue;
+      const fd = ego.y - py;
+      if (fd > 0 && fd < best) best = fd;
+    }
+    return best;
+  };
+  const curLane = laneOf(ego.x);
+  const dF = minD(fwd), dRL = minD(rearL), dRR = minD(rearR);
+  const dL = laneClear(curLane - 1), dR = laneClear(curLane + 1);
   const v = ego.speed;
   const stopDist = v * REACT + v * v / (2 * BRAKE);   // 煞停距離
   const margin = 2.5 * PXM;
@@ -594,7 +622,12 @@ function autopilot(dt) {
   if (dF < stopDist + margin) {
     accel = -BRAKE; act = "煞車";
     if (dF < stopDist * 0.7 && v > 5 * PXM && S.t - S.lastHard > 1.5) { S.stats.hard++; S.lastHard = S.t; log("緊急煞車　Phanh gấp"); }
-    if (S.laneCooldown === 0 && v > 3 * PXM) tryLaneChange(dL, dR, dF, dRL, dRR);
+    // 變道的門檻要比煞車高：煞車用 ±16° 扇形（保守，機車隨時可能鑽進來），
+    // 但變道是有風險的動作，一定要「自己這條車道真的被擋住」才做。
+    // 少了這個閘門，車子會為隔壁車道的東西煞車、然後在自己車道明明是空的時候變道。
+    // 實測 16 個種子：加上閘門後中位數 21.4 → 37.5 秒，變道 39 → 19 次，無謂變道 15 → 0 次。
+    if (S.laneCooldown === 0 && v > 3 * PXM && laneClear(curLane) < stopDist + margin)
+      tryLaneChange(dL, dR, dF, dRL, dRR);
   } else if (dF < stopDist + 12 * PXM) {
     // 跟車帶不主動變道。時速 40 時這一帶是 25.6 公尺，幾乎等於射線長度，
     // 只要前方看得到東西就會落在這裡；原本在這裡試變道，等於「一直在換車道」，
