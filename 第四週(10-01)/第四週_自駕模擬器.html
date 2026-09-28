@@ -65,6 +65,11 @@
   #crash .why { color:#D8E4EE; }
   #crash .tip { color:#9FE6D8; }
   #crash .kbd { color:#9FB6C8; font-size:12px; margin-top:8px; }
+  /* 作業摘要：一張截圖要能同時看到秒數、種子與三個參數，學生才交得出東西 */
+  #crash .hw { margin:2px 0 9px; padding:7px 11px; border-radius:8px; color:#CFF3EC;
+               background:rgba(0,168,150,.18); border:1px solid rgba(0,168,150,.55);
+               font-size:13.5px; line-height:1.45; }
+  #crash .hw b { color:#7FE9D6; font-size:19px; }
   #help { position:absolute; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:5; }
   #help > div { background:#fff; color:var(--ink); max-width:760px; max-height:88%; overflow:auto; border-radius:12px; padding:18px 22px; font-size:13px; line-height:1.5; }
   #help h3 { margin:0 0 6px; color:var(--navy); font-size:17px; }
@@ -118,6 +123,14 @@
     .tile .k { font-size:9px; line-height:1.15; }
     .tile .v { font-size:14px; line-height:1.1; }
     .tile .u { font-size:9.5px; }
+    /* 碰撞視窗原本 max-width:560px 沒有跟著視窗縮，390px 的手機右半邊會被切掉 */
+    #crash { padding:6px; }
+    #crash > div { max-width:100%; box-sizing:border-box; padding:12px 14px;
+                   font-size:13px; max-height:100%; overflow:auto; }
+    #crash h3 { font-size:18px; }
+    #crash .hw { font-size:12.5px; padding:6px 9px; }
+    #crash .hw b { font-size:17px; }
+    #crash .dx { padding:7px 9px; }
   }
   @media (max-width: 420px) {
     :root { --stageH: max(38vh, 200px); }
@@ -854,7 +867,18 @@ function crash(why, o) {
   S.crashed = true; S.crashWhy = why; S.stats.crash++;
   const d = diagnose(why, o);
   const C = T("：", ": ");
+  // 作業用摘要：撐了幾秒、種子、三個參數、型式與天候，全部擠在一行，手機截一張就交得出去
+  const spec = S.mount === "fixed"
+    ? `${S.rays} ${T("條", "tia")}・${S.len} m・${S.spread}°`
+    : `${S.azm} ${T("方位", "hướng")}・${S.spin} Hz・${S.len} m`;
+  const cond = [S.rain ? T("雨天", "mưa") : null, S.night ? T("夜晚", "đêm") : null]
+    .filter(Boolean).join("・") || T("晴天", "trời quang");
+  const seedTxt = $("fixSeed").checked
+    ? `${T("種子", "seed")} ${Math.max(1, Math.min(999, +$("seed").value || 1))}`
+    : T("車流隨機", "dòng xe ngẫu nhiên");
+  const mountTxt = S.mount === "fixed" ? T("固定式", "cố định") : T("旋轉式", "xoay");
   $("crashBox").innerHTML = `<h3>${T("碰撞", "Va chạm")}${C}${why}</h3>
+    <div class="hw"><b>${S.t.toFixed(1)}</b> ${T("秒", "giây")}　｜　${seedTxt}　｜　${spec}　｜　${mountTxt}・${cond}</div>
     <div class="dx"><b>${T("診斷", "Chẩn đoán")}${C}${d.title}</b><br><span class="why">${d.why}</span></div>
     <div class="dx tip"><b>${T("建議", "Gợi ý")}${C}</b>${d.tip}</div>
     <div class="kbd">${T("按 R 重新開始・按 H 看參數說明與診斷規則",
