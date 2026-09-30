@@ -10,6 +10,8 @@ on:
       - '第三週(09-24)/Nguyên lý xe tự lái_Tuần 3_Tài liệu học tập.pdf'
       - '第三週(09-24)/第三週_課堂練習_學習單_教師解答.html'
       - '第四週(10-01)/第四週_自駕模擬器.html'
+      - '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf'
+      - '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf'
       - '第五週(10-08)/第五週_規格判讀台.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -41,6 +43,8 @@ jobs:
             第三週(09-24)/Nguyên lý xe tự lái_Tuần 3_Tài liệu học tập.pdf
             第三週(09-24)/第三週_課堂練習_學習單_教師解答.html
             第四週(10-01)/第四週_自駕模擬器.html
+            第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf
+            第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf
             第五週(10-08)/第五週_規格判讀台.html
           sparse-checkout-cone-mode: false
 
@@ -60,6 +64,8 @@ jobs:
           # 課堂練習的解答，課後才公布
           cp -- '第三週(09-24)/第三週_課堂練習_學習單_教師解答.html' _site/week3/answers/index.html
           cp -- '第四週(10-01)/第四週_自駕模擬器.html' _site/week4/sim/index.html
+          cp -- '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf' _site/week4/note-zh.pdf
+          cp -- '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf' _site/week4/note-vi.pdf
           cp -- '第五週(10-08)/第五週_規格判讀台.html' _site/week5/spec/index.html
 
       - name: Upload the website
