@@ -184,9 +184,11 @@
         <label class="row"><span data-zh="張角（度）" data-vi="Góc quét (°)"></span> <span class="vi" data-zh="Góc quét (°)" data-vi="張角（度）"></span><b id="vSpread">90</b></label>
         <input type="range" id="spread" min="10" max="180" value="90">
         <div class="hint" id="hSpread"></div>
+        <div class="btns"><button id="resetSpec"></button></div>
       </div>
 
       <div id="spinCtl" style="display:none">
+        <div class="btns" id="resetSpecSpinWrap"><button id="resetSpecSpin"></button></div>
         <label class="row"><span data-zh="每圈取樣數" data-vi="Số điểm mỗi vòng"></span> <span class="vi" data-zh="Số điểm mỗi vòng" data-vi="每圈取樣數"></span><b id="vAzm">24</b></label>
         <input type="range" id="azm" min="8" max="72" step="4" value="24">
         <div class="hint" id="hAzm"></div>
@@ -243,64 +245,51 @@
     <div id="crash"><div id="crashBox"></div></div>
     <div id="help"><div>
       <button class="close" id="helpClose" data-zh="關閉" data-vi="Đóng"></button>
-      <h3>參數說明　Giải thích tham số</h3>
+      <h3 data-zh="參數說明　Giải thích tham số" data-vi="Giải thích tham số　參數說明">參數說明　Giải thích tham số</h3>
       <table>
-        <tr><th>參數</th><th>對應真車的什麼</th><th>調大會怎樣</th><th>調小會怎樣</th></tr>
-        <tr><td><b>固定式</b></td><td>裝在車頭或擋風玻璃後的固態光達（Luminar、Hesai 那一類）</td><td>所有射線同一瞬間發射，資料年齡永遠 0；點集中在前方</td><td>張角以外完全沒有資料，側後方全盲</td></tr>
-        <tr><td><b>旋轉式</b></td><td>裝在車頂的機械旋轉光達（Velodyne、Ouster 那種圓罐子）＝把固定式模組放在轉盤上</td><td>水平 360° 沒有死角，變道前看得到側後方</td><td>一次只量一個方向；沒輪到的方位是上一圈的舊資料，車身周圍還有一圈盲區</td></tr>
-        <tr><td>每圈取樣數</td><td>水平角解析度（真車約 0.1°–0.4°）</td><td>點變密，小目標比較不會漏</td><td>方位之間的縫隙變大</td></tr>
-        <tr><td>轉速</td><td>更新率。真車常見 10 或 20 Hz（10 Hz ＝ 每分鐘 600 轉），量產機種很少低於 5 Hz。本頁 2 Hz 這一檔只是為了看清楚，不是真實設定</td><td>資料比較新；但發射率固定，每圈的點數會變少</td><td>一圈的時間變長，後方的資料可能過期好幾百毫秒</td></tr>
-        <tr><td>射線數</td><td>光達的解析度（每秒幾萬到幾百萬點）</td><td>縫隙變小，側面鑽進來的機車比較早被看到；真車上算力與成本上升</td><td>兩條射線之間出現看不到的縫隙，小目標（機車、行人）從縫隙穿過</td></tr>
-        <tr><td>射線長度</td><td>測距範圍（車用光達 150–300 公尺）</td><td>更早看到前方障礙，有時間減速或變道；雨天只剩 55%</td><td>短於煞停距離時，看到就煞不住，一定撞</td></tr>
-        <tr><td>張角</td><td>視野 FOV（真車用好幾顆感測器分工）</td><td>看得到側面；但同樣射線數會變稀</td><td>正前方清楚，側面來的機車、行人、切進來的車看不到</td></tr>
-        <tr><td>目標車速</td><td>ODD 的速度上限</td><td>煞停距離以平方成長：50 km/h 約 20 公尺，80 km/h 約 48 公尺</td><td>幾乎所有碰撞都能靠降速避免，代價是效率</td></tr>
-        <tr><td>車流密度</td><td>場景的交通量</td><td>變道空間變少，跟車變多</td><td>—</td></tr>
-        <tr><td>機車流</td><td>台灣與越南的機車海</td><td>小、快、會左右鑽；對射線是小目標，最容易從縫隙穿過</td><td>—</td></tr>
-        <tr><td>違停貨車</td><td>佔半個車道的靜止障礙</td><td>張角窄的時候很晚才發現</td><td>—</td></tr>
-        <tr><td>行人穿越</td><td>從路邊橫向進入的目標</td><td>從側面進來，考驗張角與射線數</td><td>—</td></tr>
-        <tr><td>雨天</td><td>感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊</td><td>同樣的參數會撐不住，要降速或加射線補冗餘</td><td>—</td></tr>
+        <tr><th data-zh="參數" data-vi="Tham số">參數</th><th data-zh="對應真車的什麼" data-vi="Tương ứng cái gì trên xe thật">對應真車的什麼</th><th data-zh="調大會怎樣" data-vi="Tăng lên thì sao">調大會怎樣</th><th data-zh="調小會怎樣" data-vi="Giảm xuống thì sao">調小會怎樣</th></tr>
+        <tr><td data-zh="<b>固定式</b>" data-vi="<b>Cố định</b>" data-html="1"><b>固定式</b></td><td data-zh="裝在車頭或擋風玻璃後的固態光達（Luminar、Hesai 那一類）" data-vi="LiDAR thể rắn gắn ở đầu xe hoặc sau kính chắn gió (loại Luminar, Hesai)">裝在車頭或擋風玻璃後的固態光達（Luminar、Hesai 那一類）</td><td data-zh="所有射線同一瞬間發射，資料年齡永遠 0；點集中在前方" data-vi="Mọi tia phát cùng một lúc, dữ liệu luôn mới; điểm dồn về phía trước">所有射線同一瞬間發射，資料年齡永遠 0；點集中在前方</td><td data-zh="張角以外完全沒有資料，側後方全盲" data-vi="Ngoài góc quét thì không có dữ liệu, phía sau bên hông mù hoàn toàn">張角以外完全沒有資料，側後方全盲</td></tr>
+        <tr><td data-zh="<b>旋轉式</b>" data-vi="<b>Xoay</b>" data-html="1"><b>旋轉式</b></td><td data-zh="裝在車頂的機械旋轉光達（Velodyne、Ouster 那種圓罐子）＝把固定式模組放在轉盤上" data-vi="LiDAR cơ khí quay gắn trên nóc xe (kiểu lon tròn của Velodyne, Ouster) = đặt module cố định lên mâm xoay">裝在車頂的機械旋轉光達（Velodyne、Ouster 那種圓罐子）＝把固定式模組放在轉盤上</td><td data-zh="水平 360° 沒有死角，變道前看得到側後方" data-vi="Ngang 360° không có điểm mù, đổi làn thì thấy được phía sau bên hông">水平 360° 沒有死角，變道前看得到側後方</td><td data-zh="一次只量一個方向；沒輪到的方位是上一圈的舊資料，車身周圍還有一圈盲區" data-vi="Mỗi lúc chỉ đo một hướng; hướng chưa tới lượt là dữ liệu vòng trước, quanh thân xe còn một vành mù">一次只量一個方向；沒輪到的方位是上一圈的舊資料，車身周圍還有一圈盲區</td></tr>
+        <tr><td data-zh="每圈取樣數" data-vi="Số điểm mỗi vòng">每圈取樣數</td><td data-zh="水平角解析度（真車約 0.1°–0.4°）" data-vi="Độ phân giải góc ngang (xe thật khoảng 0,1°–0,4°)">水平角解析度（真車約 0.1°–0.4°）</td><td data-zh="點變密，小目標比較不會漏" data-vi="Điểm dày hơn, mục tiêu nhỏ ít bị sót">點變密，小目標比較不會漏</td><td data-zh="方位之間的縫隙變大" data-vi="Khe giữa các hướng rộng ra">方位之間的縫隙變大</td></tr>
+        <tr><td data-zh="轉速" data-vi="Tốc độ quay">轉速</td><td data-zh="更新率。真車常見 10 或 20 Hz（10 Hz ＝ 每分鐘 600 轉），量產機種很少低於 5 Hz。本頁 2 Hz 這一檔只是為了看清楚，不是真實設定" data-vi="Tần số cập nhật. Xe thật thường 10 hoặc 20 Hz (10 Hz = 600 vòng/phút), hàng sản xuất hiếm khi dưới 5 Hz. Nấc 2 Hz ở đây chỉ để nhìn cho rõ, không phải thiết lập thật">更新率。真車常見 10 或 20 Hz（10 Hz ＝ 每分鐘 600 轉），量產機種很少低於 5 Hz。本頁 2 Hz 這一檔只是為了看清楚，不是真實設定</td><td data-zh="資料比較新；但發射率固定，每圈的點數會變少" data-vi="Dữ liệu mới hơn; nhưng tốc độ phát cố định nên mỗi vòng ít điểm đi">資料比較新；但發射率固定，每圈的點數會變少</td><td data-zh="一圈的時間變長，後方的資料可能過期好幾百毫秒" data-vi="Một vòng lâu hơn, dữ liệu phía sau có thể cũ tới vài trăm mili giây">一圈的時間變長，後方的資料可能過期好幾百毫秒</td></tr>
+        <tr><td data-zh="射線數" data-vi="Số tia">射線數</td><td data-zh="光達的解析度（每秒幾萬到幾百萬點）" data-vi="Độ phân giải của LiDAR (vài chục nghìn đến vài triệu điểm mỗi giây)">光達的解析度（每秒幾萬到幾百萬點）</td><td data-zh="縫隙變小，側面鑽進來的機車比較早被看到；真車上算力與成本上升" data-vi="Khe hẹp lại, xe máy lách từ bên hông được thấy sớm hơn; trên xe thật thì tốn tính toán và tiền hơn">縫隙變小，側面鑽進來的機車比較早被看到；真車上算力與成本上升</td><td data-zh="兩條射線之間出現看不到的縫隙，小目標（機車、行人）從縫隙穿過" data-vi="Giữa hai tia xuất hiện khe không thấy được, mục tiêu nhỏ (xe máy, người đi bộ) lọt qua khe">兩條射線之間出現看不到的縫隙，小目標（機車、行人）從縫隙穿過</td></tr>
+        <tr><td data-zh="射線長度" data-vi="Chiều dài tia">射線長度</td><td data-zh="測距範圍（車用光達 150–300 公尺）" data-vi="Tầm đo (LiDAR ô tô 150–300 m)">測距範圍（車用光達 150–300 公尺）</td><td data-zh="更早看到前方障礙，有時間減速或變道；雨天只剩 55%" data-vi="Thấy vật cản phía trước sớm hơn, còn kịp giảm tốc hay đổi làn; trời mưa chỉ còn 55%">更早看到前方障礙，有時間減速或變道；雨天只剩 55%</td><td data-zh="短於煞停距離時，看到就煞不住，一定撞" data-vi="Ngắn hơn quãng đường dừng thì thấy cũng phanh không kịp, chắc chắn đâm">短於煞停距離時，看到就煞不住，一定撞</td></tr>
+        <tr><td data-zh="張角" data-vi="Góc quét">張角</td><td data-zh="視野 FOV（真車用好幾顆感測器分工）" data-vi="Tầm nhìn FOV (xe thật dùng mấy cảm biến chia việc)">視野 FOV（真車用好幾顆感測器分工）</td><td data-zh="看得到側面；但同樣射線數會變稀" data-vi="Thấy được hai bên; nhưng cùng số tia đó sẽ thưa ra">看得到側面；但同樣射線數會變稀</td><td data-zh="正前方清楚，側面來的機車、行人、切進來的車看不到" data-vi="Phía trước rõ, nhưng xe máy, người đi bộ, xe tạt vào từ bên hông thì không thấy">正前方清楚，側面來的機車、行人、切進來的車看不到</td></tr>
+        <tr><td data-zh="目標車速" data-vi="Tốc độ mục tiêu">目標車速</td><td data-zh="ODD 的速度上限" data-vi="Giới hạn tốc độ của ODD">ODD 的速度上限</td><td data-zh="煞停距離以平方成長：50 km/h 約 20 公尺，80 km/h 約 48 公尺" data-vi="Quãng đường dừng tăng theo bình phương: 50 km/h khoảng 20 m, 80 km/h khoảng 48 m">煞停距離以平方成長：50 km/h 約 20 公尺，80 km/h 約 48 公尺</td><td data-zh="幾乎所有碰撞都能靠降速避免，代價是效率" data-vi="Hầu hết va chạm đều tránh được bằng cách giảm tốc, cái giá là hiệu suất">幾乎所有碰撞都能靠降速避免，代價是效率</td></tr>
+        <tr><td data-zh="車流密度" data-vi="Mật độ xe">車流密度</td><td data-zh="場景的交通量" data-vi="Lưu lượng giao thông của kịch bản">場景的交通量</td><td data-zh="變道空間變少，跟車變多" data-vi="Ít chỗ đổi làn hơn, phải bám đuôi nhiều hơn">變道空間變少，跟車變多</td><td data-zh="—" data-vi="—">—</td></tr>
+        <tr><td data-zh="機車流" data-vi="Dòng xe máy">機車流</td><td data-zh="台灣與越南的機車海" data-vi="Biển xe máy ở Đài Loan và Việt Nam">台灣與越南的機車海</td><td data-zh="小、快、會左右鑽；對射線是小目標，最容易從縫隙穿過" data-vi="Nhỏ, nhanh, lách trái phải; với tia thì là mục tiêu nhỏ, dễ lọt khe nhất">小、快、會左右鑽；對射線是小目標，最容易從縫隙穿過</td><td data-zh="—" data-vi="—">—</td></tr>
+        <tr><td data-zh="違停貨車" data-vi="Xe tải đỗ sai">違停貨車</td><td data-zh="佔半個車道的靜止障礙" data-vi="Vật cản đứng yên chiếm nửa làn">佔半個車道的靜止障礙</td><td data-zh="張角窄的時候很晚才發現" data-vi="Góc quét hẹp thì rất muộn mới phát hiện">張角窄的時候很晚才發現</td><td data-zh="—" data-vi="—">—</td></tr>
+        <tr><td data-zh="行人穿越" data-vi="Người đi bộ băng qua">行人穿越</td><td data-zh="從路邊橫向進入的目標" data-vi="Mục tiêu đi ngang vào từ lề đường">從路邊橫向進入的目標</td><td data-zh="從側面進來，考驗張角與射線數" data-vi="Vào từ bên hông, thử thách góc quét và số tia">從側面進來，考驗張角與射線數</td><td data-zh="—" data-vi="—">—</td></tr>
+        <tr><td data-zh="雨天" data-vi="Trời mưa">雨天</td><td data-zh="感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊" data-vi="Cảm biến suy giảm: tia còn 55%, đọc sót ngẫu nhiên, khoảng cách có nhiễu">感測器失效：射線縮短 55%、隨機漏讀、距離有雜訊</td><td data-zh="同樣的參數會撐不住，要降速或加射線補冗餘" data-vi="Cùng bộ tham số sẽ không trụ nổi, phải giảm tốc hoặc thêm tia để bù">同樣的參數會撐不住，要降速或加射線補冗餘</td><td data-zh="—" data-vi="—">—</td></tr>
         
-        <tr><td>夜晚</td><td>射線再縮 15%，畫面變暗</td><td>—</td><td>—</td></tr>
+        <tr><td data-zh="夜晚" data-vi="Ban đêm">夜晚</td><td data-zh="射線再縮 15%，畫面變暗" data-vi="Tia ngắn thêm 15%, màn hình tối đi">射線再縮 15%，畫面變暗</td><td data-zh="—" data-vi="—">—</td><td data-zh="—" data-vi="—">—</td></tr>
       </table>
-      <h3>自動駕駛用的三條規則（很簡單，這是故意的）</h3>
+      <h3 data-zh="自動駕駛用的四條規則（很簡單，這是故意的）" data-vi="Bốn quy tắc của chế độ tự lái (rất đơn giản, cố ý như vậy)">自動駕駛用的四條規則（很簡單，這是故意的）</h3>
       <table>
-        <tr><th>狀態</th><th>什麼時候</th><th>做什麼</th></tr>
-        <tr><td>直行</td><td>前方看不到東西，或比「煞停距離＋12 公尺」還遠</td><td>加速到目標車速</td></tr>
-        <tr><td>跟車</td><td>前方有東西，距離在「煞停距離＋12 公尺」以內</td><td>輕踩煞車，<b>但不變道</b></td></tr>
-        <tr><td>煞車</td><td>前方距離小於「煞停距離＋2.5 公尺」</td><td>全力煞車</td></tr>
-        <tr><td>變道</td><td>正在煞車，<b>而且自己這條車道真的被擋住</b></td><td>找左右哪一條車道前方有 8 公尺以上淨空</td></tr>
+        <tr><th data-zh="狀態" data-vi="Trạng thái">狀態</th><th data-zh="什麼時候" data-vi="Khi nào">什麼時候</th><th data-zh="做什麼" data-vi="Làm gì">做什麼</th></tr>
+        <tr><td data-zh="直行" data-vi="Đi thẳng">直行</td><td data-zh="前方看不到東西，或比「煞停距離＋12 公尺」還遠" data-vi="Phía trước không thấy gì, hoặc xa hơn «quãng đường dừng + 12 m»">前方看不到東西，或比「煞停距離＋12 公尺」還遠</td><td data-zh="加速到目標車速" data-vi="Tăng tốc tới tốc độ mục tiêu">加速到目標車速</td></tr>
+        <tr><td data-zh="跟車" data-vi="Bám đuôi">跟車</td><td data-zh="前方有東西，距離在「煞停距離＋12 公尺」以內" data-vi="Phía trước có vật, trong khoảng «quãng đường dừng + 12 m»">前方有東西，距離在「煞停距離＋12 公尺」以內</td><td data-zh="輕踩煞車，<b>但不變道</b>" data-vi="Phanh nhẹ, <b>nhưng không đổi làn</b>" data-html="1">輕踩煞車，<b>但不變道</b></td></tr>
+        <tr><td data-zh="煞車" data-vi="Phanh">煞車</td><td data-zh="前方距離小於「煞停距離＋2.5 公尺」" data-vi="Khoảng cách phía trước nhỏ hơn «quãng đường dừng + 2,5 m»">前方距離小於「煞停距離＋2.5 公尺」</td><td data-zh="全力煞車" data-vi="Phanh hết sức">全力煞車</td></tr>
+        <tr><td data-zh="變道" data-vi="Đổi làn">變道</td><td data-zh="正在煞車，<b>而且自己這條車道真的被擋住</b>" data-vi="Đang phanh, <b>và làn của mình thật sự bị chặn</b>" data-html="1">正在煞車，<b>而且自己這條車道真的被擋住</b></td><td data-zh="找左右哪一條車道前方有 8 公尺以上淨空" data-vi="Tìm bên trái hay bên phải có làn trống trên 8 m phía trước">找左右哪一條車道前方有 8 公尺以上淨空</td></tr>
       </table>
-      <div class="hint"><b>為什麼煞車和變道用不一樣的判斷？</b>
-        煞車看的是車頭前方 ±16° 這個扇形。這個扇形在 15 公尺處橫向已經 ±4.3 公尺，比一個車道（3.5 公尺）還寬——
-        <b>隔壁車道的東西也會讓它煞車</b>。這是刻意保守：機車隨時可能鑽進來。<br>
-        但變道是有風險的動作（碰撞診斷裡就有「變道中側撞」），所以門檻更高：要<b>自己這條車道真的被擋住</b>才考慮，
-        而且左右兩邊是把射線的命中點投影回<b>車道</b>來判斷，不是用角度扇形。<br>
-        早期版本兩邊都用角度扇形，結果是車子為隔壁車道的東西煞車、然後在自己車道明明是空的時候變道，
-        甚至切進正在閃避的那個東西所在的車道。</div>
-      <div class="hint"><b>為什麼只有煞車的時候才變道？</b>
-        因為<b>變道本身就是風險</b>——碰撞診斷裡的「變道中側撞」就是這麼來的。沒有必要就應該直行。<br>
-        「跟車」的門檻是煞停距離＋12 公尺，時速 40 時是 25.6 公尺，幾乎等於射線長度；
-        只要前方看得到任何東西就會落在這一帶。如果在這裡就開始找機會變道，車子會一直在換車道，
-        而前方那個東西其實離煞停距離（13.6 公尺）還很遠，根本不構成威脅。<br>
-        <b>還是要注意它有多簡單：</b>變道只看「隔壁車道前方有沒有 8 公尺淨空」，不拿來跟現在這條比，
-        也不看對方的速度。真車的規劃器會把好幾條候選路徑打分數再選一條；這裡只有距離，
-        沒有速度、沒有預測。這個差距本身就是教材。</div>
-      <h3>撞了以後，診斷怎麼判斷</h3>
+      <div class="hint" data-zh="&lt;b&gt;為什麼煞車和變道用不一樣的判斷？&lt;/b&gt;煞車看的是車頭前方 ±16° 這個扇形。這個扇形在 15 公尺處橫向已經 ±4.3 公尺，比一個車道（3.5 公尺）還寬——&lt;b&gt;隔壁車道的東西也會讓它煞車&lt;/b&gt;。這是刻意保守：機車隨時可能鑽進來。&lt;br&gt;但變道是有風險的動作（碰撞診斷裡就有「變道中側撞」），所以門檻更高：要&lt;b&gt;自己這條車道真的被擋住&lt;/b&gt;才考慮，而且左右兩邊是把射線的命中點投影回&lt;b&gt;車道&lt;/b&gt;來判斷，不是用角度扇形。&lt;br&gt;早期版本兩邊都用角度扇形，結果是車子為隔壁車道的東西煞車、然後在自己車道明明是空的時候變道，甚至切進正在閃避的那個東西所在的車道。" data-vi="&lt;b&gt;Tại sao phanh và đổi làn lại phán đoán khác nhau?&lt;/b&gt;Phanh nhìn hình quạt ±16° trước mũi xe. Ở 15 m, hình quạt này đã rộng ±4,3 m theo chiều ngang, rộng hơn cả một làn (3,5 m) — &lt;b&gt;nên vật ở làn bên cạnh cũng làm xe phanh&lt;/b&gt;. Đây là cố ý làm cho an toàn: xe máy có thể lách vào bất cứ lúc nào.&lt;br&gt;Nhưng đổi làn là hành động có rủi ro (trong chẩn đoán va chạm có mục «va chạm ngang khi đang đổi làn»), nên ngưỡng cao hơn: phải &lt;b&gt;làn của mình thật sự bị chặn&lt;/b&gt; mới tính đến, và hai bên trái phải thì chiếu điểm tia chạm về &lt;b&gt;làn đường&lt;/b&gt; để xét, không dùng hình quạt góc.&lt;br&gt;Bản đầu dùng hình quạt góc cho cả hai, kết quả là xe phanh vì vật ở làn bên cạnh, rồi lại đổi làn trong khi làn của mình rõ ràng đang trống, thậm chí tạt vào đúng làn có vật mà nó đang né." data-html="1"><b>為什麼煞車和變道用不一樣的判斷？</b>煞車看的是車頭前方 ±16° 這個扇形。這個扇形在 15 公尺處橫向已經 ±4.3 公尺，比一個車道（3.5 公尺）還寬——<b>隔壁車道的東西也會讓它煞車</b>。這是刻意保守：機車隨時可能鑽進來。<br>但變道是有風險的動作（碰撞診斷裡就有「變道中側撞」），所以門檻更高：要<b>自己這條車道真的被擋住</b>才考慮，而且左右兩邊是把射線的命中點投影回<b>車道</b>來判斷，不是用角度扇形。<br>早期版本兩邊都用角度扇形，結果是車子為隔壁車道的東西煞車、然後在自己車道明明是空的時候變道，甚至切進正在閃避的那個東西所在的車道。</div>
+      <div class="hint" data-zh="&lt;b&gt;為什麼只有煞車的時候才變道？&lt;/b&gt;因為&lt;b&gt;變道本身就是風險&lt;/b&gt;——碰撞診斷裡的「變道中側撞」就是這麼來的。沒有必要就應該直行。&lt;br&gt;「跟車」的門檻是煞停距離＋12 公尺，時速 40 時是 25.6 公尺，幾乎等於射線長度；只要前方看得到任何東西就會落在這一帶。如果在這裡就開始找機會變道，車子會一直在換車道，而前方那個東西其實離煞停距離（13.6 公尺）還很遠，根本不構成威脅。&lt;br&gt;&lt;b&gt;還是要注意它有多簡單：&lt;/b&gt;變道只看「隔壁車道前方有沒有 8 公尺淨空」，不拿來跟現在這條比，也不看對方的速度。真車的規劃器會把好幾條候選路徑打分數再選一條；這裡只有距離，沒有速度、沒有預測。這個差距本身就是教材。" data-vi="&lt;b&gt;Tại sao chỉ khi đang phanh mới đổi làn?&lt;/b&gt;Vì &lt;b&gt;bản thân việc đổi làn đã là rủi ro&lt;/b&gt; — mục «va chạm ngang khi đang đổi làn» trong chẩn đoán chính từ đó mà ra. Không cần thiết thì nên đi thẳng.&lt;br&gt;Ngưỡng của «bám đuôi» là quãng đường dừng + 12 m, ở 40 km/h là 25,6 m, gần bằng chiều dài tia; chỉ cần phía trước thấy bất cứ thứ gì là đã rơi vào vùng này. Nếu ngay lúc đó đã đi tìm cơ hội đổi làn thì xe sẽ đổi làn liên tục, trong khi vật phía trước thật ra còn cách xa quãng đường dừng (13,6 m), chưa hề là mối đe doạ.&lt;br&gt;&lt;b&gt;Vẫn phải để ý nó đơn giản tới mức nào:&lt;/b&gt; đổi làn chỉ xét «làn bên cạnh phía trước có trống 8 m hay không», không đem so với làn hiện tại, cũng không nhìn tốc độ của xe kia. Bộ lập kế hoạch trên xe thật chấm điểm mấy đường đi ứng viên rồi mới chọn một; ở đây chỉ có khoảng cách, không có tốc độ, không có dự đoán. Chính khoảng cách đó là bài học." data-html="1"><b>為什麼只有煞車的時候才變道？</b>因為<b>變道本身就是風險</b>——碰撞診斷裡的「變道中側撞」就是這麼來的。沒有必要就應該直行。<br>「跟車」的門檻是煞停距離＋12 公尺，時速 40 時是 25.6 公尺，幾乎等於射線長度；只要前方看得到任何東西就會落在這一帶。如果在這裡就開始找機會變道，車子會一直在換車道，而前方那個東西其實離煞停距離（13.6 公尺）還很遠，根本不構成威脅。<br><b>還是要注意它有多簡單：</b>變道只看「隔壁車道前方有沒有 8 公尺淨空」，不拿來跟現在這條比，也不看對方的速度。真車的規劃器會把好幾條候選路徑打分數再選一條；這裡只有距離，沒有速度、沒有預測。這個差距本身就是教材。</div>
+      <h3 data-zh="撞了以後，診斷怎麼判斷" data-vi="Sau khi đâm, chẩn đoán dựa vào đâu">撞了以後，診斷怎麼判斷</h3>
       <table>
-        <tr><th>診斷</th><th>判斷依據</th><th>建議</th></tr>
-        <tr><td>看不到：固定式沒有後方視野</td><td>撞到的東西在自車後方，而且目前是固定式</td><td>切到旋轉式；真車會加裝後方感測器或盲點雷達</td></tr>
-        <tr><td>側後方：資料是上一圈的</td><td>撞到的東西在後方，目前是旋轉式</td><td>提高轉速，或降目標車速</td></tr>
-        <tr><td>旋轉式：資料已經過期</td><td>量到過，但最後一次量測距現在超過大半圈的時間</td><td>提高轉速；代價是每圈取樣數變少</td></tr>
-        <tr><td>看不到：視野外</td><td>撞到的東西從來沒被任何射線碰到，而且它是從側面進來的</td><td>加大張角，或加射線數</td></tr>
-        <tr><td>看不到：縫隙太大</td><td>從來沒被射線碰到，但它在張角範圍內</td><td>加射線數</td></tr>
-        <tr><td>看到太晚：射線太短</td><td>第一次看到它時的距離，已經小於當時的煞停距離</td><td>射線長度加到煞停距離＋5 公尺，或降速</td></tr>
-        <tr><td>看到太晚：從側面切進來</td><td>同上，但射線長度其實夠——它是從旁邊進到路徑上的</td><td>降速（不花錢）；要動規格的話加射線數比加張角有效</td></tr>
-        <tr><td>看到太晚：雨天漏讀</td><td>雨天，撞前兩秒有多次漏讀</td><td>降速；或加射線數補冗餘</td></tr>
-        <tr><td>看到了但來不及：車速太快</td><td>看到時距離夠，但煞停距離大於當時距離（對方也在動）</td><td>降目標車速</td></tr>
-        <tr><td>變道中側撞</td><td>撞的時候正在變道，對方在側面</td><td>張角加大讓側面射線看得更遠；或降速</td></tr>
-        <tr><td>手動駕駛</td><td>手動模式</td><td>這是你的反應時間，不是參數問題</td></tr>
+        <tr><th data-zh="診斷" data-vi="Chẩn đoán">診斷</th><th data-zh="判斷依據" data-vi="Căn cứ">判斷依據</th><th data-zh="建議" data-vi="Gợi ý">建議</th></tr>
+        <tr><td data-zh="看不到：固定式沒有後方視野" data-vi="Không thấy: loại cố định không có tầm nhìn phía sau">看不到：固定式沒有後方視野</td><td data-zh="撞到的東西在自車後方，而且目前是固定式" data-vi="Vật bị đâm ở phía sau xe, và đang dùng loại cố định">撞到的東西在自車後方，而且目前是固定式</td><td data-zh="切到旋轉式；真車會加裝後方感測器或盲點雷達" data-vi="Chuyển sang loại xoay; xe thật thì gắn thêm cảm biến sau hoặc radar điểm mù">切到旋轉式；真車會加裝後方感測器或盲點雷達</td></tr>
+        <tr><td data-zh="側後方：資料是上一圈的" data-vi="Phía sau bên hông: dữ liệu của vòng trước">側後方：資料是上一圈的</td><td data-zh="撞到的東西在後方，目前是旋轉式" data-vi="Vật bị đâm ở phía sau, đang dùng loại xoay">撞到的東西在後方，目前是旋轉式</td><td data-zh="提高轉速，或降目標車速" data-vi="Tăng tốc độ quay, hoặc giảm tốc độ mục tiêu">提高轉速，或降目標車速</td></tr>
+        <tr><td data-zh="旋轉式：資料已經過期" data-vi="Loại xoay: dữ liệu đã cũ">旋轉式：資料已經過期</td><td data-zh="量到過，但最後一次量測距現在超過大半圈的時間" data-vi="Có đo được, nhưng lần đo cuối cách bây giờ hơn nửa vòng">量到過，但最後一次量測距現在超過大半圈的時間</td><td data-zh="提高轉速；代價是每圈取樣數變少" data-vi="Tăng tốc độ quay; đổi lại mỗi vòng ít điểm hơn">提高轉速；代價是每圈取樣數變少</td></tr>
+        <tr><td data-zh="看不到：視野外" data-vi="Không thấy: nằm ngoài góc quét">看不到：視野外</td><td data-zh="撞到的東西從來沒被任何射線碰到，而且它是從側面進來的" data-vi="Vật bị đâm chưa từng bị tia nào chạm tới, và nó vào từ bên hông">撞到的東西從來沒被任何射線碰到，而且它是從側面進來的</td><td data-zh="加大張角，或加射線數" data-vi="Mở rộng góc quét, hoặc thêm tia">加大張角，或加射線數</td></tr>
+        <tr><td data-zh="看不到：縫隙太大" data-vi="Không thấy: khe giữa hai tia quá rộng">看不到：縫隙太大</td><td data-zh="從來沒被射線碰到，但它在張角範圍內" data-vi="Chưa từng bị tia chạm, nhưng nó nằm trong góc quét">從來沒被射線碰到，但它在張角範圍內</td><td data-zh="加射線數" data-vi="Thêm tia">加射線數</td></tr>
+        <tr><td data-zh="看到太晚：射線太短" data-vi="Thấy quá muộn: tia quá ngắn">看到太晚：射線太短</td><td data-zh="第一次看到它時的距離，已經小於當時的煞停距離" data-vi="Khoảng cách lúc thấy lần đầu đã nhỏ hơn quãng đường dừng lúc đó">第一次看到它時的距離，已經小於當時的煞停距離</td><td data-zh="射線長度加到煞停距離＋5 公尺，或降速" data-vi="Kéo tia dài tới quãng đường dừng + 5 m, hoặc giảm tốc">射線長度加到煞停距離＋5 公尺，或降速</td></tr>
+        <tr><td data-zh="看到太晚：從側面切進來" data-vi="Thấy quá muộn: tạt vào từ bên hông">看到太晚：從側面切進來</td><td data-zh="同上，但射線長度其實夠——它是從旁邊進到路徑上的" data-vi="Như trên, nhưng tia thật ra đủ dài — nó đi từ bên cạnh vào đường của ta">同上，但射線長度其實夠——它是從旁邊進到路徑上的</td><td data-zh="降速（不花錢）；要動規格的話加射線數比加張角有效" data-vi="Giảm tốc (không tốn tiền); nếu phải đổi thông số thì thêm tia hiệu quả hơn mở góc">降速（不花錢）；要動規格的話加射線數比加張角有效</td></tr>
+        <tr><td data-zh="看到太晚：雨天漏讀" data-vi="Thấy quá muộn: trời mưa đọc sót">看到太晚：雨天漏讀</td><td data-zh="雨天，撞前兩秒有多次漏讀" data-vi="Trời mưa, hai giây trước va chạm có nhiều lần đọc sót">雨天，撞前兩秒有多次漏讀</td><td data-zh="降速；或加射線數補冗餘" data-vi="Giảm tốc; hoặc thêm tia để bù">降速；或加射線數補冗餘</td></tr>
+        <tr><td data-zh="看到了但來不及：車速太快" data-vi="Thấy rồi nhưng không kịp: chạy quá nhanh">看到了但來不及：車速太快</td><td data-zh="看到時距離夠，但煞停距離大於當時距離（對方也在動）" data-vi="Lúc thấy thì khoảng cách đủ, nhưng quãng đường dừng lớn hơn khoảng cách lúc đó (bên kia cũng đang chạy)">看到時距離夠，但煞停距離大於當時距離（對方也在動）</td><td data-zh="降目標車速" data-vi="Giảm tốc độ mục tiêu">降目標車速</td></tr>
+        <tr><td data-zh="變道中側撞" data-vi="Va chạm ngang khi đang đổi làn">變道中側撞</td><td data-zh="撞的時候正在變道，對方在側面" data-vi="Lúc đâm đang đổi làn, bên kia ở phía hông">撞的時候正在變道，對方在側面</td><td data-zh="張角加大讓側面射線看得更遠；或降速" data-vi="Mở rộng góc quét để tia bên hông nhìn xa hơn; hoặc giảm tốc">張角加大讓側面射線看得更遠；或降速</td></tr>
+        <tr><td data-zh="手動駕駛" data-vi="Lái tay">手動駕駛</td><td data-zh="手動模式" data-vi="Chế độ lái tay">手動模式</td><td data-zh="這是你的反應時間，不是參數問題" data-vi="Đây là thời gian phản ứng của bạn, không phải vấn đề tham số">這是你的反應時間，不是參數問題</td></tr>
       </table>
-      <div class="hint">診斷是規則式的，只看幾個數字，可能判錯。判錯本身也是教材：真車的事故分析比這難一百倍。</div>
+      <div class="hint" data-zh="診斷是規則式的，只看幾個數字，可能判錯。判錯本身也是教材：真車的事故分析比這難一百倍。" data-vi="Chẩn đoán này chạy theo quy tắc, chỉ nhìn vài con số nên có thể đoán sai. Bản thân việc đoán sai cũng là bài học: phân tích tai nạn trên xe thật khó hơn cái này gấp trăm lần.">診斷是規則式的，只看幾個數字，可能判錯。判錯本身也是教材：真車的事故分析比這難一百倍。</div>
     </div></div>
   </div>
 
@@ -1055,6 +1044,7 @@ $("density").addEventListener("change", respawnAhead);
 // ── 光達型式切換 ──────────────────────────────────────────────────
 function setMount(m) {
   S.mount = m; S.mem = []; S.beam = 0;
+  if (typeof labelBase === "function") labelBase();
   $("mtFixed").classList.toggle("on", m === "fixed");
   $("mtSpin").classList.toggle("on", m === "spin");
   $("fixedCtl").style.display = m === "fixed" ? "" : "none";
@@ -1135,6 +1125,30 @@ const setUI = (o) => {
   for (const [k, v] of Object.entries(o)) { const el = $(k); if (!el) continue; if (el.type === "checkbox") { el.checked = v; el.dispatchEvent(new Event("change")); } else { el.value = v; el.dispatchEvent(new Event("input")); } }
   updateHints();
 };
+// 「回到預設值」的基準：選了上課情境就是那個情境的值，沒選就是模擬器出廠值。
+// 只還原感測器那幾格，不動種子、車流密度、天氣——那些是場景，不是規格。
+let BASE = { rays: 7, spread: 90, len: 25, azm: 24, spin: 10 };
+const applyBase = () => {
+  const keys = S.mount === "fixed" ? ["rays", "spread", "len"] : ["azm", "spin", "len"];
+  for (const k of keys) {
+    const el = $(k); if (!el || BASE[k] === undefined) continue;
+    el.value = String(BASE[k]); el.dispatchEvent(new Event("input"));
+  }
+  updateHints(); reset();
+  log(T(`回到預設值：${keys.map((k) => BASE[k]).join(" / ")}`,
+        `Về giá trị mặc định: ${keys.map((k) => BASE[k]).join(" / ")}`));
+};
+const labelBase = () => {
+  const txt = S.mount === "fixed"
+    ? `${BASE.rays} ・ ${BASE.len} m ・ ${BASE.spread}°`
+    : `${BASE.azm} ・ ${BASE.spin} Hz ・ ${BASE.len} m`;
+  const zh = `↩ 回到預設值（${txt}）`, vi = `↩ Về mặc định (${txt})`;
+  for (const id of ["resetSpec", "resetSpecSpin"]) {
+    const b = $(id); if (!b) continue;
+    b.dataset.zh = zh; b.dataset.vi = vi;
+    b.textContent = window.__L === "zh" ? zh : vi;
+  }
+};
 const PRESETS = {
   one:   { mount: "fixed", rays: 1, len: 25, spread: 90, density: 4, motos: true, parked: false, peds: false, rain: false, night: false, target: 50 },
   std:   { mount: "fixed", rays: 7, len: 25, spread: 90, density: 3, motos: false, parked: false, peds: false, rain: false, night: false, target: 50 },
@@ -1153,7 +1167,10 @@ presetSel.onchange = () => {
   if (!k) return;
   const opt = presetSel.options[presetSel.selectedIndex];
   const label = opt.textContent;
-  setUI(PRESETS[k]);
+  const P = PRESETS[k];
+  for (const kk of ["rays", "spread", "len", "azm", "spin"]) if (P[kk] !== undefined) BASE[kk] = P[kk];
+  setUI(P);
+  labelBase();
   presetSel.value = k;          // setUI 會觸發下面的「自己動滑桿就歸零」，這裡補回來
   reset();
   log(`情境 Tình huống：${label}`);
@@ -1179,6 +1196,10 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "h" || e.key === "H") $("help").style.display = $("help").style.display === "flex" ? "none" : "flex";
 });
 window.addEventListener("keyup", (e) => { S.keys[e.key] = false; });
+
+$("resetSpec").onclick = applyBase;
+$("resetSpecSpin").onclick = applyBase;
+labelBase();
 
 setMount("fixed");
 resize(); reset(); requestAnimationFrame(frame);
