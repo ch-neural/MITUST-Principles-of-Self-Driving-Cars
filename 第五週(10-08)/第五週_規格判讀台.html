@@ -40,6 +40,8 @@
   .pic span{display:block;margin-top:4px;font-size:11px;color:var(--mute)}
   /* 一律直排。橫排要靠 flex 收縮，面板一窄第二張就會被擠出右緣只露一條；
      直排則是兩張各自佔滿面板寬度，手機和電腦都一樣。 */
+  .out .hint{display:block;margin-top:3px;color:var(--mute)}
+  .out .warn{display:block;margin-top:3px;color:#c0392b;font-weight:700}
   .sim{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0 2px}
   .sim>div{text-align:center;max-width:100%}
   .sim canvas{display:block;max-width:100%;height:auto;border:1px solid var(--line);
@@ -511,9 +513,16 @@ function miniP() {
   $("vCh").textContent = ch; $("vCol").textContent = col; $("vHz").textContent = hz;
   const pts = ch * col * hz, dh = 360 / col;
   const nDots = drawDots(ch, col);
+  // 轉速不會改變上面那張圖：同一圈裡的點距只由線束數和每圈點數決定。
+  // 學生拉轉速看到圖沒反應會以為壞掉，所以直接寫出來。
+  const bad2048 = (col === 2048 && hz === 20);
   $("oP").innerHTML = L(
-    `每秒 <b>${pts.toLocaleString()}</b> 點<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　40 公尺處兩點相距 <b>${(40 * dh * R).toFixed(2)} m</b>`,
-    `<b>${pts.toLocaleString()}</b> điểm/giây<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　ở 40 m cách <b>${(40 * dh * R).toFixed(2)} m</b>`);
+    `每秒 <b>${pts.toLocaleString()}</b> 點<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　40 公尺處兩點相距 <b>${(40 * dh * R).toFixed(2)} m</b>`
+    + `<br><span class="hint">轉速只改「每秒幾點」和一秒給你幾張這樣的圖（現在 ${hz} 張）；<b>上面那張圖不會變</b>——同一圈裡的點距是線束數和每圈點數決定的。</span>`
+    + (bad2048 ? `<br><span class="warn">⚠ OS1 的規格表上，2048 點／圈只有 10 Hz 這個模式，配不了 20 Hz。</span>` : ""),
+    `<b>${pts.toLocaleString()}</b> điểm/giây<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　ở 40 m cách <b>${(40 * dh * R).toFixed(2)} m</b>`
+    + `<br><span class="hint">Tốc độ quay chỉ đổi số điểm/giây và số ảnh mỗi giây (${hz}); <b>hình trên không đổi</b> — khoảng cách điểm trong một vòng do số kênh và số điểm mỗi vòng quyết định.</span>`
+    + (bad2048 ? `<br><span class="warn">⚠ Trên datasheet OS1, 2048 điểm/vòng chỉ có chế độ 10 Hz.</span>` : ""));
 }
 // ② 40 公尺的機車上落幾個點：算法和下面判定區那一段一模一樣，數字才不會各說各話
 const BIKE = { w: 0.8, h: 1.6 }, DOT_D = 40, OS1_VFOV = 42.4;
