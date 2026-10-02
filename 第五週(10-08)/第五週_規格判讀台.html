@@ -38,9 +38,12 @@
 .pic{padding:10px 12px 2px;text-align:center}
   .pic img{max-width:min(230px,70%);max-height:140px;border-radius:6px;border:1px solid var(--line)}
   .pic span{display:block;margin-top:4px;font-size:11px;color:var(--mute)}
-  .sim{display:flex;gap:10px;align-items:flex-start;margin:8px 0 2px}
-  .sim>div{text-align:center}
-  .sim canvas{display:block;border:1px solid var(--line);border-radius:5px;background:#eef2f6}
+  /* 一律直排。橫排要靠 flex 收縮，面板一窄第二張就會被擠出右緣只露一條；
+     直排則是兩張各自佔滿面板寬度，手機和電腦都一樣。 */
+  .sim{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0 2px}
+  .sim>div{text-align:center;max-width:100%}
+  .sim canvas{display:block;max-width:100%;height:auto;border:1px solid var(--line);
+    border-radius:5px;background:#eef2f6}
   .sim span{display:block;margin-top:3px;font-size:10px;color:var(--mute)}
     .src{font-size:10px;color:var(--mute);padding:6px 10px;border-top:1px solid var(--line);line-height:1.4}
   /* 判讀表 */
