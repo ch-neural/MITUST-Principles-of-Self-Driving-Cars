@@ -144,11 +144,19 @@
       <input type="range" id="sCol" min="0" max="2" step="1" value="1">
       <div class="rowv"><span data-zh="轉速 Hz" data-vi="Tốc độ quay Hz"></span><b id="vHz">10</b></div>
       <input type="range" id="sHz" min="0" max="1" step="1" value="0">
+      <div class="sim">
+        <div><canvas id="cDots" width="268" height="201"></canvas>
+          <span data-zh="40 m 外那台機車，落到幾個點" data-vi="Xe máy ở 40 m: bao nhiêu điểm"></span></div>
+      </div>
       <div class="out" id="oP"></div>
     </div>
 
     <div class="mini">
       <div class="t" data-zh="③ 反射率：黑色車與白色車" data-vi="③ Độ phản xạ: xe đen và xe trắng"><small data-zh="同一顆光達，量白色物體和黑色物體差很多" data-vi="Cùng một lidar, vật trắng và vật đen khác hẳn"></small></div>
+      <div class="rowv"><span data-zh="目標距離 m" data-vi="Khoảng cách m"></span><b id="vD">120</b></div>
+      <input type="range" id="sD" min="20" max="200" step="5" value="120">
+      <div class="sim"><div><canvas id="cRef" width="268" height="118"></canvas>
+        <span data-zh="同一顆 OS1，兩種顏色的車" data-vi="Cùng một OS1, hai màu xe"></span></div></div>
       <div id="oR" class="out"></div>
     </div>
 
@@ -499,14 +507,85 @@ function miniP() {
   const ch = CHS[+$("sCh").value], col = COLS[+$("sCol").value], hz = HZS[+$("sHz").value];
   $("vCh").textContent = ch; $("vCol").textContent = col; $("vHz").textContent = hz;
   const pts = ch * col * hz, dh = 360 / col;
+  const nDots = drawDots(ch, col);
   $("oP").innerHTML = L(
     `每秒 <b>${pts.toLocaleString()}</b> 點<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　40 公尺處兩點相距 <b>${(40 * dh * R).toFixed(2)} m</b>`,
     `<b>${pts.toLocaleString()}</b> điểm/giây<br>360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>　ở 40 m cách <b>${(40 * dh * R).toFixed(2)} m</b>`);
 }
+// ② 40 公尺的機車上落幾個點：算法和下面判定區那一段一模一樣，數字才不會各說各話
+const BIKE = { w: 0.8, h: 1.6 }, DOT_D = 40, OS1_VFOV = 42.4;
+function drawDots(ch, cols) {
+  const c = $("cDots"), g = c.getContext("2d");
+  g.clearRect(0, 0, c.width, c.height);
+  const dv = OS1_VFOV / (ch - 1), dh = 360 / cols;
+  const nv = Math.max(0, Math.floor(Math.min(ch, 2 * Math.atan(BIKE.h / 2 / DOT_D) / R / dv)));
+  const nh = Math.max(0, Math.floor(2 * Math.atan(BIKE.w / 2 / DOT_D) / R / dh));
+  // 背景放那張河內底圖裡的機車，壓暗一點，讓亮點看得清楚
+  if (LENS_IMG.complete && LENS_IMG.naturalWidth) {
+    const span = BIKE_W * 2.2;
+    const sx = (LENS_IMG.naturalWidth - span) / 2;
+    const sy = (LENS_IMG.naturalHeight - span * 0.75) / 2 + BIKE_DY;
+    g.drawImage(LENS_IMG, sx, sy, span, span * 0.75, 0, 0, c.width, c.height);
+    g.fillStyle = "rgba(10,20,34,.55)"; g.fillRect(0, 0, c.width, c.height);
+  }
+  // 機車的框：畫面中央，寬度抓畫布的 36%（對應 0.8 m）
+  const bw = c.width * 0.36, bh = bw * (BIKE.h / BIKE.w);
+  const bx = (c.width - bw) / 2, by = (c.height - bh) / 2;
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1;
+  g.strokeRect(bx, by, bw, bh);
+  g.fillStyle = "#ffd166";
+  for (let r = 0; r < nv; r++) {
+    for (let k = 0; k < nh; k++) {
+      const x = bx + bw * (k + 0.5) / nh, y = by + bh * (r + 0.5) / nv;
+      g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill();
+    }
+  }
+  g.fillStyle = "#fff"; g.font = "bold 13px Arial";
+  g.fillText(`${nv * nh}`, 8, 20);
+  g.font = "10px Arial"; g.fillText(L("個點", "điểm"), 8 + (nv * nh > 9 ? 18 : 10), 20);
+  return nv * nh;
+}
+
+// ③ 距離條：白色車到 170 m、黑色車到 90 m，拉滑桿看這個距離誰還看得到
+const REF = { white: 170, black: 90, max: 200 };
+function drawRef(d) {
+  const c = $("cRef"), g = c.getContext("2d");
+  g.clearRect(0, 0, c.width, c.height);
+  const L0 = 34, R0 = c.width - 10, span = R0 - L0;
+  const atX = (m) => L0 + span * Math.min(m, REF.max) / REF.max;
+  [["80%", REF.white, "#e8edf2", 34], ["10%", REF.black, "#3a4450", 74]].forEach(([tag, reach, col, y]) => {
+    g.fillStyle = "#dfe6ec"; g.fillRect(L0, y, span, 10);
+    g.fillStyle = col === "#e8edf2" ? "#7fb3d5" : "#2e6e4e";
+    g.fillRect(L0, y, atX(reach) - L0, 10);
+    g.fillStyle = "#5f7183"; g.font = "10px Arial";
+    g.fillText(tag, 6, y + 9);
+    g.fillStyle = "#0b1f3a"; g.font = "bold 10px Arial";
+    g.fillText(`${reach} m`, Math.min(atX(reach) + 3, c.width - 36), y + 9);
+    // 這個距離上，這種顏色看不看得到
+    g.fillStyle = d <= reach ? "#2e6e4e" : "#c0392b";
+    g.beginPath(); g.arc(atX(d), y + 5, 4.5, 0, 6.283); g.fill();
+  });
+  g.strokeStyle = "#c0392b"; g.setLineDash([3, 3]); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(atX(d), 24); g.lineTo(atX(d), 96); g.stroke(); g.setLineDash([]);
+  g.fillStyle = "#c0392b"; g.font = "bold 10px Arial";
+  g.fillText(`${d} m`, Math.max(2, Math.min(atX(d) - 12, c.width - 30)), 110);
+}
+
 function miniR() {
+  const d = +$("sD").value;
+  $("vD").textContent = d;
+  drawRef(d);
+  const w = d <= REF.white, b = d <= REF.black;
+  const mark = (ok) => ok ? "✓" : "✗";
   $("oR").innerHTML = L(
-    `OS1：白色（80%）<b>170 m</b>，黑色（10%）只剩 <b>90 m</b>。<br>看到「測距 170 m」要追問：<b>對什麼顏色量的？</b>`,
-    `OS1: vật trắng (80%) <b>170 m</b>, vật đen (10%) chỉ <b>90 m</b>.<br>Thấy «170 m» phải hỏi: đo với màu gì?`);
+    `OS1：白色（80%）<b>170 m</b>，黑色（10%）只剩 <b>90 m</b>。<br>` +
+    `${d} m 的目標：白色車 <b>${mark(w)}</b>　黑色車 <b>${mark(b)}</b>` +
+    (w && !b ? `　← <b>同一個距離，換個顏色就看不到了</b>` : "") +
+    `<br>看到「測距 170 m」要追問：<b>對什麼顏色量的？</b>`,
+    `OS1: vật trắng (80%) <b>170 m</b>, vật đen (10%) chỉ <b>90 m</b>.<br>` +
+    `Mục tiêu ở ${d} m: xe trắng <b>${mark(w)}</b>　xe đen <b>${mark(b)}</b>` +
+    (w && !b ? `　← <b>cùng khoảng cách, đổi màu là không thấy</b>` : "") +
+    `<br>Thấy «170 m» phải hỏi: đo với màu gì?`);
 }
 
 function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); }
@@ -526,6 +605,7 @@ $("btnCheck").onclick = check;
 $("btnClear").onclick = () => quiz();
 ["sF"].forEach((id) => $(id).addEventListener("input", miniF));
 ["sCh", "sCol", "sHz"].forEach((id) => $(id).addEventListener("input", miniP));
+$("sD").addEventListener("input", miniR);
 
 // 手機：三個分頁
 const MOBILE = window.matchMedia("(max-width:900px)");
