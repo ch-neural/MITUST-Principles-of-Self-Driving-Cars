@@ -135,8 +135,8 @@
       <div class="sim">
         <div><canvas id="cScene" width="268" height="201"></canvas>
           <span data-zh="這顆鏡頭看到的範圍" data-vi="Phạm vi ống kính này thấy"></span></div>
-        <div><canvas id="cBike" width="118" height="118"></canvas>
-          <span data-zh="40 m 外那台機車" data-vi="Xe máy ở 40 m"></span></div>
+        <div><canvas id="cBike" width="160" height="160"></canvas>
+          <span data-zh="40 m 外那台機車（畫面＝感光元件上 80 個像素）" data-vi="Xe máy ở 40 m (khung = 80 điểm ảnh trên cảm biến)"></span></div>
       </div>
       <div class="out" id="oF"></div>
     </div>
@@ -461,6 +461,7 @@ const CHS = [16, 32, 64, 128, 256], COLS = [512, 1024, 2048], HZS = [10, 20];
 // 小工具①的照片模擬：底圖的取景剛好等於焦距 2 mm（滑桿最廣那端）看到的範圍，
 // 所以任何焦距要顯示的範圍，就是底圖的 fov / LENS_FOV 那一塊。
 let LENS_CAPPED = false;
+const VIEW_PX = 80;          // 畫布代表感光元件上幾個像素
 const LENS_FOV = 113.9, BIKE_W = 71, BIKE_DY = 81, BIKE_ANG = 1.15;
 const LENS_IMG = new Image();
 LENS_IMG.onload = () => miniF();
@@ -480,24 +481,23 @@ function drawScene(fov) {
 function drawBike(fov) {
   const c = $("cBike"), g = c.getContext("2d");
   if (!LENS_IMG.complete || !LENS_IMG.naturalWidth) return 0;
-  // 這顆鏡頭下，那台機車在 2048 像素的感光元件上佔幾個像素
-  const px = BIKE_ANG / (fov / 2048);
-  // 取機車周圍 1.6 倍寬的一小塊，先畫到「只有那麼多像素」的小畫布，再放大
-  const span = BIKE_W * 1.6;
-  const sx = (LENS_IMG.naturalWidth - span) / 2;
-  const sy = (LENS_IMG.naturalHeight - span) / 2 + BIKE_DY;
-  // 底圖本身在這一塊只有 span 個像素。模擬要的像素數超過它的時候不能硬放大——
-  // 那是假的細節。所以夾住，並讓 miniF 把「到頂了」講出來。
-  const want = Math.max(3, Math.round(px * 1.6));
-  const n = Math.min(want, Math.round(span));
-  LENS_CAPPED = want > Math.round(span);
+  // 畫布固定代表感光元件上 VIEW_PX 個像素（像 1:1 檢視）。
+  // 這樣機車會照實際比例縮放：愈廣角，同一台機車佔的像素愈少，看起來就愈小。
+  const px = BIKE_ANG / (fov / 2048);            // 機車佔幾個感光元件像素
+  const spanBase = BIKE_W * (VIEW_PX / px);      // 這個視窗在底圖上有多寬
+  const cx = LENS_IMG.naturalWidth / 2, cy = LENS_IMG.naturalHeight / 2 + BIKE_DY;
+  const half = spanBase / 2;
+  // 底圖本身只有這麼多像素，超過就夾住——再放大是假細節
+  const n = Math.max(3, Math.min(VIEW_PX, Math.round(spanBase)));
+  LENS_CAPPED = VIEW_PX > Math.round(spanBase);
   const off = document.createElement("canvas");
   off.width = n; off.height = n;
   const og = off.getContext("2d");
   og.imageSmoothingEnabled = true;
-  og.drawImage(LENS_IMG, sx, sy, span, span, 0, 0, n, n);
-  // 放大時關平滑，才看得出一格一格；縮小時要開，否則出現鋸齒
-  g.imageSmoothingEnabled = n >= c.width;
+  og.drawImage(LENS_IMG, cx - half, cy - half, spanBase, spanBase, 0, 0, n, n);
+  // 在底圖撐得住的範圍內用方塊放大，看得出一格一格（那是真的感光元件像素）；
+  // 已經到頂的時候改用平滑，否則長焦會比短焦還方塊，學生會誤以為長焦比較差
+  g.imageSmoothingEnabled = LENS_CAPPED;
   g.clearRect(0, 0, c.width, c.height);
   g.drawImage(off, 0, 0, n, n, 0, 0, c.width, c.height);
   return px;
@@ -572,24 +572,56 @@ const REF = { white: 170, black: 90, max: 200 };
 function drawRef(d) {
   const c = $("cRef"), g = c.getContext("2d");
   g.clearRect(0, 0, c.width, c.height);
-  const L0 = 34, R0 = c.width - 10, span = R0 - L0;
+  const L0 = 40, R0 = c.width - 12, span = R0 - L0;
   const atX = (m) => L0 + span * Math.min(m, REF.max) / REF.max;
-  [["80%", REF.white, "#e8edf2", 34], ["10%", REF.black, "#3a4450", 74]].forEach(([tag, reach, col, y]) => {
-    g.fillStyle = "#dfe6ec"; g.fillRect(L0, y, span, 10);
-    g.fillStyle = col === "#e8edf2" ? "#7fb3d5" : "#2e6e4e";
-    g.fillRect(L0, y, atX(reach) - L0, 10);
-    g.fillStyle = "#5f7183"; g.font = "10px Arial";
-    g.fillText(tag, 6, y + 9);
-    g.fillStyle = "#0b1f3a"; g.font = "bold 10px Arial";
-    g.fillText(`${reach} m`, Math.min(atX(reach) + 3, c.width - 36), y + 9);
-    // 這個距離上，這種顏色看不看得到
-    g.fillStyle = d <= reach ? "#2e6e4e" : "#c0392b";
-    g.beginPath(); g.arc(atX(d), y + 5, 4.5, 0, 6.283); g.fill();
+
+  // 距離軸：0 到 200 公尺，標出兩個測距終點
+  g.strokeStyle = "#c8d2db"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(L0, 18); g.lineTo(R0, 18); g.stroke();
+  g.fillStyle = "#5f7183"; g.font = "9px Arial";
+  [0, 50, 100, 150, 200].forEach((m) => {
+    g.beginPath(); g.moveTo(atX(m), 14); g.lineTo(atX(m), 18); g.stroke();
+    g.fillText(String(m), atX(m) - (m ? 7 : 2), 11);
   });
+
+  // 一台車：in 為真就正常畫，假的話畫成虛線空殼（路上明明有，光達看不到）
+  const car = (x, y, body, roof, inRange) => {
+    const w = 22, h = 11;
+    g.save();
+    if (!inRange) { g.setLineDash([3, 2]); g.strokeStyle = "#b6c0ca"; g.lineWidth = 1; }
+    else { g.fillStyle = body; }
+    const rr = (x0, y0, w0, h0, r) => {
+      g.beginPath();
+      g.moveTo(x0 + r, y0); g.arcTo(x0 + w0, y0, x0 + w0, y0 + h0, r);
+      g.arcTo(x0 + w0, y0 + h0, x0, y0 + h0, r); g.arcTo(x0, y0 + h0, x0, y0, r);
+      g.arcTo(x0, y0, x0 + w0, y0, r); g.closePath();
+    };
+    rr(x - w / 2, y - h / 2, w, h, 3);
+    if (inRange) { g.fill(); g.strokeStyle = "#5f7183"; g.lineWidth = 0.8; g.stroke();
+      g.fillStyle = roof; rr(x - w / 2 + 5, y - h / 2 + 2, w - 10, h - 4, 2); g.fill(); }
+    else { g.stroke(); g.fillStyle = "#c0392b"; g.font = "bold 11px Arial";
+      g.fillText("\u2715", x - 4, y + 4); }
+    g.restore();
+  };
+
+  [["80%", REF.white, "#f2f5f8", "#cfd9e2", 46], ["10%", REF.black, "#26303a", "#121a22", 84]]
+    .forEach(([tag, reach, body, roof, y]) => {
+      g.fillStyle = "#eef2f6"; g.fillRect(L0, y - 10, span, 20);     // 車道
+      g.fillStyle = "#dceaf3"; g.fillRect(L0, y - 10, atX(reach) - L0, 20);  // 看得到的那一段
+      g.strokeStyle = "#9db2c4"; g.setLineDash([2, 3]); g.lineWidth = 1;
+      g.beginPath(); g.moveTo(atX(reach), y - 10); g.lineTo(atX(reach), y + 10); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = "#5f7183"; g.font = "9px Arial"; g.fillText(tag, 6, y + 3);
+      g.fillStyle = "#0b1f3a"; g.font = "bold 9px Arial";
+      g.fillText(`${reach} m`, Math.min(atX(reach) + 2, c.width - 32), y - 13);
+      car(atX(d), y, body, roof, d <= reach);
+    });
+
+  // 目前的目標距離
   g.strokeStyle = "#c0392b"; g.setLineDash([3, 3]); g.lineWidth = 1;
-  g.beginPath(); g.moveTo(atX(d), 24); g.lineTo(atX(d), 96); g.stroke(); g.setLineDash([]);
+  g.beginPath(); g.moveTo(atX(d), 20); g.lineTo(atX(d), 100); g.stroke(); g.setLineDash([]);
   g.fillStyle = "#c0392b"; g.font = "bold 10px Arial";
-  g.fillText(`${d} m`, Math.max(2, Math.min(atX(d) - 12, c.width - 30)), 110);
+  g.fillText(`${d} m`, Math.max(2, Math.min(atX(d) - 12, c.width - 30)), 112);
 }
 
 function miniR() {
