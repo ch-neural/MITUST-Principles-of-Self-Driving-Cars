@@ -460,6 +460,7 @@ function sceneBtns() {
 const CHS = [16, 32, 64, 128, 256], COLS = [512, 1024, 2048], HZS = [10, 20];
 // 小工具①的照片模擬：底圖的取景剛好等於焦距 2 mm（滑桿最廣那端）看到的範圍，
 // 所以任何焦距要顯示的範圍，就是底圖的 fov / LENS_FOV 那一塊。
+let LENS_CAPPED = false;
 const LENS_FOV = 113.9, BIKE_W = 71, BIKE_DY = 81, BIKE_ANG = 1.15;
 const LENS_IMG = new Image();
 LENS_IMG.onload = () => miniF();
@@ -485,7 +486,11 @@ function drawBike(fov) {
   const span = BIKE_W * 1.6;
   const sx = (LENS_IMG.naturalWidth - span) / 2;
   const sy = (LENS_IMG.naturalHeight - span) / 2 + BIKE_DY;
-  const n = Math.max(3, Math.round(px * 1.6));
+  // 底圖本身在這一塊只有 span 個像素。模擬要的像素數超過它的時候不能硬放大——
+  // 那是假的細節。所以夾住，並讓 miniF 把「到頂了」講出來。
+  const want = Math.max(3, Math.round(px * 1.6));
+  const n = Math.min(want, Math.round(span));
+  LENS_CAPPED = want > Math.round(span);
   const off = document.createElement("canvas");
   off.width = n; off.height = n;
   const og = off.getContext("2d");
@@ -504,7 +509,11 @@ function miniF() {
   $("vF").textContent = f.toFixed(1);
   drawScene(fov);
   const px = drawBike(fov);
-  $("oF").innerHTML = L(
+  const cap = LENS_CAPPED
+    ? L(`<span class="hint">右邊那張已經到頂：底圖的機車本身只有約 ${BIKE_W} 像素寬，比這更長的焦距模擬不出更多細節（左邊的取景和上面的數字仍然正確）。</span>`,
+        `<span class="hint">Hình bên phải đã tới hạn: xe trong ảnh gốc chỉ rộng khoảng ${BIKE_W} điểm ảnh.</span>`)
+    : "";
+  $("oF").innerHTML = cap + L(
     `視野 <b>${fov.toFixed(1)}°</b>　每像素 <b>${(fov / 2048).toFixed(4)}°</b><br>40 公尺外那台機車只剩 <b>${px.toFixed(0)} 像素</b>寬。焦距加倍 → 視野減半，看得準但看得窄。`,
     `Góc nhìn <b>${fov.toFixed(1)}°</b>　mỗi điểm ảnh <b>${(fov / 2048).toFixed(4)}°</b><br>Xe máy ở 40 m chỉ còn <b>${px.toFixed(0)} điểm ảnh</b>. Tiêu cự gấp đôi → góc nhìn giảm nửa.`);
 }
