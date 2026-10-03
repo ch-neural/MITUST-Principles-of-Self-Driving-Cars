@@ -537,7 +537,7 @@ function miniP() {
   const ch = CHS[+$("sCh").value], col = COLS[+$("sCol").value], hz = HZS[+$("sHz").value];
   $("vCh").textContent = ch; $("vCol").textContent = col; $("vHz").textContent = hz;
   const pts = ch * col * hz, dh = 360 / col;
-  const nDots = drawDots(ch, col);
+  const D = drawDots(ch, col);
   // 轉速不會改變上面那張圖：同一圈裡的點距只由線束數和每圈點數決定。
   // 學生拉轉速看到圖沒反應會以為壞掉，所以直接寫出來。
   const bad2048 = (col === 2048 && hz === 20);
@@ -549,13 +549,21 @@ function miniP() {
                            + ` × ${hz} ${zh ? "圈/秒" : "vòng/giây"} ＝ <b>${pts.toLocaleString()}</b>`)
     + row(zh ? "水平角解析度" : "Góc ngang",
           `360° ÷ ${col} ＝ <b>${dh.toFixed(3)}°</b>`)
+    + row(zh ? "垂直角解析度" : "Góc dọc",
+          `42.4° ÷ (${ch} − 1) ＝ <b>${D.dv.toFixed(3)}°</b>`)
     + row(zh ? "40 m 處點距" : "Cách nhau ở 40 m",
-          `40 m × tan(${dh.toFixed(3)}°) ＝ <b>${gap.toFixed(2)} m</b>`);
+          `40 m × tan(${dh.toFixed(3)}°) ＝ <b>${gap.toFixed(2)} m</b>`)
+    + row(zh ? "機車上的點數" : "Số điểm trên xe",
+          `${BIKE_ANG_H.toFixed(2)}° ÷ ${D.dv.toFixed(3)}° ＝ ${D.nv}`
+          + `　×　${BIKE_ANG_W.toFixed(2)}° ÷ ${dh.toFixed(3)}° ＝ ${D.nh}`
+          + `　＝ <b>${D.n}</b>`);
   $("oP").innerHTML = L(
     calc(true)
+    + `<span class="hint">那台機車 0.8 × 1.6 公尺、放在 40 公尺外，張角是寬 ${BIKE_ANG_W.toFixed(2)}°、高 ${BIKE_ANG_H.toFixed(2)}°（2 × atan(半邊 ÷ 40)）；除以角解析度再無條件捨去，就是上圖的點數。</span>`
     + `<span class="hint">轉速只改「每秒幾點」和一秒給你幾張這樣的圖（現在 ${hz} 張）；<b>上面那張圖不會變</b>——同一圈裡的點距是線束數和每圈點數決定的，和轉速無關。</span>`
     + (bad2048 ? `<span class="warn">⚠ OS1 的規格表上，2048 點／圈只有 10 Hz 這個模式，配不了 20 Hz。</span>` : ""),
     calc(false)
+    + `<span class="hint">Xe 0.8 × 1.6 m ở 40 m có góc rộng ${BIKE_ANG_W.toFixed(2)}°, cao ${BIKE_ANG_H.toFixed(2)}° (2 × atan(nửa cạnh ÷ 40)); chia cho góc phân giải rồi làm tròn xuống là ra số điểm ở hình trên.</span>`
     + `<span class="hint">Tốc độ quay chỉ đổi số điểm/giây và số ảnh mỗi giây (${hz}); <b>hình trên không đổi</b> — khoảng cách điểm trong một vòng do số kênh và số điểm mỗi vòng quyết định.</span>`
     + (bad2048 ? `<span class="warn">⚠ Trên datasheet OS1, 2048 điểm/vòng chỉ có chế độ 10 Hz.</span>` : ""));
 }
@@ -590,8 +598,12 @@ function drawDots(ch, cols) {
   g.fillStyle = "#fff"; g.font = "bold 13px Arial";
   g.fillText(`${nv * nh}`, 8, 20);
   g.font = "10px Arial"; g.fillText(L("個點", "điểm"), 8 + (nv * nh > 9 ? 18 : 10), 20);
-  return nv * nh;
+  return { n: nv * nh, nv, nh, dv, dh };
 }
+
+// 40 公尺外那台機車張開多少角度：2 × atan(半邊 ÷ 距離)。寬高分開算。
+const BIKE_ANG_H = 2 * Math.atan(BIKE.h / 2 / DOT_D) / R;
+const BIKE_ANG_W = 2 * Math.atan(BIKE.w / 2 / DOT_D) / R;
 
 // ③ 距離條：白色車到 170 m、黑色車到 90 m，拉滑桿看這個距離誰還看得到
 const REF = { white: 170, black: 90, max: 200 };
