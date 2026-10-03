@@ -553,17 +553,19 @@ function miniP() {
           `42.4° ÷ (${ch} − 1) ＝ <b>${D.dv.toFixed(3)}°</b>`)
     + row(zh ? "40 m 處點距" : "Cách nhau ở 40 m",
           `40 m × tan(${dh.toFixed(3)}°) ＝ <b>${gap.toFixed(2)} m</b>`)
+    + row(zh ? "機車橫向幾個" : "Theo chiều ngang",
+          `${BIKE_ANG_W.toFixed(2)}° ÷ ${dh.toFixed(3)}° ＝ ${D.rh.toFixed(2)} → <b>${D.nh}</b>`)
+    + row(zh ? "機車縱向幾排" : "Theo chiều dọc",
+          `${BIKE_ANG_H.toFixed(2)}° ÷ ${D.dv.toFixed(3)}° ＝ ${D.rv.toFixed(2)} → <b>${D.nv}</b>`)
     + row(zh ? "機車上的點數" : "Số điểm trên xe",
-          `${BIKE_ANG_H.toFixed(2)}° ÷ ${D.dv.toFixed(3)}° ＝ ${D.nv}`
-          + `　×　${BIKE_ANG_W.toFixed(2)}° ÷ ${dh.toFixed(3)}° ＝ ${D.nh}`
-          + `　＝ <b>${D.n}</b>`);
+          `${D.nh} × ${D.nv} ＝ <b>${D.n}</b>`);
   $("oP").innerHTML = L(
     calc(true)
-    + `<span class="hint">那台機車 0.8 × 1.6 公尺、放在 40 公尺外，張角是寬 ${BIKE_ANG_W.toFixed(2)}°、高 ${BIKE_ANG_H.toFixed(2)}°（2 × atan(半邊 ÷ 40)）；除以角解析度再無條件捨去，就是上圖的點數。</span>`
+    + `<span class="hint">那台機車 0.8 × 1.6 公尺、放在 40 公尺外，張角是寬 ${BIKE_ANG_W.toFixed(2)}°、高 ${BIKE_ANG_H.toFixed(2)}°（2 × atan(半邊 ÷ 40)）；除以角解析度，小數點後面**無條件捨去**——打不到就是打不到，沒有半個點這種東西。</span>`
     + `<span class="hint">轉速只改「每秒幾點」和一秒給你幾張這樣的圖（現在 ${hz} 張）；<b>上面那張圖不會變</b>——同一圈裡的點距是線束數和每圈點數決定的，和轉速無關。</span>`
     + (bad2048 ? `<span class="warn">⚠ OS1 的規格表上，2048 點／圈只有 10 Hz 這個模式，配不了 20 Hz。</span>` : ""),
     calc(false)
-    + `<span class="hint">Xe 0.8 × 1.6 m ở 40 m có góc rộng ${BIKE_ANG_W.toFixed(2)}°, cao ${BIKE_ANG_H.toFixed(2)}° (2 × atan(nửa cạnh ÷ 40)); chia cho góc phân giải rồi làm tròn xuống là ra số điểm ở hình trên.</span>`
+    + `<span class="hint">Xe 0.8 × 1.6 m ở 40 m có góc rộng ${BIKE_ANG_W.toFixed(2)}°, cao ${BIKE_ANG_H.toFixed(2)}° (2 × atan(nửa cạnh ÷ 40)); chia cho góc phân giải rồi <b>làm tròn xuống</b> — không có nửa điểm.</span>`
     + `<span class="hint">Tốc độ quay chỉ đổi số điểm/giây và số ảnh mỗi giây (${hz}); <b>hình trên không đổi</b> — khoảng cách điểm trong một vòng do số kênh và số điểm mỗi vòng quyết định.</span>`
     + (bad2048 ? `<span class="warn">⚠ Trên datasheet OS1, 2048 điểm/vòng chỉ có chế độ 10 Hz.</span>` : ""));
 }
@@ -573,8 +575,10 @@ function drawDots(ch, cols) {
   const c = $("cDots"), g = c.getContext("2d");
   g.clearRect(0, 0, c.width, c.height);
   const dv = OS1_VFOV / (ch - 1), dh = 360 / cols;
-  const nv = Math.max(0, Math.floor(Math.min(ch, 2 * Math.atan(BIKE.h / 2 / DOT_D) / R / dv)));
-  const nh = Math.max(0, Math.floor(2 * Math.atan(BIKE.w / 2 / DOT_D) / R / dh));
+  const rv = 2 * Math.atan(BIKE.h / 2 / DOT_D) / R / dv;      // 還沒捨去的商
+  const rh = 2 * Math.atan(BIKE.w / 2 / DOT_D) / R / dh;
+  const nv = Math.max(0, Math.floor(Math.min(ch, rv)));
+  const nh = Math.max(0, Math.floor(rh));
   // 背景放那張河內底圖裡的機車，壓暗一點，讓亮點看得清楚
   if (LENS_IMG.complete && LENS_IMG.naturalWidth) {
     const span = BIKE_W * 2.2;
@@ -598,7 +602,7 @@ function drawDots(ch, cols) {
   g.fillStyle = "#fff"; g.font = "bold 13px Arial";
   g.fillText(`${nv * nh}`, 8, 20);
   g.font = "10px Arial"; g.fillText(L("個點", "điểm"), 8 + (nv * nh > 9 ? 18 : 10), 20);
-  return { n: nv * nh, nv, nh, dv, dh };
+  return { n: nv * nh, nv, nh, rv, rh, dv, dh };
 }
 
 // 40 公尺外那台機車張開多少角度：2 × atan(半邊 ÷ 距離)。寬高分開算。
