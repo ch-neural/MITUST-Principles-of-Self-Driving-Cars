@@ -43,6 +43,29 @@
   .out .calc{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin:3px 0}
   .out .calc>i{flex:0 0 auto;min-width:96px;font-style:normal;font-size:11px;color:var(--mute)}
   .out .calc>code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--navy)}
+  #pHw{grid-column:1/-1}
+  .hwq{margin:10px 0 4px;font-weight:700;font-size:13px;color:var(--navy)}
+  .hwn{font-size:11.5px;color:var(--mute);margin-bottom:4px}
+  /* table-layout:fixed 一定要留著——不然型號那一欄會把表撐到比手機還寬，
+     整頁跟著橫向溢出，連上面的分頁列都會被推出去。 */
+  .hwtab{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+  .hwtab th,.hwtab td{border:1px solid var(--line);padding:4px 3px;text-align:center;
+    overflow:hidden;text-overflow:ellipsis}
+  .hwtab th{background:var(--card);font-weight:700;font-size:11px}
+  .hwtab td:first-child,.hwtab th:first-child{text-align:left;width:37%;font-size:11.5px}
+  .hwtab select{width:100%;padding:5px 0;font-size:12px;min-height:0}
+  .hw input[type=text],.hw textarea{width:100%;font-family:inherit;font-size:13px;
+    padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+  .hw textarea{min-height:58px;resize:vertical;line-height:1.5}
+  .hwtf{display:flex;gap:6px;align-items:flex-start;margin-top:5px}
+  .hwtf select{flex:0 0 76px}
+  #sheet{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:12px 14px}
+  #sheet h3{margin:0 0 2px;font-size:15px;color:var(--navy)}
+  #sheet .who{font-size:13px;font-weight:700;color:var(--ink)}
+  #sheet .when{font-size:11px;color:var(--mute);margin-bottom:8px}
+  #sheet .sec{font-size:11.5px;color:var(--teal-d);font-weight:700;margin:9px 0 3px}
+  #sheet .ans{font-size:12.5px;line-height:1.55;white-space:pre-wrap}
+  #sheet .miss{color:var(--red)}
   .out .hint{display:block;margin-top:3px;color:var(--mute)}
   .out .warn{display:block;margin-top:3px;color:#c0392b;font-weight:700}
   .sim{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0 2px}
@@ -98,6 +121,7 @@
   <button data-tab="ds" class="on" data-zh="規格表" data-vi="Thông số"></button>
   <button data-tab="read" data-zh="判讀與試算" data-vi="Đọc &amp; tính"></button>
   <button data-tab="mini" data-zh="三個小工具" data-vi="Ba công cụ"></button>
+  <button data-tab="hw" data-zh="作業" data-vi="Bài nộp"></button>
 </div>
 
 <div id="app">
@@ -174,6 +198,20 @@
 
     <div class="foot" data-zh="規格取自各廠公開文件，來源標在每張表下面。算出來的點數與煞停距離是課堂算式，不是廠商保證值。"
          data-vi="Thông số từ tài liệu công khai; nguồn ghi dưới mỗi bảng. Giá trị tính ra là công thức lớp học."></div>
+  </div>
+
+  <!-- 作業：手機上作答，最後產生一張可以截圖上傳的作答單 -->
+  <div class="panel hw" id="pHw">
+    <h2 data-zh="第五週作業：替一台車選感測器" data-vi="Bài tuần 5: chọn cảm biến cho một chiếc xe"></h2>
+    <div class="note" data-zh="在這一頁作答，最後按「產生作答單」，把那張截圖上傳到 LINE 群組。答案會存在這台裝置上，關掉再開還在。"
+         data-vi="Trả lời ở trang này, bấm «Tạo phiếu», chụp màn hình rồi gửi lên nhóm LINE. Câu trả lời được lưu trên máy này."></div>
+    <div id="hwForm"></div>
+    <div id="sheet" style="display:none"></div>
+    <div class="grid g2" style="margin-top:10px">
+      <button id="btnSheet" data-zh="產生作答單" data-vi="Tạo phiếu nộp"></button>
+      <button id="btnBack" style="display:none" data-zh="回去修改" data-vi="Sửa lại"></button>
+      <button id="btnWipe" data-zh="全部清空" data-vi="Xoá hết"></button>
+    </div>
   </div>
 </div>
 
@@ -699,7 +737,107 @@ function miniR() {
     `<br>Thấy «170 m» phải hỏi: đo với màu gì?`);
 }
 
-function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); }
+// ═══════════ 作業 ═══════════
+// 學生在手機上填，最後產生一張乾淨的作答單截圖上傳。答案存在 localStorage，
+// 只在這台裝置上，不會傳到任何地方——切分頁、手滑重整都還在。
+const HW_KEY = "w5hw";
+const HW_M = [["os1", "Ouster OS1-64"], ["at128", "Hesai AT128P"],
+              ["ar0233", "onsemi AR0233AT"], ["ld16", "LD-16"]];
+const HW_S = [["campus", "校園 20", "Trường 20"], ["hanoi", "河內 40", "Hà Nội 40"],
+              ["hiway", "國道 100", "Cao tốc 100"]];
+const HW_TF = [
+  ["① 規格表寫「測距 200 公尺」，就表示 200 公尺內的東西都看得到。",
+   "① «Tầm 200 m» nghĩa là mọi thứ trong 200 m đều thấy."],
+  ["② 同一顆影像感測器，視野是固定的。", "② Cùng một cảm biến ảnh thì góc nhìn cố định."],
+  ["③ 兩顆光達比每秒點數，點數大的那顆，遠處的人一定看得比較清楚。",
+   "③ Lidar nào nhiều điểm/giây hơn thì chắc chắn nhìn người ở xa rõ hơn."],
+  ["④ 兩顆感測器各自都好，合起來就一定好。",
+   "④ Hai cảm biến đều tốt thì ghép lại chắc chắn tốt."],
+];
+let HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
+           tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
+try { const r = localStorage.getItem(HW_KEY); if (r) HW = Object.assign(HW, JSON.parse(r)); }
+catch (e) { /* 無痕視窗或封鎖 cookie：照常能寫，只是關掉就沒了 */ }
+const hwSave = () => { try { localStorage.setItem(HW_KEY, JSON.stringify(HW)); } catch (e) {} };
+
+function hwForm() {
+  const sel = (v, blank) => ["", L("夠", "Đủ"), L("不夠", "Không đủ")]
+    .map((o, i) => `<option value="${["", "ok", "ng"][i]}"${v === ["", "ok", "ng"][i] ? " selected" : ""}>${i ? o : blank}</option>`).join("");
+  const tfsel = (v) => ["", L("對", "Đúng"), L("錯", "Sai")]
+    .map((o, i) => `<option value="${["", "T", "F"][i]}"${v === ["", "T", "F"][i] ? " selected" : ""}>${i ? o : "—"}</option>`).join("");
+  $("hwForm").innerHTML =
+    `<div class="grid g2" style="margin-top:8px">
+       <input type="text" id="hwName" placeholder="${L("姓名", "Họ tên")}" value="${HW.name}">
+       <input type="text" id="hwSid" placeholder="${L("班級／學號", "Lớp / MSSV")}" value="${HW.sid}">
+     </div>
+     <div class="hwq">${L("一、十二格判定", "1. Mười hai ô")}</div>
+     <div class="hwn">${L("四個型號 × 三個情境，每一格在左邊的試算區按出來再填。",
+                          "4 model × 3 tình huống; bấm ở khu tính toán rồi điền.")}</div>
+     <table class="hwtab"><tr><th></th>${HW_S.map((x) => `<th>${L(x[1], x[2])}</th>`).join("")}</tr>
+     ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
+        `<td><select data-g="${k}_${sk}">${sel(HW.g[k + "_" + sk] || "", "—")}</select></td>`).join("")}</tr>`).join("")}
+     </table>
+     <div class="hwq">${L("二、河內尖峰：OS1 換成 2048 點／圈", "2. Hà Nội: OS1 đổi sang 2048 điểm/vòng")}</div>
+     <div class="grid g2">
+       <input type="text" id="hwPts" placeholder="${L("機車身上幾個點", "Bao nhiêu điểm trên xe")}" value="${HW.pts}">
+       <select id="hwOk2048">${sel(HW.ok2048, L("換模式後：夠／不夠", "Sau khi đổi: đủ / không"))}</select>
+     </div>
+     <div class="hwn" style="margin-top:5px">${L("換這個模式要付什麼代價？", "Đổi chế độ này phải trả giá gì?")}</div>
+     <textarea id="hwCost">${HW.cost}</textarea>
+     <div class="hwq">${L("三、結論句", "3. Câu kết luận")}</div>
+     <div class="hwn">${L("要寫出卡在哪一行。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
+                          "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»")}</div>
+     <textarea id="hwConcl" style="min-height:76px">${HW.concl}</textarea>
+     <div class="hwq">${L("四、四句話，對或錯，再說一句理由", "4. Bốn câu: đúng hay sai, kèm lý do")}</div>
+     ${HW_TF.map((q, i) => `<div class="hwn" style="margin-top:7px">${L(q[0], q[1])}</div>
+       <div class="hwtf"><select data-tf="${i}">${tfsel(HW.tf[i][0])}</select>
+       <input type="text" data-tfr="${i}" placeholder="${L("理由", "Lý do")}" value="${HW.tf[i][1]}"></div>`).join("")}`;
+
+  const bind = (id, k) => $(id).addEventListener("input", (e) => { HW[k] = e.target.value; hwSave(); });
+  bind("hwName", "name"); bind("hwSid", "sid"); bind("hwPts", "pts");
+  bind("hwCost", "cost"); bind("hwConcl", "concl");
+  $("hwOk2048").addEventListener("change", (e) => { HW.ok2048 = e.target.value; hwSave(); });
+  document.querySelectorAll("[data-g]").forEach((el) =>
+    el.addEventListener("change", (e) => { HW.g[e.target.dataset.g] = e.target.value; hwSave(); }));
+  document.querySelectorAll("[data-tf]").forEach((el) =>
+    el.addEventListener("change", (e) => { HW.tf[+e.target.dataset.tf][0] = e.target.value; hwSave(); }));
+  document.querySelectorAll("[data-tfr]").forEach((el) =>
+    el.addEventListener("input", (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; hwSave(); }));
+}
+
+function hwSheet() {
+  const miss = (t) => `<span class="miss">${L("（沒寫）", "(chưa điền)")}</span>` && (t && String(t).trim()
+    ? String(t) : `<span class="miss">${L("（沒寫）", "(chưa điền)")}</span>`);
+  const cell = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không") : "—";
+  const d = new Date();
+  const two = (n) => String(n).padStart(2, "0");
+  $("sheet").innerHTML =
+    `<h3>${L("第五週作業　替一台車選感測器", "Bài tuần 5 — Chọn cảm biến")}</h3>
+     <div class="who">${miss(HW.name)}　${HW.sid || ""}</div>
+     <div class="when">${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}</div>
+     <table class="hwtab"><tr><th></th>${HW_S.map((x) => `<th>${L(x[1], x[2])}</th>`).join("")}</tr>
+     ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
+        `<td>${cell(HW.g[k + "_" + sk])}</td>`).join("")}</tr>`).join("")}</table>
+     <div class="sec">${L("OS1 換成 2048 點／圈", "OS1 → 2048 điểm/vòng")}</div>
+     <div class="ans">${miss(HW.pts)} ${L("個點", "điểm")}　→　${cell(HW.ok2048)}
+       <br>${L("代價：", "Phải trả giá: ")}${miss(HW.cost)}</div>
+     <div class="sec">${L("結論", "Kết luận")}</div>
+     <div class="ans">${miss(HW.concl)}</div>
+     <div class="sec">${L("四句話", "Bốn câu")}</div>
+     <div class="ans">${HW_TF.map((q, i) => `${L(q[0], q[1]).slice(0, 2)} ${
+        HW.tf[i][0] === "T" ? L("對", "Đúng") : HW.tf[i][0] === "F" ? L("錯", "Sai") : "—"
+      }　${miss(HW.tf[i][1])}`).join("<br>")}</div>`;
+  $("hwForm").style.display = "none"; $("sheet").style.display = "";
+  $("btnSheet").style.display = "none"; $("btnBack").style.display = "";
+  $("sheet").scrollIntoView({ block: "start" });
+}
+
+function hwBack() {
+  $("sheet").style.display = "none"; $("hwForm").style.display = "";
+  $("btnSheet").style.display = ""; $("btnBack").style.display = "none";
+}
+
+function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); hwForm(); }
 function applyLang() {
   document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
   document.title = L("規格判讀台", "Bàn đọc thông số");
@@ -717,12 +855,19 @@ $("btnClear").onclick = () => quiz();
 ["sF"].forEach((id) => $(id).addEventListener("input", miniF));
 ["sCh", "sCol", "sHz"].forEach((id) => $(id).addEventListener("input", miniP));
 $("sD").addEventListener("input", miniR);
+$("btnSheet").onclick = hwSheet;
+$("btnBack").onclick = hwBack;
+$("btnWipe").onclick = () => {
+  HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
+         tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
+  hwSave(); hwBack(); hwForm();
+};
 
 // 手機：三個分頁
 const MOBILE = window.matchMedia("(max-width:900px)");
 function tab(name) {
   document.querySelectorAll("#mtabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
-  const map = { ds: "pDs", read: "pRead", mini: "pMini" };
+  const map = { ds: "pDs", read: "pRead", mini: "pMini", hw: "pHw" };
   Object.entries(map).forEach(([k, id]) => { $(id).style.display = (!MOBILE.matches || k === name) ? "" : "none"; });
 }
 document.querySelectorAll("#mtabs button").forEach((b) => b.onclick = () => tab(b.dataset.tab));
