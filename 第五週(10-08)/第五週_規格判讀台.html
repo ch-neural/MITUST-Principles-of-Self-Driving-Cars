@@ -473,7 +473,8 @@ function calc() {
   const m = MODELS[model], c = m.calc, s = SCENES[scene], need = brake(s.v) + 5;
   let html = `<div class="res">${L("情境：", "Tình huống: ")}<b>${L(s.zh, s.vi)}</b>　${L(s.zhNote, s.viNote)}
     <span class="big">${L("煞停要 ", "Cần ")}${brake(s.v).toFixed(0)} m${L("　→　感測器至少要看到 ", " → cảm biến phải thấy tối thiểu ")}${need.toFixed(0)} m</span>
-    <span style="font-size:11px;color:var(--mute)">${L("時速 × 0.3 ＋ 時速² ÷ 12，再加 5 公尺餘裕（第四週第 1 節）", "v×0,3 + v²÷12, cộng 5 m dự phòng (tuần 4)")}</span>
+    <span style="font-size:11px;color:var(--mute)">${L(`v × 0.3 ＋ v² ÷ 12，再加 5 公尺餘裕（第四週第 1 節）。<b>v 用每秒公尺</b>＝時速 ÷ 3.6，這裡是 ${(SCENES[scene].v / 3.6).toFixed(1)} m/s`,
+           `v × 0,3 + v² ÷ 12, cộng 5 m dự phòng (tuần 4). <b>v tính bằng m/s</b> = km/h ÷ 3,6 = ${(SCENES[scene].v / 3.6).toFixed(1)} m/s`)}</span>
     <span style="font-size:11px;color:var(--mute);display:block;margin-top:2px">${L(
       `本課的三條門檻：測距 ≥ 上面那個數字、目標身上 ≥ <b>${MIN_PTS}</b> 個點、相機估距誤差 ≤ <b>±${MAX_ERR}</b> m`,
       `Ba ngưỡng của môn này: tầm đo ≥ số trên, ≥ <b>${MIN_PTS}</b> điểm trên vật, sai số ước lượng ≤ <b>±${MAX_ERR}</b> m`)}</span></div>`;
