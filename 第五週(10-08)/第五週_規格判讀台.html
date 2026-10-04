@@ -355,6 +355,11 @@ let model = "os1", scene = "hanoi", cols = 1024, hzNow = 10, TR = true;
 
 const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
 
+// 本課訂的兩條門檻。寫成常數，判定和畫面上印的才一定是同一個數字。
+// 十個點：低於這個數，演算法大概只能說「那裡有東西」，說不出那是什麼。
+// 誤差 1.5 公尺：相機靠路面假設估距，差到一個半車身就不能拿來煞車了。
+const MIN_PTS = 10, MAX_ERR = 1.5;
+
 // ═══════════ 畫面 ═══════════
 function modelBtns() {
   $("mdlBtns").innerHTML = Object.entries(MODELS).map(([k, m]) =>
@@ -396,7 +401,10 @@ function calc() {
   const m = MODELS[model], c = m.calc, s = SCENES[scene], need = brake(s.v) + 5;
   let html = `<div class="res">${L("情境：", "Tình huống: ")}<b>${L(s.zh, s.vi)}</b>　${L(s.zhNote, s.viNote)}
     <span class="big">${L("煞停要 ", "Cần ")}${brake(s.v).toFixed(0)} m${L("　→　感測器至少要看到 ", " → cảm biến phải thấy tối thiểu ")}${need.toFixed(0)} m</span>
-    <span style="font-size:11px;color:var(--mute)">${L("時速 × 0.3 ＋ 時速² ÷ 12，再加 5 公尺餘裕（第四週第 1 節）", "v×0,3 + v²÷12, cộng 5 m dự phòng (tuần 4)")}</span></div>`;
+    <span style="font-size:11px;color:var(--mute)">${L("時速 × 0.3 ＋ 時速² ÷ 12，再加 5 公尺餘裕（第四週第 1 節）", "v×0,3 + v²÷12, cộng 5 m dự phòng (tuần 4)")}</span>
+    <span style="font-size:11px;color:var(--mute);display:block;margin-top:2px">${L(
+      `本課的三條門檻：測距 ≥ 上面那個數字、目標身上 ≥ <b>${MIN_PTS}</b> 個點、相機估距誤差 ≤ <b>±${MAX_ERR}</b> m`,
+      `Ba ngưỡng của môn này: tầm đo ≥ số trên, ≥ <b>${MIN_PTS}</b> điểm trên vật, sai số ước lượng ≤ <b>±${MAX_ERR}</b> m`)}</span></div>`;
 
   const lines = [];
   const T = s.tgt || PED;
@@ -413,10 +421,13 @@ function calc() {
     const reach = c.range10 >= need;
     if (!reach) ok = false;
     lines.push([L(`測距 ${c.range10} m`, `Tầm ${c.range10} m`),
-                reach ? L("夠，比 " + need.toFixed(0) + " m 遠", "Đủ") : L("不夠，差 " + (need - c.range10).toFixed(0) + " m", "Thiếu"), reach]);
+                reach ? L(`夠，門檻 ${need.toFixed(0)} m`, `Đủ, ngưỡng ${need.toFixed(0)} m`)
+                      : L(`不夠，門檻 ${need.toFixed(0)} m，差 ${(need - c.range10).toFixed(0)} m`,
+                          `Thiếu ${(need - c.range10).toFixed(0)} m so với ngưỡng ${need.toFixed(0)} m`), reach]);
     lines.push([L(`角解析度 ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`, `Phân giải ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`),
-                L(`${s.d} m 的${s.tgt.zh}身上有 ${pts(s.d)} 個點`, `${s.tgt.vi} ở ${s.d} m có ${pts(s.d)} điểm`), pts(s.d) >= 10]);
-    if (pts(s.d) < 10) ok = false;
+                L(`${s.d} m 的${s.tgt.zh}身上有 ${pts(s.d)} 個點，門檻 ${MIN_PTS} 個`,
+                  `${s.tgt.vi} ở ${s.d} m có ${pts(s.d)} điểm, ngưỡng ${MIN_PTS}`), pts(s.d) >= MIN_PTS]);
+    if (pts(s.d) < MIN_PTS) ok = false;
     lines.push([L(`更新率 ${hz} Hz`, `${hz} Hz`),
                 L(`每 ${(1000 / hz).toFixed(0)} 毫秒一張；這段時間車子前進 ${(s.v / 3.6 / hz).toFixed(1)} m`,
                   `Mỗi ${(1000 / hz).toFixed(0)} ms một khung; xe đi ${(s.v / 3.6 / hz).toFixed(1)} m`), true]);
@@ -427,8 +438,9 @@ function calc() {
     lines.push([L(`配 ${c.f} mm 鏡頭 → 視野 ${fov.toFixed(0)}°`, `Ống kính ${c.f} mm → ${fov.toFixed(0)}°`),
                 L("感測器規格表沒有視野，是鏡頭決定的", "Bảng cảm biến không có góc nhìn"), true]);
     lines.push([L(`每像素 ${(fov / c.px).toFixed(4)}°`, `Mỗi điểm ảnh ${(fov / c.px).toFixed(4)}°`),
-                L(`${s.d} m 處估距誤差 ±${err.toFixed(2)} m`, `Sai số ở ${s.d} m: ±${err.toFixed(2)} m`), err < 1.5]);
-    if (err >= 1.5) ok = false;
+                L(`${s.d} m 處估距誤差 ±${err.toFixed(2)} m，門檻 ±${MAX_ERR} m`,
+                  `Sai số ở ${s.d} m: ±${err.toFixed(2)} m, ngưỡng ±${MAX_ERR} m`), err < MAX_ERR]);
+    if (err >= MAX_ERR) ok = false;
     lines.push([L("更新率 60 fps", "60 fps"),
                 L(`每 17 毫秒一張；這段時間車子前進 ${(s.v / 3.6 / 60).toFixed(2)} m`,
                   `Mỗi 17 ms; xe đi ${(s.v / 3.6 / 60).toFixed(2)} m`), true]);
