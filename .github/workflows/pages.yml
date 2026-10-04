@@ -13,6 +13,11 @@ on:
       - '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf'
       - '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf'
       - '第五週(10-08)/第五週_規格判讀台.html'
+      - '第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf'
+      - '第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf'
+      - '第五週(10-08)/第五週_第1節_簡報.pdf'
+      - '第五週(10-08)/第五週_第2節_簡報.pdf'
+      - '第五週(10-08)/第五週_第3節_簡報.pdf'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -46,6 +51,11 @@ jobs:
             第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf
             第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf
             第五週(10-08)/第五週_規格判讀台.html
+            第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf
+            第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf
+            第五週(10-08)/第五週_第1節_簡報.pdf
+            第五週(10-08)/第五週_第2節_簡報.pdf
+            第五週(10-08)/第五週_第3節_簡報.pdf
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -67,6 +77,12 @@ jobs:
           cp -- '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf' _site/week4/note-zh.pdf
           cp -- '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf' _site/week4/note-vi.pdf
           cp -- '第五週(10-08)/第五週_規格判讀台.html' _site/week5/spec/index.html
+          cp -- '第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf' _site/week5/note-zh.pdf
+          cp -- '第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf' _site/week5/note-vi.pdf
+          # 簡報的學生版：PDF 不含備忘稿，動圖只留第一格（每張動圖的第一格都是故意放結論那一格）
+          cp -- '第五週(10-08)/第五週_第1節_簡報.pdf' _site/week5/slides-1.pdf
+          cp -- '第五週(10-08)/第五週_第2節_簡報.pdf' _site/week5/slides-2.pdf
+          cp -- '第五週(10-08)/第五週_第3節_簡報.pdf' _site/week5/slides-3.pdf
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4
