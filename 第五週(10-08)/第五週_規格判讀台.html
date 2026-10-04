@@ -400,7 +400,9 @@ const SCENES = {
             tgt: { w: 1.8, h: 1.5, zh: "汽車", vi: "ô tô" },
             zhNote: "時速 100，要在 150 公尺外看到車", viNote: "100 km/h, thấy xe ở 150 m" },
 };
-let model = "os1", scene = "hanoi", cols = 1024, hzNow = 10, TR = true, LAST_OK = false;
+const DEF_COLS = 1024, DEF_HZ = 10;   // 十二格那一題要用的預設模式
+let model = "os1", scene = "hanoi", cols = DEF_COLS, hzNow = DEF_HZ, TR = true,
+    LAST_OK = false, LAST_PTS = 0;
 
 const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
 
@@ -492,6 +494,7 @@ function calc() {
                       : L(`不夠，門檻 ${need.toFixed(0)} m，差 ${(need - c.range10).toFixed(0)} m`,
                           `Thiếu ${(need - c.range10).toFixed(0)} m so với ngưỡng ${need.toFixed(0)} m`), reach]);
     lines.push([L(`角解析度 ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`, `Phân giải ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`),
+                (LAST_PTS = pts(s.d)) && false ||
                 L(`${s.d} m 的${s.tgt.zh}身上有 ${pts(s.d)} 個點，門檻 ${MIN_PTS} 個`,
                   `${s.tgt.vi} ở ${s.d} m có ${pts(s.d)} điểm, ngưỡng ${MIN_PTS}`), pts(s.d) >= MIN_PTS]);
     if (pts(s.d) < MIN_PTS) ok = false;
@@ -531,15 +534,27 @@ function calc() {
   // 十二格要一格一格試，試完還要切到作業去填——所以這裡直接給一顆按鈕把這格記起來。
   // 學生還是得自己把每一個組合按出來看過，只是不必再切分頁抄一次。
   LAST_OK = ok;
-  html += `<button id="btnToHw" style="width:100%;margin-top:6px">${L(
-    `記進作業：${m.name} × ${L(SCENES[scene].zh, SCENES[scene].vi)} → ${ok ? "夠" : "不夠"}`,
-    `Ghi vào bài: ${m.name} × ${L(SCENES[scene].zh, SCENES[scene].vi)} → ${ok ? "Đủ" : "Không đủ"}`)}</button>
+  // 模式不是預設的時候，按鈕要改寫去作業第二題，不能寫十二格——
+  // 十二格問的是原廠預設（1024 @ 10 Hz），第二題問的才是切到 2048 之後。
+  const isDef = !c.modes || (cols === DEF_COLS && hzNow === DEF_HZ);
+  const toQ2 = !isDef && model === "os1" && scene === "hanoi";
+  const sname = L(SCENES[scene].zh, SCENES[scene].vi);
+  html += `<button id="btnToHw" style="width:100%;margin-top:6px">${
+    toQ2 ? L(`記進作業第二題：${LAST_PTS} 個點 → ${ok ? "夠" : "不夠"}`,
+             `Ghi vào câu 2: ${LAST_PTS} điểm → ${ok ? "Đủ" : "Không đủ"}`)
+         : L(`記進作業十二格：${m.name} × ${sname} → ${ok ? "夠" : "不夠"}`,
+             `Ghi vào bảng 12 ô: ${m.name} × ${sname} → ${ok ? "Đủ" : "Không đủ"}`)}</button>
+    ${!isDef && !toQ2 ? `<div class="hint" style="font-size:11px;color:var(--red);margin-top:3px">${L(
+      `注意：現在是 ${cols} 點／圈 ${hzNow} Hz，不是預設模式。十二格那一題要用預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
+      `Chú ý: đang ở ${cols} điểm/vòng ${hzNow} Hz, không phải mặc định. Bảng 12 ô dùng ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
     <div id="toHwFb" class="hint" style="font-size:11px;color:var(--ok);min-height:14px;margin-top:3px"></div>`;
   $("calc").innerHTML = html;
   $("btnToHw").onclick = () => {
-    HW.g[model + "_" + scene] = LAST_OK ? "ok" : "ng";
+    if (toQ2) { HW.pts = String(LAST_PTS); HW.ok2048 = LAST_OK ? "ok" : "ng"; }
+    else { HW.g[model + "_" + scene] = LAST_OK ? "ok" : "ng"; }
     hwSave(); hwForm();
-    $("toHwFb").textContent = L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
+    $("toHwFb").textContent = toQ2 ? L("✓ 已經填進作業第二題了", "✓ Đã ghi vào câu 2")
+                                   : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
     setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 2500);
   };
   if (c.modes) {
@@ -821,6 +836,8 @@ function hwForm() {
         `<td><select data-g="${k}_${sk}">${sel(HW.g[k + "_" + sk] || "", "—")}</select></td>`).join("")}</tr>`).join("")}
      </table>
      <div class="hwq">${L("二、河內尖峰：OS1 換成 2048 點／圈", "2. Hà Nội: OS1 đổi sang 2048 điểm/vòng")}</div>
+     <div class="hwn">${L("在「判讀與試算」那一頁改：選 OS1 ＋ 河內尖峰，判定<b>上面</b>有兩個下拉（1024 點／圈、10 Hz），把 1024 改成 2048，判定就會跟著變。小工具②也看得到點數從 9 變 18，但那一區不會改判定。",
+                          "Đổi ở tab «Đọc & tính»: chọn OS1 + Hà Nội, <b>phía trên</b> kết luận có hai ô chọn (1024 điểm/vòng, 10 Hz), đổi 1024 thành 2048. Công cụ ② cũng thấy 9 → 18 nhưng không đổi kết luận.")}</div>
      <div class="grid g2">
        <input type="text" id="hwPts" placeholder="${L("機車身上幾個點", "Bao nhiêu điểm trên xe")}" value="${HW.pts}">
        <select id="hwOk2048">${sel(HW.ok2048, L("換模式後：夠／不夠", "Sau khi đổi: đủ / không"))}</select>
