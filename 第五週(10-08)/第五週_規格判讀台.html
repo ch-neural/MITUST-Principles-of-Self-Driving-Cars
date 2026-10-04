@@ -332,6 +332,16 @@ const QUIZ = [
             ar0233: ["no", "60", "140", "2048"], ld16: ["40", "360", "8", "no"] } },
   { k: "res", zh: "解析度那一行寫什麼？", vi: "Dòng phân giải ghi gì?",
     zhs: "光達的表上有兩行 Resolution，相機看像素", vis: "Lidar có hai dòng Resolution; camera: điểm ảnh",
+    // 這一題每個型號問的不是同一行，小標要跟著型號換，不然 OS1 有兩行 Resolution，
+    // 學生答水平那一行（512／1024／2048）也說得通，卻會被判錯。
+    by: { os1: ["表上有兩行 Resolution：這一題問<b>垂直</b>那一行（線束數）",
+                "Có hai dòng Resolution: câu này hỏi dòng <b>dọc</b> (số kênh)"],
+          ld16: ["表上有兩行：這一題問<b>垂直</b>那一行（線束數）",
+                 "Hai dòng: câu này hỏi dòng <b>dọc</b> (số kênh)"],
+          at128: ["這一顆直接把角度寫出來了，不是寫線束",
+                  "Model này ghi thẳng góc, không ghi số kênh"],
+          ar0233: ["相機看的是<b>像素數</b>，不是線束也不是角度",
+                   "Camera xem <b>số điểm ảnh</b>"] },
     opts: { os1: ["64", "512", "2,621,440", "no"], at128: ["0.1", "128", "1,536,000", "no"],
             ar0233: ["2048", "3.0", "60", "no"], ld16: ["16", "900", "144,000", "no"] } },
   { k: "rate", zh: "更新率：一秒鐘看幾次？", vi: "Tốc độ cập nhật: mỗi giây mấy lần?",
@@ -418,7 +428,7 @@ function dsTable() {
 function quiz() {
   const m = MODELS[model];
   $("quiz").innerHTML = QUIZ.map((q) => `<div class="q">
-    <label>${L(q.zh, q.vi)}<small>${L(q.zhs, q.vis)}</small></label>
+    <label>${L(q.zh, q.vi)}<small>${q.by && q.by[model] ? L(q.by[model][0], q.by[model][1]) : L(q.zhs, q.vis)}</small></label>
     <select id="q_${q.k}"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
       ${q.opts[model].slice().sort().map((o) => {
         const t = OPT_TEXT[o] || [o, o];
