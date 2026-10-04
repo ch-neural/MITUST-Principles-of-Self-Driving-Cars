@@ -58,13 +58,16 @@
     padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
   .hw textarea{min-height:58px;resize:vertical;line-height:1.5}
   .hwtf{display:flex;gap:6px;align-items:flex-start;margin-top:5px}
+  .hwtf{flex-wrap:wrap}
   .hwtf select{flex:0 0 76px}
+  .hwtf select[data-tfr]{flex:1 1 100%;min-width:0}
+  .hw select{width:100%;font-size:12.5px;padding:7px 8px}
   #sheet{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:12px 14px}
   #sheet h3{margin:0 0 2px;font-size:15px;color:var(--navy)}
   #sheet .who{font-size:13px;font-weight:700;color:var(--ink)}
   #sheet .when{font-size:11px;color:var(--mute);margin-bottom:8px}
   #sheet .sec{font-size:11.5px;color:var(--teal-d);font-weight:700;margin:9px 0 3px}
-  #sheet .ans{font-size:12.5px;line-height:1.55;white-space:pre-wrap}
+  #sheet .ans{font-size:12px;line-height:1.5;white-space:pre-wrap}
   #sheet .miss{color:var(--red)}
   .out .hint{display:block;margin-top:3px;color:var(--mute)}
   .out .warn{display:block;margin-top:3px;color:#c0392b;font-weight:700}
@@ -811,6 +814,47 @@ const HW_TF = [
   ["④ 兩顆感測器各自都好，合起來就一定好。",
    "④ Hai cảm biến đều tốt thì ghép lại chắc chắn tốt."],
 ];
+// 作業用的選項。每一題只有一個對的，其餘是課堂上真的會聽到的錯法。
+// 寫成資料是為了之後要改措辭時只改這裡一個地方。
+// 三個值就是 OS1 × 河內在三種模式下真的會算出來的點數（512→3、1024→9、2048→18），
+// 所以「記進作業第二題」按鈕寫進來的數字一定對得上其中一個。36 是誘答。
+const HW_PTS = ["3", "9", "18", "36"];
+const HW_COST = [
+  ["資料量加倍，而且 2048 點／圈配不了 20 Hz",
+   "Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],
+  ["要多花錢買更貴的型號", "Phải mua model đắt hơn"],
+  ["測距會從 90 公尺變短", "Tầm đo giảm xuống dưới 90 m"],
+  ["垂直線束數會變少", "Số kênh dọc giảm đi"],
+];
+const HW_CONCL = [
+  ["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。",
+   "OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],
+  ["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。",
+   "OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],
+  ["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。",
+   "OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],
+  ["OS1 不好用。", "OS1 không tốt."],
+];
+// 四句話的理由，每句第一個是對的
+const HW_WHY = [
+  [["沒問條件：測距要看是對百分之幾反射率量的。OS1 對白色 170 m，對黑色只剩 90 m。",
+    "Chưa hỏi điều kiện: tầm đo đo với vật phản xạ bao nhiêu %? Trắng 170 m, đen 90 m."],
+   ["因為 200 公尺太遠了，沒有感測器做得到。", "Vì 200 m quá xa, không cảm biến nào làm được."],
+   ["因為那是在實驗室量的，路上量不到。", "Vì đo trong phòng thí nghiệm, ra đường thì không."]],
+  [["視野是鏡頭決定的。同一塊晶片，8 mm 鏡頭看 42°，3.6 mm 看 81°。",
+    "Góc nhìn do ống kính quyết định: cùng một chip, 8 mm → 42°, 3,6 mm → 81°."],
+   ["因為視野會隨著解析度模式改變。", "Vì góc nhìn đổi theo chế độ phân giải."],
+   ["因為感測器裝上車之後角度會跑掉。", "Vì lắp lên xe rồi góc sẽ lệch."]],
+  [["每秒點數要先換成角度。OS1 262 萬點灑滿 360°，40 m 的目標上只有 9 點；AT128P 150 萬點集中在 120°，同一個目標有 121 點。",
+    "Phải đổi điểm/giây sang góc. OS1 2,62 triệu rải khắp 360° → 9 điểm; AT128P 1,5 triệu dồn trong 120° → 121 điểm."],
+   ["因為點數大的那顆比較貴，貴的不一定好。", "Vì cái nhiều điểm thì đắt hơn, đắt chưa chắc tốt."],
+   ["因為同一顆光達切到 2048 點，點數加倍也看不清楚。",
+    "Vì cùng một lidar đổi sang 2048 điểm cũng không rõ hơn."]],
+  [["還有標定和時間同步兩關。差一度，50 公尺外就差將近一公尺。",
+    "Còn hiệu chuẩn và đồng bộ thời gian: lệch 1° thì ở 50 m lệch gần 1 m."],
+   ["因為兩顆感測器會互相干擾。", "Vì hai cảm biến gây nhiễu lẫn nhau."],
+   ["因為合起來之後更新率會變慢。", "Vì ghép lại thì tốc độ cập nhật chậm đi."]],
+];
 let HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
            tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
 try { const r = localStorage.getItem(HW_KEY); if (r) HW = Object.assign(HW, JSON.parse(r)); }
@@ -839,31 +883,35 @@ function hwForm() {
      <div class="hwn">${L("在「判讀與試算」那一頁改：選 OS1 ＋ 河內尖峰，判定<b>上面</b>有兩個下拉（1024 點／圈、10 Hz），把 1024 改成 2048，判定就會跟著變。小工具②也看得到點數從 9 變 18，但那一區不會改判定。",
                           "Đổi ở tab «Đọc & tính»: chọn OS1 + Hà Nội, <b>phía trên</b> kết luận có hai ô chọn (1024 điểm/vòng, 10 Hz), đổi 1024 thành 2048. Công cụ ② cũng thấy 9 → 18 nhưng không đổi kết luận.")}</div>
      <div class="grid g2">
-       <input type="text" id="hwPts" placeholder="${L("機車身上幾個點", "Bao nhiêu điểm trên xe")}" value="${HW.pts}">
+       <select id="hwPts"><option value="">${L("機車身上幾個點", "Bao nhiêu điểm")}</option>
+         ${HW_PTS.map((o) => `<option value="${o}"${o === HW.pts ? " selected" : ""}>${o} ${L("個點", "điểm")}</option>`).join("")}</select>
        <select id="hwOk2048">${sel(HW.ok2048, L("換模式後：夠／不夠", "Sau khi đổi: đủ / không"))}</select>
      </div>
      <div class="hwn" style="margin-top:5px">${L("換這個模式要付什麼代價？", "Đổi chế độ này phải trả giá gì?")}</div>
-     <textarea id="hwCost">${HW.cost}</textarea>
+     <select id="hwCost"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
+       ${HW_COST.map((o, i) => `<option value="${i}"${String(i) === HW.cost ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select>
      <div class="hwq">${L("三、結論句", "3. Câu kết luận")}</div>
      <div class="hwn">${L("要寫出卡在哪一行。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
                           "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»")}</div>
-     <textarea id="hwConcl" style="min-height:76px">${HW.concl}</textarea>
+     <select id="hwConcl"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
+       ${HW_CONCL.map((o, i) => `<option value="${i}"${String(i) === HW.concl ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select>
      <div class="hwq">${L("四、四句話，對或錯，再說一句理由", "4. Bốn câu: đúng hay sai, kèm lý do")}</div>
      ${HW_TF.map((q, i) => `<div class="hwn" style="margin-top:7px">${L(q[0], q[1])}</div>
        <div class="hwtf"><select data-tf="${i}">${tfsel(HW.tf[i][0])}</select>
-       <input type="text" data-tfr="${i}" placeholder="${L("理由", "Lý do")}" value="${HW.tf[i][1]}"></div>`).join("")}`;
+       <select data-tfr="${i}"><option value="">${L("── 選一個理由 ──", "── Chọn lý do ──")}</option>
+         ${HW_WHY[i].map((o, j) => `<option value="${j}"${String(j) === HW.tf[i][1] ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select></div>`).join("")}`;
 
   $("btnGoCalc").onclick = () => { tab("read"); $("calc").scrollIntoView({ block: "start" }); };
   const bind = (id, k) => $(id).addEventListener("input", (e) => { HW[k] = e.target.value; hwSave(); });
-  bind("hwName", "name"); bind("hwSid", "sid"); bind("hwPts", "pts");
-  bind("hwCost", "cost"); bind("hwConcl", "concl");
-  $("hwOk2048").addEventListener("change", (e) => { HW.ok2048 = e.target.value; hwSave(); });
+  bind("hwName", "name"); bind("hwSid", "sid");
+  ["hwPts", "hwCost", "hwConcl", "hwOk2048"].forEach((id) => $(id)
+    .addEventListener("change", (e) => { HW[{ hwPts: "pts", hwCost: "cost", hwConcl: "concl", hwOk2048: "ok2048" }[id]] = e.target.value; hwSave(); }));
   document.querySelectorAll("[data-g]").forEach((el) =>
     el.addEventListener("change", (e) => { HW.g[e.target.dataset.g] = e.target.value; hwSave(); }));
   document.querySelectorAll("[data-tf]").forEach((el) =>
     el.addEventListener("change", (e) => { HW.tf[+e.target.dataset.tf][0] = e.target.value; hwSave(); }));
   document.querySelectorAll("[data-tfr]").forEach((el) =>
-    el.addEventListener("input", (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; hwSave(); }));
+    el.addEventListener("change", (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; hwSave(); }));
 }
 
 function hwSheet() {
@@ -881,13 +929,13 @@ function hwSheet() {
         `<td>${cell(HW.g[k + "_" + sk])}</td>`).join("")}</tr>`).join("")}</table>
      <div class="sec">${L("OS1 換成 2048 點／圈", "OS1 → 2048 điểm/vòng")}</div>
      <div class="ans">${miss(HW.pts)} ${L("個點", "điểm")}　→　${cell(HW.ok2048)}
-       <br>${L("代價：", "Phải trả giá: ")}${miss(HW.cost)}</div>
+       <br>${L("代價：", "Phải trả giá: ")}${HW.cost === "" ? miss("") : L(HW_COST[+HW.cost][0], HW_COST[+HW.cost][1])}</div>
      <div class="sec">${L("結論", "Kết luận")}</div>
-     <div class="ans">${miss(HW.concl)}</div>
+     <div class="ans">${HW.concl === "" ? miss("") : L(HW_CONCL[+HW.concl][0], HW_CONCL[+HW.concl][1])}</div>
      <div class="sec">${L("四句話", "Bốn câu")}</div>
      <div class="ans">${HW_TF.map((q, i) => `${L(q[0], q[1]).slice(0, 2)} ${
         HW.tf[i][0] === "T" ? L("對", "Đúng") : HW.tf[i][0] === "F" ? L("錯", "Sai") : "—"
-      }　${miss(HW.tf[i][1])}`).join("<br>")}</div>`;
+      }　${HW.tf[i][1] === "" ? miss("") : L(HW_WHY[i][+HW.tf[i][1]][0], HW_WHY[i][+HW.tf[i][1]][1])}`).join("<br>")}</div>`;
   $("hwForm").style.display = "none"; $("sheet").style.display = "";
   $("btnSheet").style.display = "none"; $("btnBack").style.display = "";
   $("sheet").scrollIntoView({ block: "start" });
