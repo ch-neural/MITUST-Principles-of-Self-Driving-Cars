@@ -426,18 +426,36 @@ function dsTable() {
        <div class="k">${k}${TR ? `<small>${L(zh, vi)}</small>` : ""}</div><div class="v">${v}</div></div>`).join("")}
     <div class="src">${L("來源｜", "Nguồn｜")}${L(m.src, m.srcVi)}</div></div>`;
 }
+// 選過的答案要留著：換語言、換型號再換回來，都不該被洗掉。
+// 每個型號各記一組，key 是「型號_題目」。QCHK 記這個型號按過檢查沒有，
+// 按過的話重畫之後要把 ✓／✗ 一起還原，不然學生會以為自己沒按。
+const QKEY = "w5quiz";
+let QANS = {}, QCHK = {};
+try {
+  const r = localStorage.getItem(QKEY);
+  if (r) { const o = JSON.parse(r); QANS = o.a || {}; QCHK = o.c || {}; }
+} catch (e) { /* 無痕視窗：照常能作答，只是關掉就沒了 */ }
+const qSave = () => { try { localStorage.setItem(QKEY, JSON.stringify({ a: QANS, c: QCHK })); } catch (e) {} };
+
 function quiz() {
   const m = MODELS[model];
-  $("quiz").innerHTML = QUIZ.map((q) => `<div class="q">
+  $("quiz").innerHTML = QUIZ.map((q) => {
+    const cur = QANS[model + "_" + q.k] || "";
+    return `<div class="q">
     <label>${L(q.zh, q.vi)}<small>${q.by && q.by[model] ? L(q.by[model][0], q.by[model][1]) : L(q.zhs, q.vis)}</small></label>
-    <select id="q_${q.k}"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
+    <select id="q_${q.k}"><option value=""${cur ? "" : " selected"}>${L("── 請選 ──", "── Chọn ──")}</option>
       ${q.opts[model].slice().sort().map((o) => {
         const t = OPT_TEXT[o] || [o, o];
-        return `<option value="${o}">${L(t[0], t[1])}</option>`; }).join("")}
-    </select><div class="fb" id="f_${q.k}"></div></div>`).join("");
+        return `<option value="${o}"${o === cur ? " selected" : ""}>${L(t[0], t[1])}</option>`; }).join("")}
+    </select><div class="fb" id="f_${q.k}"></div></div>`; }).join("");
+  QUIZ.forEach((q) => $("q_" + q.k).addEventListener("change", (e) => {
+    QANS[model + "_" + q.k] = e.target.value; qSave();
+  }));
+  if (QCHK[model]) check();            // 按過檢查的，重畫之後把判定還原
 }
 function check() {
   const m = MODELS[model];
+  QCHK[model] = true; qSave();
   QUIZ.forEach((q) => {
     const sel = $("q_" + q.k).value, fb = $("f_" + q.k);
     if (!sel) { fb.className = "fb"; fb.textContent = ""; return; }
@@ -862,7 +880,10 @@ $("btnVi").onclick = () => { LANG = "vi"; applyLang(); };
 $("btnTr").onclick = () => { TR = true; $("btnTr").classList.add("on"); $("btnEn").classList.remove("on"); dsTable(); };
 $("btnEn").onclick = () => { TR = false; $("btnEn").classList.add("on"); $("btnTr").classList.remove("on"); dsTable(); };
 $("btnCheck").onclick = check;
-$("btnClear").onclick = () => quiz();
+$("btnClear").onclick = () => {   // 「重來」只清這一個型號，別的型號答過的留著
+  QUIZ.forEach((q) => delete QANS[model + "_" + q.k]);
+  delete QCHK[model]; qSave(); quiz();
+};
 ["sF"].forEach((id) => $(id).addEventListener("input", miniF));
 ["sCh", "sCol", "sHz"].forEach((id) => $(id).addEventListener("input", miniP));
 $("sD").addEventListener("input", miniR);
