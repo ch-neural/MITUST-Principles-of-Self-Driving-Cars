@@ -79,14 +79,20 @@
 | 張 | 圖 | 來源 |
 |---|---|---|
 | 1-4　旋轉式光達 | OPTICAL PERFORMANCE 整塊 | Ouster OS1 datasheet, Rev7 / FW 3.2, p.1 |
-| 1-5　固定式光達 | §1.5 Specifications（SENSOR） | Hesai AT128P User Manual A02, p.13 |
+| 1-5　固定式光達 | §1.5 Specifications（SENSOR）**＋ p.15 的註解②** | Hesai AT128P User Manual A02, p.13 與 p.15 |
 | 1-7　更新率 | Rotation Rate 那幾行 | 同上 OS1 p.1 |
 | 1-9　相機 | 見下節（晶片 vs 模組兩張並排） | onsemi／Raspberry Pi |
-| 1-11　「可設定」 | Lidar Operating Modes | OS1 p.3 |
-| 1-12　兩個測距 | 兩行 Range（80% / 10%） | OS1 p.1 |
-| 2-8　波長與 Class 1 | LASER 整塊 | OS1 p.2 |
-| 2-9　多次回波 | # of Returns、Return Order | OS1 p.1 |
-| 2-13　時間同步 | Additional Programmability | OS1 p.3 |
+| 1-12　「可設定」 | Lidar Operating Modes | OS1 p.3 |
+| 1-13　兩個測距 | 兩行 Range（80% / 10%） | OS1 p.1 |
+| 2-10　Class 1 | LASER 整塊 | OS1 p.2 |
+| 2-11　多次回波 | # of Returns、Return Order（放成底下那一條） | OS1 p.1 |
+| 2-18　時間同步 | Additional Programmability | OS1 p.3 |
+
+**1-5 的圖是兩頁接起來的。**手冊第 13 頁那張表上，Horizontal／Vertical resolution 兩行
+後面跟著一個 ②，可是 ② 指到的註解在**第 15 頁**——遠場 >7.2 m、近場 0.5–7.2 m 就寫在
+那裡。只裁第 13 頁的話，口白講「遠場是超過七點二公尺」時學生在畫面上找不到這個數字。
+`src/tools_make_at128p_spec.py` 把兩段原頁接成一張（表格 ＋ 分隔線 ＋ 註解②），
+兩邊的 ② 學生自己對得起來，順便就是「關鍵定義常常在註腳裡」的現場示範。
 
 兩種放法：規格表比較方正的用 `spec` 版型放在左欄（`img` + `credit`），
 細長的（只有兩三行）用 `point` 版型放成整頁寬的一條（同樣是 `img` + `credit`），
