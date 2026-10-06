@@ -131,6 +131,10 @@
   body.sheet #pHw{border:none;padding:0;background:none}
   #shotHint{display:none;font-size:11.5px;color:var(--mute);margin-top:8px;text-align:center}
   body.sheet #shotHint{display:block}
+  /* 每個小工具算的是哪一種感測器；選的型號對不上就變成警告 */
+  .scope{font-size:11px;line-height:1.45;color:var(--mute);margin:1px 0 7px}
+  .scope.bad{background:#FFF6E3;border:1px solid var(--amber);color:#7A4E00;
+             border-radius:6px;padding:5px 7px;margin-top:3px}
   .hwprog{font-size:11.5px;color:var(--mute);text-align:center;margin-top:3px}
   .hwprog b{color:var(--navy)}
   @media (max-width:900px){
@@ -206,6 +210,7 @@
 
     <div class="mini">
       <div class="t" data-zh="① 焦距 → 視野" data-vi="① Tiêu cự → góc nhìn"><small data-zh="感光元件寬 6.14 mm（AR0233AT：2048 × 3.0 µm）" data-vi="Cảm biến rộng 6,14 mm (AR0233AT)"></small></div>
+      <div class="scope" id="sc1"></div>
       <div class="rowv"><span data-zh="鏡頭焦距 mm" data-vi="Tiêu cự mm"></span><b id="vF">8</b></div>
       <input type="range" id="sF" min="2" max="24" step="0.2" value="8">
       <div class="sim">
@@ -219,6 +224,7 @@
 
     <div class="mini">
       <div class="t" data-zh="② 每秒點數 ↔ 角解析度" data-vi="② Số điểm/giây ↔ phân giải góc"><small data-zh="規格表常只寫點數，角度要自己除出來" data-vi="Bảng thường chỉ ghi số điểm; góc phải tự chia"></small></div>
+      <div class="scope" id="sc2"></div>
       <div class="rowv"><span data-zh="線束數" data-vi="Số kênh"></span><b id="vCh">64</b></div>
       <!-- CHS = [16, 32, 64, 128, 256]：64 是 index 2。原本寫 3（＝128 線），
            一打開就算出 18 點，可是第 1 節第 6 張和第 2 節第 14 張的口白都說
@@ -237,6 +243,7 @@
 
     <div class="mini">
       <div class="t" data-zh="③ 反射率：黑色車與白色車" data-vi="③ Độ phản xạ: xe đen và xe trắng"><small data-zh="同一顆光達，量白色物體和黑色物體差很多" data-vi="Cùng một lidar, vật trắng và vật đen khác hẳn"></small></div>
+      <div class="scope" id="sc3"></div>
       <div class="rowv"><span data-zh="目標距離 m" data-vi="Khoảng cách m"></span><b id="vD">120</b></div>
       <input type="range" id="sD" min="20" max="200" step="5" value="120">
       <div class="sim"><div><canvas id="cRef" width="268" height="118"></canvas>
@@ -712,6 +719,37 @@ function miniF() {
     `視野 <b>${fov.toFixed(1)}°</b>　每像素 <b>${(fov / 2048).toFixed(4)}°</b><br>40 公尺外那台機車只剩 <b>${px.toFixed(0)} 像素</b>寬。焦距加倍 → 視野減半，看得準但看得窄。`,
     `Góc nhìn <b>${fov.toFixed(1)}°</b>　mỗi điểm ảnh <b>${(fov / 2048).toFixed(4)}°</b><br>Xe máy ở 40 m chỉ còn <b>${px.toFixed(0)} điểm ảnh</b>. Tiêu cự gấp đôi → góc nhìn giảm nửa.`);
 }
+// 每一格算的是哪一種感測器。型號對不上的時候要講清楚「這一格不是在算它」，
+// 不然學生選了 AT128P 再拉②的滑桿，會把「128 線的 OS1」當成 AT128P。
+const MINI_FOR = {
+  1: { ok: ["ar0233"],
+       zh: "這一格算的是<b>相機</b>（AR0233AT 的感光元件）。",
+       vi: "Khung này tính cho <b>camera</b> (cảm biến AR0233AT).",
+       badZh: "這一格不是在算它。光達的視野是規格表直接寫的，不用從焦距算。",
+       badVi: "Khung này không tính cho model đó. Góc nhìn của lidar ghi thẳng trên bảng." },
+  2: { ok: ["os1", "ld16"],
+       zh: "這一格算的是<b>旋轉式 360° 光達</b>（OS1-64、LD-16）。",
+       vi: "Khung này tính cho <b>lidar quay 360°</b> (OS1-64, LD-16).",
+       badZh: "這一格不是在算它——它不會轉，沒有「每圈點數」和「轉速」。它在目標上的點數請看「判讀與試算」那一邊。",
+       badVi: "Khung này không tính cho model đó — nó không quay, không có «điểm mỗi vòng» hay «tốc độ quay». Số điểm của nó xem ở tab «Đọc & tính»." },
+  3: { ok: ["os1"],
+       zh: "這一格用的是 <b>OS1-64</b> 規格表上那兩個測距數字（170 m / 90 m）。",
+       vi: "Khung này dùng hai con số tầm đo của <b>OS1-64</b> (170 m / 90 m).",
+       badZh: "這一格畫的還是 OS1-64，不是它。每一顆的兩個測距數字都不一樣，要自己去規格表上找。",
+       badVi: "Khung này vẫn vẽ OS1-64, không phải model đó. Mỗi model có hai con số riêng, phải tự tìm trên bảng." },
+};
+function miniScope() {
+  Object.entries(MINI_FOR).forEach(([k, f]) => {
+    const el = $("sc" + k);
+    if (!el) return;
+    const fit = f.ok.includes(model);
+    el.className = "scope" + (fit ? "" : " bad");
+    el.innerHTML = fit ? L(f.zh, f.vi)
+      : L(`⚠ 你現在選的是 <b>${MODELS[model].name}</b>。${f.badZh}`,
+          `⚠ Bạn đang chọn <b>${MODELS[model].name}</b>. ${f.badVi}`);
+  });
+}
+
 function miniP() {
   const ch = CHS[+$("sCh").value], col = COLS[+$("sCol").value], hz = HZS[+$("sHz").value];
   $("vCh").textContent = ch; $("vCol").textContent = col; $("vHz").textContent = hz;
@@ -1014,7 +1052,7 @@ function hwBack() {
   document.body.classList.remove("sheet");
 }
 
-function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); hwForm(); }
+function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); miniScope(); hwForm(); }
 function applyLang() {
   document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
   document.title = L("規格判讀台", "Bàn đọc thông số");
