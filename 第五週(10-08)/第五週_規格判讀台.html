@@ -220,7 +220,10 @@
     <div class="mini">
       <div class="t" data-zh="② 每秒點數 ↔ 角解析度" data-vi="② Số điểm/giây ↔ phân giải góc"><small data-zh="規格表常只寫點數，角度要自己除出來" data-vi="Bảng thường chỉ ghi số điểm; góc phải tự chia"></small></div>
       <div class="rowv"><span data-zh="線束數" data-vi="Số kênh"></span><b id="vCh">64</b></div>
-      <input type="range" id="sCh" min="0" max="4" step="1" value="3">
+      <!-- CHS = [16, 32, 64, 128, 256]：64 是 index 2。原本寫 3（＝128 線），
+           一打開就算出 18 點，可是第 1 節第 6 張和第 2 節第 14 張的口白都說
+           「現在上面寫著 9 個點」——9 是 OS1-64 的數字，所以預設要停在 64。 -->
+      <input type="range" id="sCh" min="0" max="4" step="1" value="2">
       <div class="rowv"><span data-zh="每圈水平點數" data-vi="Điểm ngang mỗi vòng"></span><b id="vCol">1024</b></div>
       <input type="range" id="sCol" min="0" max="2" step="1" value="1">
       <div class="rowv"><span data-zh="轉速 Hz" data-vi="Tốc độ quay Hz"></span><b id="vHz">10</b></div>
