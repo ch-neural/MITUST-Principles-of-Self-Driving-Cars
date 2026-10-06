@@ -98,33 +98,60 @@
   .rowv b{color:var(--navy);font-size:13px}
   .out{font-size:12px;color:var(--ink);background:var(--card);border-radius:6px;padding:6px 8px;margin-top:6px;line-height:1.5}
   .foot{font-size:10.5px;color:var(--mute);margin-top:10px;border-top:1px solid var(--line);padding-top:6px;line-height:1.45}
-  .lang{position:fixed;top:10px;right:12px;display:flex;gap:0;z-index:5}
+  .lang{display:flex;gap:0;flex:0 0 auto}
   .lang{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;
         box-shadow:0 1px 3px rgba(11,31,58,.08)}
   .lang button{padding:5px 11px;font-size:11.5px;background:#fff;border:none;border-radius:0}
   .lang button.on{background:var(--navy);color:#fff}   /* 這一條一定要排在上面那條後面，
      否則 .lang button 的白底會蓋掉 button.on 的深底，白字壓白底＝整顆看起來是空的 */
   #mtabs{display:none}
+  /* 情境是「這一題」的設定，整題不變，所以提到最上面固定住：
+     捲到哪裡都看得到自己在哪個情境，也隨時改得到。 */
+  #stick{position:sticky;top:0;z-index:6;background:#fff;border-bottom:1px solid var(--line)}
+  #topbar{display:flex;align-items:center;gap:10px;padding:7px 12px;flex-wrap:wrap}
+  .tb-lab{font-size:12px;font-weight:700;color:var(--navy);flex:0 0 auto}
+  #sceBtns{display:flex;gap:6px;flex:0 0 auto}
+  #sceBtns button{padding:5px 12px;font-size:12.5px;min-height:0;line-height:1.25}
+  #sceBtns .vi{display:block;font-size:10px;opacity:.72}
+  #tbNeed{font-size:12px;color:var(--navy);flex:1 1 180px;min-width:0}
+  #tbNeed b{font-size:14px}
+  /* 判定卡上方的型號快捷鈕：固定情境之後在原地輪四顆 */
+  .mdl2{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 7px}
+  .mdl2 button{flex:1 1 0;min-width:84px;padding:6px 4px;font-size:11.5px;min-height:0;line-height:1.3}
+  .hwprog{font-size:11.5px;color:var(--mute);text-align:center;margin-top:3px}
+  .hwprog b{color:var(--navy)}
   @media (max-width:900px){
     #app{display:block;padding:8px}
     .panel{margin-bottom:8px}
-    #mtabs{display:flex;position:sticky;top:0;z-index:4;background:#fff;border:1px solid var(--line);
+    #mtabs{display:flex;background:#fff;border:1px solid var(--line);
            border-radius:8px;overflow:hidden;margin-bottom:8px}
     #mtabs button{flex:1 1 0;border:none;border-radius:0;padding:10px 4px;font-size:13px}
     #mtabs button.on{background:var(--navy);color:#fff}
-    .lang{position:static;justify-content:flex-end;margin-bottom:6px}
+    #topbar{padding:6px 8px;gap:7px}
+    #sceBtns{flex:1 1 100%;order:2}
+    #sceBtns button{flex:1 1 0;min-width:0}
+    #tbNeed{order:3;flex:1 1 100%}
+    .tb-lab{order:1}
+    .lang{order:1;margin-left:auto}
     button{font-size:12.5px;padding:9px 8px;min-height:38px}
   }
 </style>
 </head>
 <body>
-<div class="lang"><button id="btnZh" class="on">中文</button><button id="btnVi">Tiếng Việt</button></div>
+<div id="stick">
+<div id="topbar">
+  <span class="tb-lab" data-zh="情境" data-vi="Tình huống"></span>
+  <div id="sceBtns"></div>
+  <div id="tbNeed"></div>
+  <div class="lang"><button id="btnZh" class="on">中文</button><button id="btnVi">Tiếng Việt</button></div>
+</div>
 
 <div id="mtabs">
   <button data-tab="ds" class="on" data-zh="規格表" data-vi="Thông số"></button>
   <button data-tab="read" data-zh="判讀與試算" data-vi="Đọc &amp; tính"></button>
   <button data-tab="mini" data-zh="三個小工具" data-vi="Ba công cụ"></button>
   <button data-tab="hw" data-zh="作業" data-vi="Bài nộp"></button>
+</div>
 </div>
 
 <div id="app">
@@ -153,9 +180,11 @@
       <button id="btnClear" data-zh="重來" data-vi="Làm lại"></button>
     </div>
 
-    <h2 data-zh="二、這顆放進我的情境，夠不夠用" data-vi="2. Model này có đủ cho tình huống của tôi không"></h2>
-    <div class="grid g3" id="sceBtns"></div>
-    <div id="calc" style="margin-top:8px"></div>
+    <h2 data-zh="二、這顆放進上面那個情境，夠不夠用" data-vi="2. Model này có đủ cho tình huống ở trên không"></h2>
+    <div class="note" data-zh="情境在最上面那一條換。這裡換型號，四顆輪一遍。"
+         data-vi="Đổi tình huống ở thanh trên cùng. Ở đây đổi model, làm lần lượt bốn cái."></div>
+    <div class="mdl2" id="mdlBtns2"></div>
+    <div id="calc"></div>
   </div>
 
   <!-- 右：三個小工具 -->
@@ -419,8 +448,19 @@ function modelBtns() {
   $("mdlBtns").innerHTML = Object.entries(MODELS).map(([k, m]) =>
     `<button data-mdl="${k}" class="${k === model ? "on" : ""}">${m.name}
       <span class="vi">${L(m.zh, m.vi)}</span></button>`).join("");
-  $("mdlBtns").querySelectorAll("[data-mdl]").forEach((b) =>
-    b.onclick = () => { model = b.dataset.mdl; render(); });
+  // 判定卡上方那一排（精簡版）：和左欄同一組，點哪一邊都一樣
+  $("mdlBtns2").innerHTML = Object.entries(MODELS).map(([k, m]) =>
+    `<button data-mdl="${k}" class="${k === model ? "on" : ""}">${m.name}</button>`).join("");
+  [$("mdlBtns"), $("mdlBtns2")].forEach((box) =>
+    box.querySelectorAll("[data-mdl]").forEach((b) =>
+      b.onclick = () => { model = b.dataset.mdl; render(); }));
+}
+
+// 十二格填了幾格——按鈕旁邊要印出來，學生才知道還缺幾格
+function hwCount() {
+  let n = 0;
+  HW_M.forEach(([mk]) => HW_S.forEach(([sk]) => { if (HW.g[mk + "_" + sk]) n++; }));
+  return n;
 }
 function dsTable() {
   const m = MODELS[model];
@@ -551,12 +591,14 @@ function calc() {
     ${!isDef && !toQ2 ? `<div class="hint" style="font-size:11px;color:var(--red);margin-top:3px">${L(
       `注意：現在是 ${cols} 點／圈 ${hzNow} Hz，不是預設模式。十二格那一題要用預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
       `Chú ý: đang ở ${cols} điểm/vòng ${hzNow} Hz, không phải mặc định. Bảng 12 ô dùng ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
+    <div class="hwprog">${L("十二格已經記了", "Bảng 12 ô đã ghi")} <b id="hwProg">${hwCount()}</b> / 12</div>
     <div id="toHwFb" class="hint" style="font-size:11px;color:var(--ok);min-height:14px;margin-top:3px"></div>`;
   $("calc").innerHTML = html;
   $("btnToHw").onclick = () => {
     if (toQ2) { HW.pts = String(LAST_PTS); HW.ok2048 = LAST_OK ? "ok" : "ng"; }
     else { HW.g[model + "_" + scene] = LAST_OK ? "ok" : "ng"; }
     hwSave(); hwForm();
+    if ($("hwProg")) $("hwProg").textContent = hwCount();
     $("toHwFb").textContent = toQ2 ? L("✓ 已經填進作業第二題了", "✓ Đã ghi vào câu 2")
                                    : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
     setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 2500);
@@ -572,6 +614,10 @@ function sceneBtns() {
       <span class="vi">${s.v} km/h</span></button>`).join("");
   $("sceBtns").querySelectorAll("[data-sce]").forEach((b) =>
     b.onclick = () => { scene = b.dataset.sce; sceneBtns(); calc(); });
+  const s2 = SCENES[scene];
+  $("tbNeed").innerHTML = L(
+    `煞停 <b>${brake(s2.v).toFixed(0)} m</b> → 至少要看到 <b>${(brake(s2.v) + 5).toFixed(0)} m</b>　${s2.zhNote}`,
+    `Phanh <b>${brake(s2.v).toFixed(0)} m</b> → phải thấy <b>${(brake(s2.v) + 5).toFixed(0)} m</b>　${s2.viNote}`);
 }
 
 // ── 三個小工具 ──
@@ -876,7 +922,7 @@ function hwForm() {
      <div class="hwn">${L("四個型號 × 三個情境。在「判讀與試算」那一頁把每一個組合按出來，判定底下有一顆「記進作業」，按了就會填到這裡；也可以自己改。",
                           "4 model × 3 tình huống. Ở tab «Đọc & tính», dưới kết luận có nút «Ghi vào bài»; bấm là điền vào đây. Vẫn sửa tay được.")}</div>
      <button id="btnGoCalc" style="width:100%;margin-bottom:6px">${L("← 去「判讀與試算」按下一個組合", "← Sang tab «Đọc & tính»")}</button>
-     <table class="hwtab"><tr><th></th>${HW_S.map((x) => `<th>${L(x[1], x[2])}</th>`).join("")}</tr>
+     <table class="hwtab"><tr><th></th>${HW_S.map((x, i) => `<th>${L(`第${"一二三"[i]}題`, `Câu ${i + 1}`)}<br>${L(x[1], x[2])}</th>`).join("")}</tr>
      ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
         `<td><select data-g="${k}_${sk}">${sel(HW.g[k + "_" + sk] || "", "—")}</select></td>`).join("")}</tr>`).join("")}
      </table>
@@ -925,7 +971,7 @@ function hwSheet() {
     `<h3>${L("第五週作業　替一台車選感測器", "Bài tuần 5 — Chọn cảm biến")}</h3>
      <div class="who">${miss(HW.name)}　${HW.sid || ""}</div>
      <div class="when">${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}</div>
-     <table class="hwtab"><tr><th></th>${HW_S.map((x) => `<th>${L(x[1], x[2])}</th>`).join("")}</tr>
+     <table class="hwtab"><tr><th></th>${HW_S.map((x, i) => `<th>${L(`第${"一二三"[i]}題`, `Câu ${i + 1}`)}<br>${L(x[1], x[2])}</th>`).join("")}</tr>
      ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
         `<td>${cell(HW.g[k + "_" + sk])}</td>`).join("")}</tr>`).join("")}</table>
      <div class="sec">${L("OS1 換成 2048 點／圈", "OS1 → 2048 điểm/vòng")}</div>
