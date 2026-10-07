@@ -43,32 +43,6 @@
   .out .calc{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin:3px 0}
   .out .calc>i{flex:0 0 auto;min-width:96px;font-style:normal;font-size:11px;color:var(--mute)}
   .out .calc>code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--navy)}
-  #pHw{grid-column:1/-1}
-  .hwq{margin:10px 0 4px;font-weight:700;font-size:13px;color:var(--navy)}
-  .hwn{font-size:11.5px;color:var(--mute);margin-bottom:4px}
-  /* table-layout:fixed 一定要留著——不然型號那一欄會把表撐到比手機還寬，
-     整頁跟著橫向溢出，連上面的分頁列都會被推出去。 */
-  .hwtab{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
-  .hwtab th,.hwtab td{border:1px solid var(--line);padding:4px 3px;text-align:center;
-    overflow:hidden;text-overflow:ellipsis}
-  .hwtab th{background:var(--card);font-weight:700;font-size:11px}
-  .hwtab td:first-child,.hwtab th:first-child{text-align:left;width:37%;font-size:11.5px}
-  .hwtab select{width:100%;padding:5px 0;font-size:12px;min-height:0}
-  .hw input[type=text],.hw textarea{width:100%;font-family:inherit;font-size:13px;
-    padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
-  .hw textarea{min-height:58px;resize:vertical;line-height:1.5}
-  .hwtf{display:flex;gap:6px;align-items:flex-start;margin-top:5px}
-  .hwtf{flex-wrap:wrap}
-  .hwtf select{flex:0 0 76px}
-  .hwtf select[data-tfr]{flex:1 1 100%;min-width:0}
-  .hw select{width:100%;font-size:12.5px;padding:7px 8px}
-  #sheet{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:12px 14px}
-  #sheet h3{margin:0 0 2px;font-size:15px;color:var(--navy)}
-  #sheet .who{font-size:13px;font-weight:700;color:var(--ink)}
-  #sheet .when{font-size:11px;color:var(--mute);margin-bottom:8px}
-  #sheet .sec{font-size:11.5px;color:var(--teal-d);font-weight:700;margin:9px 0 3px}
-  #sheet .ans{font-size:12px;line-height:1.5;white-space:pre-wrap}
-  #sheet .miss{color:var(--red)}
   .out .hint{display:block;margin-top:3px;color:var(--mute)}
   .out .warn{display:block;margin-top:3px;color:#c0392b;font-weight:700}
   .sim{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0 2px}
@@ -118,27 +92,14 @@
   /* 判定卡上方的型號快捷鈕：固定情境之後在原地輪四顆 */
   .mdl2{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 7px}
   .mdl2 button{flex:1 1 0;min-width:84px;padding:6px 4px;font-size:11.5px;min-height:0;line-height:1.3}
-  /* 產生作答單之後，把上面那些按鈕和另外三欄全部收掉：
-     學生直接截整個畫面就是一張乾淨的答案，不必自己框。 */
-  body.sheet #stick,
-  body.sheet #pDs,
-  body.sheet #pRead,
-  body.sheet #pMini,
-  body.sheet #pHw > h2,
-  body.sheet #pHw > .note,
-  body.sheet #btnWipe{display:none}
-  body.sheet #app{display:block;padding:10px;min-height:0}
-  body.sheet #pHw{border:none;padding:0;background:none}
-  #shotHint{display:none;font-size:11.5px;color:var(--mute);margin-top:8px;text-align:center}
-  body.sheet #shotHint{display:block}
   /* 每個小工具算的是哪一種感測器；選的型號對不上就變成警告 */
   .scope{font-size:11px;line-height:1.45;color:var(--mute);margin:1px 0 7px}
   .scope.bad{background:#FFF6E3;border:1px solid var(--amber);color:#7A4E00;
              border-radius:6px;padding:5px 7px;margin-top:3px}
-  .hwprog{font-size:11.5px;color:var(--mute);text-align:center;margin-top:3px}
-  /* 「全部清空」上膛之後的樣子：它清的是整份作業，誤觸的代價太大 */
-  button.danger{background:var(--red);color:#fff;border-color:var(--red)}
-  .hwprog b{color:var(--navy)}
+  /* 去作業那一頁 */
+  .hwlink{display:block;margin-top:8px;padding:9px 10px;border-radius:7px;text-align:center;
+          background:var(--teal);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none}
+  .hwlink:hover{background:var(--teal-d)}
   @media (max-width:900px){
     #app{display:block;padding:8px}
     .panel{margin-bottom:8px}
@@ -169,7 +130,6 @@
   <button data-tab="ds" class="on" data-zh="規格表" data-vi="Thông số"></button>
   <button data-tab="read" data-zh="判讀與試算" data-vi="Đọc &amp; tính"></button>
   <button data-tab="mini" data-zh="三個小工具" data-vi="Ba công cụ"></button>
-  <button data-tab="hw" data-zh="作業" data-vi="Bài nộp"></button>
 </div>
 </div>
 
@@ -257,21 +217,6 @@
          data-vi="Thông số từ tài liệu công khai; nguồn ghi dưới mỗi bảng. Giá trị tính ra là công thức lớp học."></div>
   </div>
 
-  <!-- 作業：手機上作答，最後產生一張可以截圖上傳的作答單 -->
-  <div class="panel hw" id="pHw">
-    <h2 data-zh="第五週作業：替一台車選感測器" data-vi="Bài tuần 5: chọn cảm biến cho một chiếc xe"></h2>
-    <div class="note" data-zh="在這一頁作答，最後按「產生作答單」，把那張截圖上傳到 LINE 群組。答案會存在這台裝置上，關掉再開還在。"
-         data-vi="Trả lời ở trang này, bấm «Tạo phiếu», chụp màn hình rồi gửi lên nhóm LINE. Câu trả lời được lưu trên máy này."></div>
-    <div id="hwForm"></div>
-    <div id="sheet" style="display:none"></div>
-    <div id="shotHint" data-zh="↑ 截這一張上傳 LINE 群組。要改的話按下面「回去修改」。"
-         data-vi="↑ Chụp tấm này gửi lên nhóm LINE. Muốn sửa thì bấm «Sửa lại» bên dưới."></div>
-    <div class="grid g2" style="margin-top:10px">
-      <button id="btnSheet" data-zh="產生作答單" data-vi="Tạo phiếu nộp"></button>
-      <button id="btnBack" style="display:none" data-zh="回去修改" data-vi="Sửa lại"></button>
-      <button id="btnWipe" data-zh="全部清空" data-vi="Xoá hết"></button>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -459,9 +404,9 @@ const SCENES = {
             tgt: { w: 1.8, h: 1.5, zh: "汽車", vi: "ô tô" },
             zhNote: "時速 100，要在 150 公尺外看到車", viNote: "100 km/h, thấy xe ở 150 m" },
 };
-const DEF_COLS = 1024, DEF_HZ = 10;   // 十二格那一題要用的預設模式
-let model = "os1", scene = "hanoi", cols = DEF_COLS, hzNow = DEF_HZ, TR = true,
-    LAST_OK = false, LAST_PTS = 0;
+const DEF_COLS = 1024, DEF_HZ = 10;   // 原廠預設模式
+const HW_URL = "https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week5/hw/";
+let model = "os1", scene = "hanoi", cols = DEF_COLS, hzNow = DEF_HZ, TR = true;
 
 const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
 
@@ -483,12 +428,6 @@ function modelBtns() {
       b.onclick = () => { model = b.dataset.mdl; render(); }));
 }
 
-// 十二格填了幾格——按鈕旁邊要印出來，學生才知道還缺幾格
-function hwCount() {
-  let n = 0;
-  HW_M.forEach(([mk]) => HW_S.forEach(([sk]) => { if (HW.g[mk + "_" + sk]) n++; }));
-  return n;
-}
 function dsTable() {
   const m = MODELS[model];
   $("ds").innerHTML = `<div class="ds">
@@ -565,27 +504,26 @@ function calc() {
                       : L(`不夠，門檻 ${need.toFixed(0)} m，差 ${(need - c.range10).toFixed(0)} m`,
                           `Thiếu ${(need - c.range10).toFixed(0)} m so với ngưỡng ${need.toFixed(0)} m`), reach]);
     lines.push([L(`角解析度 ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`, `Phân giải ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`),
-                (LAST_PTS = pts(s.d)) && false ||
                 L(`${s.d} m 的${s.tgt.zh}身上有 ${pts(s.d)} 個點，門檻 ${MIN_PTS} 個`,
                   `${s.tgt.vi} ở ${s.d} m có ${pts(s.d)} điểm, ngưỡng ${MIN_PTS}`), pts(s.d) >= MIN_PTS]);
     if (pts(s.d) < MIN_PTS) ok = false;
     lines.push([L(`更新率 ${hz} Hz`, `${hz} Hz`),
                 L(`每 ${(1000 / hz).toFixed(0)} 毫秒一張；這段時間車子前進 ${(s.v / 3.6 / hz).toFixed(1)} m`,
-                  `Mỗi ${(1000 / hz).toFixed(0)} ms một khung; xe đi ${(s.v / 3.6 / hz).toFixed(1)} m`), true]);
+                  `Mỗi ${(1000 / hz).toFixed(0)} ms một khung; xe đi ${(s.v / 3.6 / hz).toFixed(1)} m`), null]);
   } else {
     const fov = 2 * Math.atan(c.px * c.pitch / 1000 / 2 / c.f) / R;
     const th = fov / c.px * R;
     const err = s.d * s.d * th / c.h;
     lines.push([L(`配 ${c.f} mm 鏡頭 → 視野 ${fov.toFixed(0)}°`, `Ống kính ${c.f} mm → ${fov.toFixed(0)}°`),
-                L("感測器規格表沒有視野，是鏡頭決定的", "Bảng cảm biến không có góc nhìn"), true]);
+                L("感測器規格表沒有視野，是鏡頭決定的", "Bảng cảm biến không có góc nhìn"), null]);
     lines.push([L(`每像素 ${(fov / c.px).toFixed(4)}°`, `Mỗi điểm ảnh ${(fov / c.px).toFixed(4)}°`),
                 L(`${s.d} m 處估距誤差 ±${err.toFixed(2)} m，門檻 ±${MAX_ERR} m`,
                   `Sai số ở ${s.d} m: ±${err.toFixed(2)} m, ngưỡng ±${MAX_ERR} m`), err < MAX_ERR]);
     if (err >= MAX_ERR) ok = false;
     lines.push([L("更新率 60 fps", "60 fps"),
                 L(`每 17 毫秒一張；這段時間車子前進 ${(s.v / 3.6 / 60).toFixed(2)} m`,
-                  `Mỗi 17 ms; xe đi ${(s.v / 3.6 / 60).toFixed(2)} m`), true]);
-    lines.push([L("測距", "Đo khoảng cách"), L("規格表上沒有，距離是算出來的，而且要假設路面是平的", "Không có trong bảng"), true]);
+                  `Mỗi 17 ms; xe đi ${(s.v / 3.6 / 60).toFixed(2)} m`), null]);
+    lines.push([L("測距", "Đo khoảng cách"), L("規格表上沒有，距離是算出來的，而且要假設路面是平的", "Không có trong bảng"), null]);
   }
   if (c.modes) {
     html += `<div class="res" style="margin-top:6px;font-size:11.5px">
@@ -598,71 +536,19 @@ function calc() {
   }
   html += lines.map(([a, b, good]) => `<div class="row" style="border:1px solid var(--line);border-radius:6px;margin-top:5px;background:#fff">
       <div class="k" style="flex:0 0 46%">${a}</div>
-      <div class="v" style="color:${good ? "var(--ok)" : "var(--red)"}">${b}</div></div>`).join("");
+      <div class="v" style="color:${good === null ? "var(--mute)" : good ? "var(--ok)" : "var(--red)"}">${b}</div></div>`).join("");
+  html += `<div class="hint" style="font-size:11px;color:var(--mute);margin-top:6px">${L(
+    "灰色那幾行<b>不是門檻</b>，是算給你看的代價；只有綠色和紅色的行在決定夠不夠。",
+    "Các dòng màu xám <b>không phải ngưỡng</b>, chỉ cho bạn thấy cái giá phải trả; chỉ dòng xanh và đỏ mới quyết định.")}</div>`;
   html += `<div class="verdict ${ok ? "pass" : "fail"}">${ok
     ? L("這一顆在這個情境撐得住。接下來要問的是價錢、功耗和裝得上去嗎。", "Model này đủ dùng. Câu hỏi tiếp theo là giá, điện và chỗ lắp.")
     : L("這一顆在這個情境不夠用。上面紅色那一行就是卡住的地方。", "Không đủ. Dòng màu đỏ ở trên là chỗ bị chặn.")}</div>`;
-  // 十二格要一格一格試，試完還要切到作業去填——所以這裡直接給一顆按鈕把這格記起來。
-  // 學生還是得自己把每一個組合按出來看過，只是不必再切分頁抄一次。
-  LAST_OK = ok;
-  // 模式不是預設的時候，按鈕要改寫去作業第二題，不能寫十二格——
-  // 十二格問的是原廠預設（1024 @ 10 Hz），第二題問的才是切到 2048 之後。
-  const isDef = !c.modes || (cols === DEF_COLS && hzNow === DEF_HZ);
-  const toQ2 = !isDef && model === "os1" && scene === "hanoi";
-  const sname = L(SCENES[scene].zh, SCENES[scene].vi);
-  // 這一格現在存的是什麼？學生要看得到，才知道自己按過沒有、也才知道「清掉」會清掉什麼。
-  const cellKey = model + "_" + scene;
-  const stored = toQ2 ? (HW.ok2048 || "") : (HW.g[cellKey] || "");
-  const storedTxt = stored === "ok" ? L("夠", "Đủ") : stored === "ng" ? L("不夠", "Không đủ") : "";
-  const toHwLabel = toQ2
-    ? L(`記進作業第二題：${LAST_PTS} 個點 → ${ok ? "夠" : "不夠"}`,
-        `Ghi vào câu 2: ${LAST_PTS} điểm → ${ok ? "Đủ" : "Không đủ"}`)
-    : L(`記進作業十二格：${m.name} × ${sname} → ${ok ? "夠" : "不夠"}`,
-        `Ghi vào bảng 12 ô: ${m.name} × ${sname} → ${ok ? "Đủ" : "Không đủ"}`);
-  html += stored
-    ? `<div class="grid g2" style="margin-top:6px">
-         <button id="btnToHw">${toHwLabel}</button>
-         <button id="btnClrHw">${L(`清掉這一格（現在記的是「${storedTxt}」）`,
-                                   `Xoá ô này (đang ghi «${storedTxt}»)`)}</button>
-       </div>`
-    : `<button id="btnToHw" style="width:100%;margin-top:6px">${toHwLabel}</button>`;
-  html += `
-    ${toQ2 ? `<div class="hint" style="font-size:11px;color:var(--mute);margin-top:3px">${L(
-      `記的是作業的<b>第二題</b>（河內尖峰：OS1 換成 2048 點／圈），<b>十二格不會變</b>——十二格那一題問的是預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
-      `Ghi vào <b>câu 2</b> của bài (Hà Nội: OS1 đổi sang 2048 điểm/vòng). <b>Bảng 12 ô không đổi</b> — bảng đó hỏi chế độ mặc định ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
-    ${!isDef && !toQ2 ? `<div class="hint" style="font-size:11px;color:var(--red);margin-top:3px">${L(
-      `注意：現在是 ${cols} 點／圈 ${hzNow} Hz，不是預設模式。十二格那一題要用預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
-      `Chú ý: đang ở ${cols} điểm/vòng ${hzNow} Hz, không phải mặc định. Bảng 12 ô dùng ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
-    <div class="hwprog">${L("十二格已經記了", "Bảng 12 ô đã ghi")} <b id="hwProg">${hwCount()}</b> / 12</div>
-    <div id="toHwFb" class="hint" style="font-size:11px;color:var(--ok);min-height:14px;margin-top:3px"></div>`;
+  // 作業搬到獨立的一頁了（week5/hw/）：在那一頁點「型號 × 情境」的任一格，
+  // 判讀就在那一格底下展開，看完直接選夠／不夠。這裡只留一條路過去，
+  // 不要再有「在這邊按、去那邊看」的兩套流程——學生就是被那個繞昏的。
+  html += `<a class="hwlink" href="${HW_URL}" target="_blank" rel="noopener">${L(
+    "作業在另一頁　→", "Bài nộp ở trang khác　→")}</a>`;
   $("calc").innerHTML = html;
-  $("btnToHw").onclick = () => {
-    if (toQ2) { HW.pts = String(LAST_PTS); HW.ok2048 = LAST_OK ? "ok" : "ng"; }
-    else { HW.g[model + "_" + scene] = LAST_OK ? "ok" : "ng"; }
-    hwSave(); hwForm();
-    // 先重畫（「清掉這一格」才會出現），**再**去抓新的回饋框——
-    // 反過來的話 calc() 會把剛設好的字一起洗掉，按下去就完全沒有反應。
-    calc();
-    const fb = $("toHwFb");
-    if (fb) {
-      fb.textContent = toQ2
-        ? L(`✓ 已經填進作業第二題：${LAST_PTS} 個點 → ${LAST_OK ? "夠" : "不夠"}`,
-            `✓ Đã ghi vào câu 2: ${LAST_PTS} điểm → ${LAST_OK ? "Đủ" : "Không đủ"}`)
-        : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
-      setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 3000);
-    }
-  };
-  // 反悔：只清掉現在這一個「型號 × 情境」，不要動到別格
-  if ($("btnClrHw")) $("btnClrHw").onclick = () => {
-    if (toQ2) { HW.pts = ""; HW.ok2048 = ""; } else { delete HW.g[cellKey]; }
-    hwSave(); hwForm(); calc();
-    const e = $("toHwFb");
-    if (e) {
-      e.textContent = toQ2 ? L("✓ 作業第二題那一格清掉了", "✓ Đã xoá ô câu 2")
-                           : L("✓ 十二格裡的那一格清掉了", "✓ Đã xoá ô đó trong bảng 12 ô");
-      setTimeout(() => { const e2 = $("toHwFb"); if (e2) e2.textContent = ""; }, 2500);
-    }
-  };
   if (c.modes) {
     $("mCols").onchange = (e) => { cols = +e.target.value; calc(); };
     $("mHz").onchange = (e) => { hzNow = +e.target.value; calc(); };
@@ -935,159 +821,7 @@ function miniR() {
     `<br>Thấy «170 m» phải hỏi: đo với màu gì?`);
 }
 
-// ═══════════ 作業 ═══════════
-// 學生在手機上填，最後產生一張乾淨的作答單截圖上傳。答案存在 localStorage，
-// 只在這台裝置上，不會傳到任何地方——切分頁、手滑重整都還在。
-const HW_KEY = "w5hw";
-const HW_M = [["os1", "Ouster OS1-64"], ["at128", "Hesai AT128P"],
-              ["ar0233", "onsemi AR0233AT"], ["ld16", "LD-16"]];
-const HW_S = [["campus", "校園 20", "Trường 20"], ["hanoi", "河內 40", "Hà Nội 40"],
-              ["hiway", "國道 100", "Cao tốc 100"]];
-const HW_TF = [
-  ["① 規格表寫「測距 200 公尺」，就表示 200 公尺內的東西都看得到。",
-   "① «Tầm 200 m» nghĩa là mọi thứ trong 200 m đều thấy."],
-  ["② 同一顆影像感測器，視野是固定的。", "② Cùng một cảm biến ảnh thì góc nhìn cố định."],
-  ["③ 兩顆光達比每秒點數，點數大的那顆，遠處的人一定看得比較清楚。",
-   "③ Lidar nào nhiều điểm/giây hơn thì chắc chắn nhìn người ở xa rõ hơn."],
-  ["④ 兩顆感測器各自都好，合起來就一定好。",
-   "④ Hai cảm biến đều tốt thì ghép lại chắc chắn tốt."],
-];
-// 作業用的選項。每一題只有一個對的，其餘是課堂上真的會聽到的錯法。
-// 寫成資料是為了之後要改措辭時只改這裡一個地方。
-// 三個值就是 OS1 × 河內在三種模式下真的會算出來的點數（512→3、1024→9、2048→18），
-// 所以「記進作業第二題」按鈕寫進來的數字一定對得上其中一個。36 是誘答。
-const HW_PTS = ["3", "9", "18", "36"];
-const HW_COST = [
-  ["資料量加倍，而且 2048 點／圈配不了 20 Hz",
-   "Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],
-  ["要多花錢買更貴的型號", "Phải mua model đắt hơn"],
-  ["測距會從 90 公尺變短", "Tầm đo giảm xuống dưới 90 m"],
-  ["垂直線束數會變少", "Số kênh dọc giảm đi"],
-];
-const HW_CONCL = [
-  ["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。",
-   "OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],
-  ["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。",
-   "OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],
-  ["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。",
-   "OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],
-  ["OS1 不好用。", "OS1 không tốt."],
-];
-// 四句話的理由，每句第一個是對的
-const HW_WHY = [
-  [["沒問條件：測距要看是對百分之幾反射率量的。OS1 對白色 170 m，對黑色只剩 90 m。",
-    "Chưa hỏi điều kiện: tầm đo đo với vật phản xạ bao nhiêu %? Trắng 170 m, đen 90 m."],
-   ["因為 200 公尺太遠了，沒有感測器做得到。", "Vì 200 m quá xa, không cảm biến nào làm được."],
-   ["因為那是在實驗室量的，路上量不到。", "Vì đo trong phòng thí nghiệm, ra đường thì không."]],
-  [["視野是鏡頭決定的。同一塊晶片，8 mm 鏡頭看 42°，3.6 mm 看 81°。",
-    "Góc nhìn do ống kính quyết định: cùng một chip, 8 mm → 42°, 3,6 mm → 81°."],
-   ["因為視野會隨著解析度模式改變。", "Vì góc nhìn đổi theo chế độ phân giải."],
-   ["因為感測器裝上車之後角度會跑掉。", "Vì lắp lên xe rồi góc sẽ lệch."]],
-  [["每秒點數要先換成角度。OS1 262 萬點灑滿 360°，40 m 的目標上只有 9 點；AT128P 150 萬點集中在 120°，同一個目標有 121 點。",
-    "Phải đổi điểm/giây sang góc. OS1 2,62 triệu rải khắp 360° → 9 điểm; AT128P 1,5 triệu dồn trong 120° → 121 điểm."],
-   ["因為點數大的那顆比較貴，貴的不一定好。", "Vì cái nhiều điểm thì đắt hơn, đắt chưa chắc tốt."],
-   ["因為同一顆光達切到 2048 點，點數加倍也看不清楚。",
-    "Vì cùng một lidar đổi sang 2048 điểm cũng không rõ hơn."]],
-  [["還有標定和時間同步兩關。差一度，50 公尺外就差將近一公尺。",
-    "Còn hiệu chuẩn và đồng bộ thời gian: lệch 1° thì ở 50 m lệch gần 1 m."],
-   ["因為兩顆感測器會互相干擾。", "Vì hai cảm biến gây nhiễu lẫn nhau."],
-   ["因為合起來之後更新率會變慢。", "Vì ghép lại thì tốc độ cập nhật chậm đi."]],
-];
-let HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
-           tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
-try { const r = localStorage.getItem(HW_KEY); if (r) HW = Object.assign(HW, JSON.parse(r)); }
-catch (e) { /* 無痕視窗或封鎖 cookie：照常能寫，只是關掉就沒了 */ }
-const hwSave = () => { try { localStorage.setItem(HW_KEY, JSON.stringify(HW)); } catch (e) {} };
-
-function hwForm() {
-  const sel = (v, blank) => ["", L("夠", "Đủ"), L("不夠", "Không đủ")]
-    .map((o, i) => `<option value="${["", "ok", "ng"][i]}"${v === ["", "ok", "ng"][i] ? " selected" : ""}>${i ? o : blank}</option>`).join("");
-  const tfsel = (v) => ["", L("對", "Đúng"), L("錯", "Sai")]
-    .map((o, i) => `<option value="${["", "T", "F"][i]}"${v === ["", "T", "F"][i] ? " selected" : ""}>${i ? o : "—"}</option>`).join("");
-  $("hwForm").innerHTML =
-    `<div class="grid g2" style="margin-top:8px">
-       <input type="text" id="hwName" placeholder="${L("姓名", "Họ tên")}" value="${HW.name}">
-       <input type="text" id="hwSid" placeholder="${L("班級／學號", "Lớp / MSSV")}" value="${HW.sid}">
-     </div>
-     <div class="hwq">${L("一、十二格判定", "1. Mười hai ô")}</div>
-     <div class="hwn">${L("四個型號 × 三個情境。在「判讀與試算」那一頁把每一個組合按出來，判定底下有一顆「記進作業」，按了就會填到這裡；也可以自己改。",
-                          "4 model × 3 tình huống. Ở tab «Đọc & tính», dưới kết luận có nút «Ghi vào bài»; bấm là điền vào đây. Vẫn sửa tay được.")}</div>
-     <button id="btnGoCalc" style="width:100%;margin-bottom:6px">${L("← 去「判讀與試算」按下一個組合", "← Sang tab «Đọc & tính»")}</button>
-     <table class="hwtab"><tr><th></th>${HW_S.map((x, i) => `<th>${L(`第${"一二三"[i]}題`, `Câu ${i + 1}`)}<br>${L(x[1], x[2])}</th>`).join("")}</tr>
-     ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
-        `<td><select data-g="${k}_${sk}">${sel(HW.g[k + "_" + sk] || "", "—")}</select></td>`).join("")}</tr>`).join("")}
-     </table>
-     <div class="hwq">${L("二、河內尖峰：OS1 換成 2048 點／圈", "2. Hà Nội: OS1 đổi sang 2048 điểm/vòng")}</div>
-     <div class="hwn">${L("在「判讀與試算」那一頁改：選 OS1 ＋ 河內尖峰，判定<b>上面</b>有兩個下拉（1024 點／圈、10 Hz），把 1024 改成 2048，判定就會跟著變。小工具②也看得到點數從 9 變 18，但那一區不會改判定。",
-                          "Đổi ở tab «Đọc & tính»: chọn OS1 + Hà Nội, <b>phía trên</b> kết luận có hai ô chọn (1024 điểm/vòng, 10 Hz), đổi 1024 thành 2048. Công cụ ② cũng thấy 9 → 18 nhưng không đổi kết luận.")}</div>
-     <div class="grid g2">
-       <select id="hwPts"><option value="">${L("機車身上幾個點", "Bao nhiêu điểm")}</option>
-         ${HW_PTS.map((o) => `<option value="${o}"${o === HW.pts ? " selected" : ""}>${o} ${L("個點", "điểm")}</option>`).join("")}</select>
-       <select id="hwOk2048">${sel(HW.ok2048, L("換模式後：夠／不夠", "Sau khi đổi: đủ / không"))}</select>
-     </div>
-     <div class="hwn" style="margin-top:5px">${L("換這個模式要付什麼代價？", "Đổi chế độ này phải trả giá gì?")}</div>
-     <select id="hwCost"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
-       ${HW_COST.map((o, i) => `<option value="${i}"${String(i) === HW.cost ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select>
-     <div class="hwq">${L("三、結論句", "3. Câu kết luận")}</div>
-     <div class="hwn">${L("要寫出卡在哪一行。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
-                          "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»")}</div>
-     <select id="hwConcl"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>
-       ${HW_CONCL.map((o, i) => `<option value="${i}"${String(i) === HW.concl ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select>
-     <div class="hwq">${L("四、四句話，對或錯，再說一句理由", "4. Bốn câu: đúng hay sai, kèm lý do")}</div>
-     ${HW_TF.map((q, i) => `<div class="hwn" style="margin-top:7px">${L(q[0], q[1])}</div>
-       <div class="hwtf"><select data-tf="${i}">${tfsel(HW.tf[i][0])}</select>
-       <select data-tfr="${i}"><option value="">${L("── 選一個理由 ──", "── Chọn lý do ──")}</option>
-         ${HW_WHY[i].map((o, j) => `<option value="${j}"${String(j) === HW.tf[i][1] ? " selected" : ""}>${L(o[0], o[1])}</option>`).join("")}</select></div>`).join("")}`;
-
-  $("btnGoCalc").onclick = () => { tab("read"); $("calc").scrollIntoView({ block: "start" }); };
-  const bind = (id, k) => $(id).addEventListener("input", (e) => { HW[k] = e.target.value; hwSave(); });
-  bind("hwName", "name"); bind("hwSid", "sid");
-  ["hwPts", "hwCost", "hwConcl", "hwOk2048"].forEach((id) => $(id)
-    .addEventListener("change", (e) => { HW[{ hwPts: "pts", hwCost: "cost", hwConcl: "concl", hwOk2048: "ok2048" }[id]] = e.target.value; hwSave(); }));
-  document.querySelectorAll("[data-g]").forEach((el) =>
-    el.addEventListener("change", (e) => { HW.g[e.target.dataset.g] = e.target.value; hwSave(); }));
-  document.querySelectorAll("[data-tf]").forEach((el) =>
-    el.addEventListener("change", (e) => { HW.tf[+e.target.dataset.tf][0] = e.target.value; hwSave(); }));
-  document.querySelectorAll("[data-tfr]").forEach((el) =>
-    el.addEventListener("change", (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; hwSave(); }));
-}
-
-function hwSheet() {
-  const miss = (t) => `<span class="miss">${L("（沒寫）", "(chưa điền)")}</span>` && (t && String(t).trim()
-    ? String(t) : `<span class="miss">${L("（沒寫）", "(chưa điền)")}</span>`);
-  const cell = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không") : "—";
-  const d = new Date();
-  const two = (n) => String(n).padStart(2, "0");
-  $("sheet").innerHTML =
-    `<h3>${L("第五週作業　替一台車選感測器", "Bài tuần 5 — Chọn cảm biến")}</h3>
-     <div class="who">${miss(HW.name)}　${HW.sid || ""}</div>
-     <div class="when">${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}</div>
-     <table class="hwtab"><tr><th></th>${HW_S.map((x, i) => `<th>${L(`第${"一二三"[i]}題`, `Câu ${i + 1}`)}<br>${L(x[1], x[2])}</th>`).join("")}</tr>
-     ${HW_M.map(([k, n]) => `<tr><td>${n}</td>${HW_S.map(([sk]) =>
-        `<td>${cell(HW.g[k + "_" + sk])}</td>`).join("")}</tr>`).join("")}</table>
-     <div class="sec">${L("OS1 換成 2048 點／圈", "OS1 → 2048 điểm/vòng")}</div>
-     <div class="ans">${miss(HW.pts)} ${L("個點", "điểm")}　→　${cell(HW.ok2048)}
-       <br>${L("代價：", "Phải trả giá: ")}${HW.cost === "" ? miss("") : L(HW_COST[+HW.cost][0], HW_COST[+HW.cost][1])}</div>
-     <div class="sec">${L("結論", "Kết luận")}</div>
-     <div class="ans">${HW.concl === "" ? miss("") : L(HW_CONCL[+HW.concl][0], HW_CONCL[+HW.concl][1])}</div>
-     <div class="sec">${L("四句話", "Bốn câu")}</div>
-     <div class="ans">${HW_TF.map((q, i) => `${L(q[0], q[1]).slice(0, 2)} ${
-        HW.tf[i][0] === "T" ? L("對", "Đúng") : HW.tf[i][0] === "F" ? L("錯", "Sai") : "—"
-      }　${HW.tf[i][1] === "" ? miss("") : L(HW_WHY[i][+HW.tf[i][1]][0], HW_WHY[i][+HW.tf[i][1]][1])}`).join("<br>")}</div>`;
-  $("hwForm").style.display = "none"; $("sheet").style.display = "";
-  $("btnSheet").style.display = "none"; $("btnBack").style.display = "";
-  // 只留作答單：上面的固定列、分頁鈕與另外三欄都收掉，整個畫面截下去就是答案
-  document.body.classList.add("sheet");
-  window.scrollTo(0, 0);
-}
-
-function hwBack() {
-  $("sheet").style.display = "none"; $("hwForm").style.display = "";
-  $("btnSheet").style.display = ""; $("btnBack").style.display = "none";
-  document.body.classList.remove("sheet");
-}
-
-function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); miniScope(); hwForm(); }
+function render() { modelBtns(); dsTable(); quiz(); sceneBtns(); calc(); miniScope(); }
 function applyLang() {
   document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
   document.title = L("規格判讀台", "Bàn đọc thông số");
@@ -1108,33 +842,6 @@ $("btnClear").onclick = () => {   // 「重來」只清這一個型號，別的�
 ["sF"].forEach((id) => $(id).addEventListener("input", miniF));
 ["sCh", "sCol", "sHz"].forEach((id) => $(id).addEventListener("input", miniP));
 $("sD").addEventListener("input", miniR);
-$("btnSheet").onclick = hwSheet;
-$("btnBack").onclick = hwBack;
-// 「全部清空」清的是整份作業（姓名、學號、十二格、第二題、結論、四句話），
-// 手機上那顆就在「產生作答單」旁邊，做到一半誤觸就全沒了。所以要按兩次。
-let wipeTimer = null;
-const wipeReset = () => {
-  const b = $("btnWipe");
-  b.dataset.zh = "全部清空"; b.dataset.vi = "Xoá hết";
-  b.textContent = b.dataset[LANG];
-  b.classList.remove("danger");
-};
-$("btnWipe").onclick = () => {
-  const b = $("btnWipe");
-  if (!wipeTimer) {                                   // 第一下只是上膛
-    b.dataset.zh = "再按一次：整份作業都會清掉";
-    b.dataset.vi = "Bấm lần nữa: xoá toàn bộ bài";
-    b.textContent = b.dataset[LANG];
-    b.classList.add("danger");
-    wipeTimer = setTimeout(() => { wipeTimer = null; wipeReset(); }, 3000);
-    return;
-  }
-  clearTimeout(wipeTimer); wipeTimer = null; wipeReset();
-  HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
-         tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
-  hwSave(); hwBack(); hwForm(); calc();
-};
-
 // 手機：三個分頁
 const MOBILE = window.matchMedia("(max-width:900px)");
 const TAB_Y = {};
@@ -1143,7 +850,7 @@ function tab(name) {
   if (MOBILE.matches) TAB_Y[tabNow] = window.scrollY;   // 離開前記下來
   tabNow = name;
   document.querySelectorAll("#mtabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
-  const map = { ds: "pDs", read: "pRead", mini: "pMini", hw: "pHw" };
+  const map = { ds: "pDs", read: "pRead", mini: "pMini" };
   Object.entries(map).forEach(([k, id]) => { $(id).style.display = (!MOBILE.matches || k === name) ? "" : "none"; });
   if (MOBILE.matches) window.scrollTo(0, TAB_Y[name] || 0);   // 回來停在原來的位置
 }
