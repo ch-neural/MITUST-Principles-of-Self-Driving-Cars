@@ -147,7 +147,7 @@ body.sheet #wrap{padding-top:10px}
 const MODELS = {"os1":{"name":"Ouster OS1-64","zh":"旋轉式光達","vi":"Lidar quay 360°","kind":"lidar","calc":{"type":"lidar","ch":64,"vfov":42.4,"cols":1024,"hfov":360,"hz":10,"range10":90,"modes":{"cols":[512,1024,2048],"hz":[10,20],"hzFor":{"512":[10,20],"1024":[10,20],"2048":[10]}}}},"at128":{"name":"Hesai AT128P","zh":"固定式前向光達","vi":"Lidar cố định hướng trước","kind":"lidar","calc":{"type":"lidar","ch":128,"vfov":25.4,"cols":1200,"hfov":120,"hz":10,"range10":210,"dh":0.1,"dv":0.2}},"ar0233":{"name":"onsemi AR0233AT","zh":"車用影像感測器","vi":"Cảm biến ảnh ô tô","kind":"cam","calc":{"type":"cam","px":2048,"pitch":3,"f":8,"h":1.5}},"ld16":{"name":"LD-16","zh":"便宜的 16 線光達（教學用）","vi":"Lidar 16 kênh giá rẻ (tự đặt)","kind":"lidar","calc":{"type":"lidar","ch":16,"vfov":30,"cols":900,"hfov":360,"hz":10,"range10":40}}};
 const SCENES = {"campus":{"zh":"校園接駁","vi":"Xe đưa đón trong trường","v":20,"d":40,"tgt":{"w":0.5,"h":1.7,"zh":"行人","vi":"người đi bộ"},"zhNote":"時速 20，要在 40 公尺外認出行人","viNote":"20 km/h, nhận ra người ở 40 m"},"hanoi":{"zh":"河內尖峰","vi":"Giờ cao điểm Hà Nội","v":40,"d":40,"tgt":{"w":0.8,"h":1.6,"zh":"機車","vi":"xe máy"},"zhNote":"時速 40，要在 40 公尺外認出機車","viNote":"40 km/h, nhận ra xe máy ở 40 m"},"hiway":{"zh":"國道","vi":"Đường cao tốc","v":100,"d":150,"tgt":{"w":1.8,"h":1.5,"zh":"汽車","vi":"ô tô"},"zhNote":"時速 100，要在 150 公尺外看到車","viNote":"100 km/h, thấy xe ở 150 m"}};
 const HW_M = [["os1","Ouster OS1-64"],["at128","Hesai AT128P"],["ar0233","onsemi AR0233AT"],["ld16","LD-16"]], HW_S = [["campus","校園 20","Trường 20"],["hanoi","河內 40","Hà Nội 40"],["hiway","國道 100","Cao tốc 100"]], HW_PTS = ["3","9","18","36"];
-const HW_COST = [["資料量加倍，而且 2048 點／圈配不了 20 Hz","Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],["要多花錢買更貴的型號","Phải mua model đắt hơn"],["測距會從 90 公尺變短","Tầm đo giảm xuống dưới 90 m"],["垂直線束數會變少","Số kênh dọc giảm đi"]], HW_CONCL = [["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。","OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。","OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。","OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],["OS1 不好用。","OS1 không tốt."]];
+const HW_COST = [["資料量加倍，而且 2048 點／圈配不了 20 Hz","Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],["要多花錢買更貴的型號","Phải mua model đắt hơn"],["視野會從 360 度變窄","Góc nhìn sẽ hẹp lại từ 360°"],["垂直線束數會變少","Số kênh dọc giảm đi"]], HW_CONCL = [["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。","OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。","OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。","OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],["OS1 不好用。","OS1 không tốt."]];
 const HW_TF = [["① 規格表寫「測距 200 公尺」，就表示 200 公尺內的東西都看得到。","① «Tầm 200 m» nghĩa là mọi thứ trong 200 m đều thấy."],["② 同一顆影像感測器，視野是固定的。","② Cùng một cảm biến ảnh thì góc nhìn cố định."],["③ 兩顆光達比每秒點數，點數大的那顆，遠處的人一定看得比較清楚。","③ Lidar nào nhiều điểm/giây hơn thì chắc chắn nhìn người ở xa rõ hơn."],["④ 兩顆感測器各自都好，合起來就一定好。","④ Hai cảm biến đều tốt thì ghép lại chắc chắn tốt."]], HW_WHY = [[["沒問條件：測距要看是對百分之幾反射率量的。OS1 對白色 170 m，對黑色只剩 90 m。","Chưa hỏi điều kiện: tầm đo đo với vật phản xạ bao nhiêu %? Trắng 170 m, đen 90 m."],["因為 200 公尺太遠了，沒有感測器做得到。","Vì 200 m quá xa, không cảm biến nào làm được."],["因為那是在實驗室量的，路上量不到。","Vì đo trong phòng thí nghiệm, ra đường thì không."],["規格表上的數字就是廠商保證的：寫 200 公尺就是 200 公尺，不必再追問條件。","Con số trong bảng là hãng bảo đảm: ghi 200 m thì là 200 m, không cần hỏi thêm điều kiện."]],[["視野是鏡頭決定的。同一塊晶片，8 mm 鏡頭看 42°，3.6 mm 看 81°。","Góc nhìn do ống kính quyết định: cùng một chip, 8 mm → 42°, 3,6 mm → 81°."],["因為視野會隨著解析度模式改變。","Vì góc nhìn đổi theo chế độ phân giải."],["因為感測器裝上車之後角度會跑掉。","Vì lắp lên xe rồi góc sẽ lệch."],["視野是感光晶片的大小決定的，晶片沒換，視野就不會變。","Góc nhìn do kích thước cảm biến quyết định; không đổi cảm biến thì góc nhìn không đổi."]],[["每秒點數要先換成角度。OS1 262 萬點灑滿 360°，40 m 的目標上只有 9 點；AT128P 150 萬點集中在 120°，同一個目標有 121 點。","Phải đổi điểm/giây sang góc. OS1 2,62 triệu rải khắp 360° → 9 điểm; AT128P 1,5 triệu dồn trong 120° → 121 điểm."],["因為點數大的那顆比較貴，貴的不一定好。","Vì cái nhiều điểm thì đắt hơn, đắt chưa chắc tốt."],["因為同一顆光達切到 2048 點，點數加倍也看不清楚。","Vì cùng một lidar đổi sang 2048 điểm cũng không rõ hơn."],["每秒點數就是解析度，點數愈大，看什麼都愈清楚。","Số điểm mỗi giây chính là độ phân giải: càng nhiều điểm thì nhìn gì cũng rõ hơn."]],[["還有標定和時間同步兩關。差一度，50 公尺外就差將近一公尺。","Còn hiệu chuẩn và đồng bộ thời gian: lệch 1° thì ở 50 m lệch gần 1 m."],["因為兩顆感測器會互相干擾。","Vì hai cảm biến gây nhiễu lẫn nhau."],["因為合起來之後更新率會變慢。","Vì ghép lại thì tốc độ cập nhật chậm đi."],["兩顆各自都通過了規格，合起來只會更好，不會更差。","Hai cảm biến đều đạt thông số riêng, ghép lại chỉ tốt hơn chứ không kém đi."]]];
 const DEF_COLS = 1024, DEF_HZ = 10;
 const MIN_PTS = 10, MAX_ERR = 1.5, R = Math.PI / 180;
@@ -179,12 +179,15 @@ function judge(mk, sk, cols, hz) {
       const nh = 2 * Math.atan(T.w / 2 / s.d) / R / dh;
       return Math.max(0, Math.floor(nv)) * Math.max(0, Math.floor(nh));
     })();
-    const reach = c.range10 >= need;
+    // 測距有兩個要求：搆得到煞停距離，也搆得到這個情境要你認出來的那個目標。
+    // 兩個取大的才是真正的門檻（判讀台同一套，verify_hw.js 會逐行比對）。
+    const rm = Math.max(need, s.d);
+    const reach = c.range10 >= rm;
     if (!reach) ok = false;
     lines.push([L("測距 " + c.range10 + " m", "Tầm " + c.range10 + " m"),
-      reach ? L("夠，門檻 " + need.toFixed(0) + " m", "Đủ, ngưỡng " + need.toFixed(0) + " m")
-            : L("不夠，門檻 " + need.toFixed(0) + " m，差 " + (need - c.range10).toFixed(0) + " m",
-                "Thiếu " + (need - c.range10).toFixed(0) + " m so với ngưỡng " + need.toFixed(0) + " m"), reach]);
+      reach ? L("夠，門檻 " + rm.toFixed(0) + " m", "Đủ, ngưỡng " + rm.toFixed(0) + " m")
+            : L("不夠，門檻 " + rm.toFixed(0) + " m，差 " + (rm - c.range10).toFixed(0) + " m",
+                "Thiếu " + (rm - c.range10).toFixed(0) + " m so với ngưỡng " + rm.toFixed(0) + " m"), reach]);
     lines.push([L("角解析度 " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°",
                   "Phân giải " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°"),
       L(s.d + " m 的" + s.tgt.zh + "身上有 " + pts + " 個點，門檻 " + MIN_PTS + " 個",
@@ -216,10 +219,15 @@ function judge(mk, sk, cols, hz) {
 function calcHtml(mk, sk, cols, hz, withHead) {
   const s = SCENES[sk], r = judge(mk, sk, cols, hz);
   let h = "";
+  // 抬頭要印**真正**的測距門檻（煞停餘裕和目標距離取大的），不然會出現
+  // 上面寫「至少要看到 9 m」、底下測距行寫「門檻 40 m」的自相矛盾。
+  const rm = Math.max(r.need, s.d);
   if (withHead)
     h += '<div class="res"><b>' + MODELS[mk].name + " × " + L(s.zh, s.vi) + "</b>　" + L(s.zhNote, s.viNote) +
-         '<span class="big">' + L("煞停要 ", "Cần ") + brake(s.v).toFixed(0) + L(" m　→　至少要看到 ", " m → phải thấy tối thiểu ") +
-         r.need.toFixed(0) + " m</span></div>";
+         '<span class="big">' +
+         L("煞停要 " + brake(s.v).toFixed(0) + " m，加餘裕 " + r.need.toFixed(0) + " m；目標在 " + s.d + " m　→　測距門檻 " + rm.toFixed(0) + " m",
+           "Dừng " + brake(s.v).toFixed(0) + " m, cộng dự phòng " + r.need.toFixed(0) + " m; vật ở " + s.d + " m → ngưỡng tầm đo " + rm.toFixed(0) + " m") +
+         "</span></div>";
   h += r.lines.map(([k, v, good]) =>
     '<div class="line"><div class="k">' + k + '</div><div class="v ' +
     (good === null ? "n" : good ? "good" : "bad") + '">' + v + (good === null ? "" : good ? "　✓" : "　✗") +
@@ -307,9 +315,9 @@ function fill() {
                          "Câu 1 dùng mặc định " + DEF_COLS + " @ " + DEF_HZ + " Hz. Câu này hãy đổi ô bên trái thành <b>2048</b> và xem kết quả đổi thế nào.");
   $("q2a").textContent = L("轉成 2048 之後，40 公尺的機車身上有幾個點？夠不夠？", "Sau khi đổi sang 2048: xe máy ở 40 m có mấy điểm? Đủ không?");
   $("q2c").textContent = L("換這個模式要付什麼代價？", "Đổi chế độ này phải trả giá gì?");
-  $("q3t").textContent = L("第三題　結論句", "Câu 3 — Câu kết luận");
-  $("q3n").innerHTML = L("要寫出卡在哪一行。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
-                         "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»");
+  $("q3t").textContent = L("第三題　替「OS1 × 河內尖峰」寫一句結論", "Câu 3 — Viết một câu kết luận cho «OS1 × Hà Nội»");
+  $("q3n").innerHTML = L("講的是<b>原廠預設</b>的那一格（1024 點／圈 10 Hz），就是第一題中間那一欄的第一格。要寫出<b>卡在哪一行</b>。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
+                         "Nói về ô <b>chế độ mặc định</b> (1024 điểm/vòng, 10 Hz) — chính là ô đầu của cột giữa ở câu 1. Phải nói rõ <b>tắc ở dòng nào</b>. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»");
   $("q4t").textContent = L("第四題　四句話，對或錯，再選一個理由", "Câu 4 — Bốn câu: đúng hay sai, kèm lý do");
   $("btnSheet").textContent = L("產生作答單（交這一頁）", "Tạo phiếu trả lời (nộp trang này)");
   if (!wipeTimer) wipeReset();        // 上膛中就不要被語言切換洗掉

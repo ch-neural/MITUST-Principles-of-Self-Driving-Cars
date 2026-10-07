@@ -487,12 +487,13 @@ function check() {
 function calc() {
   const m = MODELS[model], c = m.calc, s = SCENES[scene], need = brake(s.v) + 5;
   let html = `<div class="res">${L("情境：", "Tình huống: ")}<b>${L(s.zh, s.vi)}</b>　${L(s.zhNote, s.viNote)}
-    <span class="big">${L("煞停要 ", "Cần ")}${brake(s.v).toFixed(0)} m${L("　→　感測器至少要看到 ", " → cảm biến phải thấy tối thiểu ")}${need.toFixed(0)} m</span>
+    <span class="big">${L(`煞停要 ${brake(s.v).toFixed(0)} m，加餘裕 ${need.toFixed(0)} m；目標在 ${s.d} m　→　測距門檻 ${Math.max(need, s.d).toFixed(0)} m`,
+      `Dừng ${brake(s.v).toFixed(0)} m, cộng dự phòng ${need.toFixed(0)} m; vật ở ${s.d} m → ngưỡng tầm đo ${Math.max(need, s.d).toFixed(0)} m`)}</span>
     <span style="font-size:11px;color:var(--mute)">${L(`v × 0.3 ＋ v² ÷ 12，再加 5 公尺餘裕（第四週第 1 節）。<b>v 用每秒公尺</b>＝時速 ÷ 3.6，這裡是 ${(SCENES[scene].v / 3.6).toFixed(1)} m/s`,
            `v × 0,3 + v² ÷ 12, cộng 5 m dự phòng (tuần 4). <b>v tính bằng m/s</b> = km/h ÷ 3,6 = ${(SCENES[scene].v / 3.6).toFixed(1)} m/s`)}</span>
     <span style="font-size:11px;color:var(--mute);display:block;margin-top:2px">${L(
-      `本課的三條門檻：測距 ≥ 上面那個數字、目標身上 ≥ <b>${MIN_PTS}</b> 個點、相機估距誤差 ≤ <b>±${MAX_ERR}</b> m`,
-      `Ba ngưỡng của môn này: tầm đo ≥ số trên, ≥ <b>${MIN_PTS}</b> điểm trên vật, sai số ước lượng ≤ <b>±${MAX_ERR}</b> m`)}</span></div>`;
+      `本課的三條門檻：測距要同時<b>搆到煞停距離</b>和<b>搆到目標</b>（目標在 ${s.d} m）、目標身上 ≥ <b>${MIN_PTS}</b> 個點、相機估距誤差 ≤ <b>±${MAX_ERR}</b> m`,
+      `Ba ngưỡng của môn này: tầm đo phải <b>đủ cả quãng phanh lẫn tới vật</b> (vật ở ${s.d} m), ≥ <b>${MIN_PTS}</b> điểm trên vật, sai số ước lượng ≤ <b>±${MAX_ERR}</b> m`)}</span></div>`;
 
   const lines = [];
   const T = s.tgt || PED;
@@ -506,12 +507,16 @@ function calc() {
       const nh = 2 * Math.atan(T.w / 2 / d) / R / dh;
       return Math.max(0, Math.floor(nv)) * Math.max(0, Math.floor(nh));
     };
-    const reach = c.range10 >= need;
+    // 測距有兩個要求：搆得到煞停距離，也搆得到這個情境要你認出來的那個目標。
+    // 只比煞停的話，90 公尺的 OS1 在「150 公尺外看到車」這一題會被判成「夠」——
+    // 可是那台車根本在它的測距之外。兩個取大的才是真正的門檻。
+    const rm = Math.max(need, s.d);
+    const reach = c.range10 >= rm;
     if (!reach) ok = false;
     lines.push([L(`測距 ${c.range10} m`, `Tầm ${c.range10} m`),
-                reach ? L(`夠，門檻 ${need.toFixed(0)} m`, `Đủ, ngưỡng ${need.toFixed(0)} m`)
-                      : L(`不夠，門檻 ${need.toFixed(0)} m，差 ${(need - c.range10).toFixed(0)} m`,
-                          `Thiếu ${(need - c.range10).toFixed(0)} m so với ngưỡng ${need.toFixed(0)} m`), reach]);
+                reach ? L(`夠，門檻 ${rm.toFixed(0)} m`, `Đủ, ngưỡng ${rm.toFixed(0)} m`)
+                      : L(`不夠，門檻 ${rm.toFixed(0)} m，差 ${(rm - c.range10).toFixed(0)} m`,
+                          `Thiếu ${(rm - c.range10).toFixed(0)} m so với ngưỡng ${rm.toFixed(0)} m`), reach]);
     lines.push([L(`角解析度 ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`, `Phân giải ${dh.toFixed(2)}° × ${dv.toFixed(2)}°`),
                 L(`${s.d} m 的${s.tgt.zh}身上有 ${pts(s.d)} 個點，門檻 ${MIN_PTS} 個`,
                   `${s.tgt.vi} ở ${s.d} m có ${pts(s.d)} điểm, ngưỡng ${MIN_PTS}`), pts(s.d) >= MIN_PTS]);
