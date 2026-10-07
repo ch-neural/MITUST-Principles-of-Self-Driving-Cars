@@ -136,6 +136,8 @@
   .scope.bad{background:#FFF6E3;border:1px solid var(--amber);color:#7A4E00;
              border-radius:6px;padding:5px 7px;margin-top:3px}
   .hwprog{font-size:11.5px;color:var(--mute);text-align:center;margin-top:3px}
+  /* 「全部清空」上膛之後的樣子：它清的是整份作業，誤觸的代價太大 */
+  button.danger{background:var(--red);color:#fff;border-color:var(--red)}
   .hwprog b{color:var(--navy)}
   @media (max-width:900px){
     #app{display:block;padding:8px}
@@ -608,11 +610,23 @@ function calc() {
   const isDef = !c.modes || (cols === DEF_COLS && hzNow === DEF_HZ);
   const toQ2 = !isDef && model === "os1" && scene === "hanoi";
   const sname = L(SCENES[scene].zh, SCENES[scene].vi);
-  html += `<button id="btnToHw" style="width:100%;margin-top:6px">${
-    toQ2 ? L(`記進作業第二題：${LAST_PTS} 個點 → ${ok ? "夠" : "不夠"}`,
-             `Ghi vào câu 2: ${LAST_PTS} điểm → ${ok ? "Đủ" : "Không đủ"}`)
-         : L(`記進作業十二格：${m.name} × ${sname} → ${ok ? "夠" : "不夠"}`,
-             `Ghi vào bảng 12 ô: ${m.name} × ${sname} → ${ok ? "Đủ" : "Không đủ"}`)}</button>
+  // 這一格現在存的是什麼？學生要看得到，才知道自己按過沒有、也才知道「清掉」會清掉什麼。
+  const cellKey = model + "_" + scene;
+  const stored = toQ2 ? (HW.ok2048 || "") : (HW.g[cellKey] || "");
+  const storedTxt = stored === "ok" ? L("夠", "Đủ") : stored === "ng" ? L("不夠", "Không đủ") : "";
+  const toHwLabel = toQ2
+    ? L(`記進作業第二題：${LAST_PTS} 個點 → ${ok ? "夠" : "不夠"}`,
+        `Ghi vào câu 2: ${LAST_PTS} điểm → ${ok ? "Đủ" : "Không đủ"}`)
+    : L(`記進作業十二格：${m.name} × ${sname} → ${ok ? "夠" : "不夠"}`,
+        `Ghi vào bảng 12 ô: ${m.name} × ${sname} → ${ok ? "Đủ" : "Không đủ"}`);
+  html += stored
+    ? `<div class="grid g2" style="margin-top:6px">
+         <button id="btnToHw">${toHwLabel}</button>
+         <button id="btnClrHw">${L(`清掉這一格（現在記的是「${storedTxt}」）`,
+                                   `Xoá ô này (đang ghi «${storedTxt}»)`)}</button>
+       </div>`
+    : `<button id="btnToHw" style="width:100%;margin-top:6px">${toHwLabel}</button>`;
+  html += `
     ${!isDef && !toQ2 ? `<div class="hint" style="font-size:11px;color:var(--red);margin-top:3px">${L(
       `注意：現在是 ${cols} 點／圈 ${hzNow} Hz，不是預設模式。十二格那一題要用預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
       `Chú ý: đang ở ${cols} điểm/vòng ${hzNow} Hz, không phải mặc định. Bảng 12 ô dùng ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
@@ -627,6 +641,18 @@ function calc() {
     $("toHwFb").textContent = toQ2 ? L("✓ 已經填進作業第二題了", "✓ Đã ghi vào câu 2")
                                    : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
     setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 2500);
+    calc();                                    // 重畫，「清掉這一格」才會出現
+  };
+  // 反悔：只清掉現在這一個「型號 × 情境」，不要動到別格
+  if ($("btnClrHw")) $("btnClrHw").onclick = () => {
+    if (toQ2) { HW.pts = ""; HW.ok2048 = ""; } else { delete HW.g[cellKey]; }
+    hwSave(); hwForm(); calc();
+    const e = $("toHwFb");
+    if (e) {
+      e.textContent = toQ2 ? L("✓ 作業第二題那一格清掉了", "✓ Đã xoá ô câu 2")
+                           : L("✓ 十二格裡的那一格清掉了", "✓ Đã xoá ô đó trong bảng 12 ô");
+      setTimeout(() => { const e2 = $("toHwFb"); if (e2) e2.textContent = ""; }, 2500);
+    }
   };
   if (c.modes) {
     $("mCols").onchange = (e) => { cols = +e.target.value; calc(); };
@@ -1075,10 +1101,29 @@ $("btnClear").onclick = () => {   // 「重來」只清這一個型號，別的�
 $("sD").addEventListener("input", miniR);
 $("btnSheet").onclick = hwSheet;
 $("btnBack").onclick = hwBack;
+// 「全部清空」清的是整份作業（姓名、學號、十二格、第二題、結論、四句話），
+// 手機上那顆就在「產生作答單」旁邊，做到一半誤觸就全沒了。所以要按兩次。
+let wipeTimer = null;
+const wipeReset = () => {
+  const b = $("btnWipe");
+  b.dataset.zh = "全部清空"; b.dataset.vi = "Xoá hết";
+  b.textContent = b.dataset[LANG];
+  b.classList.remove("danger");
+};
 $("btnWipe").onclick = () => {
+  const b = $("btnWipe");
+  if (!wipeTimer) {                                   // 第一下只是上膛
+    b.dataset.zh = "再按一次：整份作業都會清掉";
+    b.dataset.vi = "Bấm lần nữa: xoá toàn bộ bài";
+    b.textContent = b.dataset[LANG];
+    b.classList.add("danger");
+    wipeTimer = setTimeout(() => { wipeTimer = null; wipeReset(); }, 3000);
+    return;
+  }
+  clearTimeout(wipeTimer); wipeTimer = null; wipeReset();
   HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
          tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
-  hwSave(); hwBack(); hwForm();
+  hwSave(); hwBack(); hwForm(); calc();
 };
 
 // 手機：三個分頁
