@@ -627,6 +627,9 @@ function calc() {
        </div>`
     : `<button id="btnToHw" style="width:100%;margin-top:6px">${toHwLabel}</button>`;
   html += `
+    ${toQ2 ? `<div class="hint" style="font-size:11px;color:var(--mute);margin-top:3px">${L(
+      `記的是作業的<b>第二題</b>（河內尖峰：OS1 換成 2048 點／圈），<b>十二格不會變</b>——十二格那一題問的是預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
+      `Ghi vào <b>câu 2</b> của bài (Hà Nội: OS1 đổi sang 2048 điểm/vòng). <b>Bảng 12 ô không đổi</b> — bảng đó hỏi chế độ mặc định ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
     ${!isDef && !toQ2 ? `<div class="hint" style="font-size:11px;color:var(--red);margin-top:3px">${L(
       `注意：現在是 ${cols} 點／圈 ${hzNow} Hz，不是預設模式。十二格那一題要用預設的 ${DEF_COLS} 點／圈 ${DEF_HZ} Hz。`,
       `Chú ý: đang ở ${cols} điểm/vòng ${hzNow} Hz, không phải mặc định. Bảng 12 ô dùng ${DEF_COLS} @ ${DEF_HZ} Hz.`)}</div>` : ""}
@@ -637,11 +640,17 @@ function calc() {
     if (toQ2) { HW.pts = String(LAST_PTS); HW.ok2048 = LAST_OK ? "ok" : "ng"; }
     else { HW.g[model + "_" + scene] = LAST_OK ? "ok" : "ng"; }
     hwSave(); hwForm();
-    if ($("hwProg")) $("hwProg").textContent = hwCount();
-    $("toHwFb").textContent = toQ2 ? L("✓ 已經填進作業第二題了", "✓ Đã ghi vào câu 2")
-                                   : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
-    setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 2500);
-    calc();                                    // 重畫，「清掉這一格」才會出現
+    // 先重畫（「清掉這一格」才會出現），**再**去抓新的回饋框——
+    // 反過來的話 calc() 會把剛設好的字一起洗掉，按下去就完全沒有反應。
+    calc();
+    const fb = $("toHwFb");
+    if (fb) {
+      fb.textContent = toQ2
+        ? L(`✓ 已經填進作業第二題：${LAST_PTS} 個點 → ${LAST_OK ? "夠" : "不夠"}`,
+            `✓ Đã ghi vào câu 2: ${LAST_PTS} điểm → ${LAST_OK ? "Đủ" : "Không đủ"}`)
+        : L("✓ 已經填進作業的十二格了", "✓ Đã ghi vào bảng 12 ô");
+      setTimeout(() => { const e = $("toHwFb"); if (e) e.textContent = ""; }, 3000);
+    }
   };
   // 反悔：只清掉現在這一個「型號 × 情境」，不要動到別格
   if ($("btnClrHw")) $("btnClrHw").onclick = () => {
