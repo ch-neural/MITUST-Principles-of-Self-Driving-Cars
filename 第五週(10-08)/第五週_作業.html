@@ -70,7 +70,10 @@ input,select{font-family:inherit;font-size:13px;padding:7px 8px;border:1px solid
 #sheet .hwtab td{padding:5px 3px;font-size:12.5px}
 /* 作答單模式：姓名欄、進度、題目全收掉，整個畫面截下去就是答案
    （姓名和日期作答單自己會印，留著輸入框只會讓截圖變醜） */
-body.sheet #qs,body.sheet .foot button#btnSheet,body.sheet #wrap>.panel:first-child{display:none}
+body.sheet #qs,body.sheet .foot button#btnSheet,body.sheet .foot button#btnWipe,
+body.sheet #wrap>.panel:first-child{display:none}
+/* 「全部清空」上膛之後的樣子：它清的是整份作業，誤觸的代價太大 */
+button.danger{background:var(--red);color:#fff;border-color:var(--red)}
 body.sheet #sheet{display:block}
 body.sheet #wrap{padding-top:10px}
 @media (max-width:560px){
@@ -131,6 +134,7 @@ body.sheet #wrap{padding-top:10px}
   <div class="foot">
     <div class="grid g2">
       <button id="btnSheet" class="go"></button>
+      <button id="btnWipe"></button>
       <button id="btnBack" style="display:none"></button>
     </div>
   </div>
@@ -293,6 +297,7 @@ function fill() {
                          "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»");
   $("q4t").textContent = L("第四題　四句話，對或錯，再選一個理由", "Câu 4 — Bốn câu: đúng hay sai, kèm lý do");
   $("btnSheet").textContent = L("產生作答單（交這一頁）", "Tạo phiếu trả lời (nộp trang này)");
+  if (!wipeTimer) wipeReset();        // 上膛中就不要被語言切換洗掉
   $("btnBack").textContent = L("← 回去改", "← Quay lại sửa");
 
   const opt = (v, cur, txt) => '<option value="' + v + '"' + (String(cur) === String(v) ? " selected" : "") + ">" + txt + "</option>";
@@ -361,6 +366,33 @@ function sheet() {
 }
 
 function draw() { fill(); tab12(); q2(); prog(); }
+
+// 全部清空：姓名、學號、十二格、第二題、結論、四句話，整份歸零。
+// 學生想重做，或手機借給下一個人，都要有這條路。
+// 它就在「產生作答單」旁邊，做到一半誤觸就全沒了——所以要按兩次。
+let wipeTimer = null;
+function wipeReset() {
+  const b = $("btnWipe");
+  if (!b) return;
+  b.textContent = L("全部清空", "Xoá hết");
+  b.classList.remove("danger");
+}
+$("btnWipe").onclick = () => {
+  const b = $("btnWipe");
+  if (!wipeTimer) {                                   // 第一下只是上膛
+    b.textContent = L("再按一次：整份作業都會清掉", "Bấm lần nữa: xoá toàn bộ bài");
+    b.classList.add("danger");
+    wipeTimer = setTimeout(() => { wipeTimer = null; wipeReset(); }, 3000);
+    return;
+  }
+  clearTimeout(wipeTimer); wipeTimer = null;
+  HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
+         tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
+  save();
+  openCell = ""; Q2.cols = DEF_COLS; Q2.hz = DEF_HZ;   // 展開的格子和模式也一起歸位
+  draw();
+  window.scrollTo(0, 0);
+};
 
 $("btnSheet").onclick = sheet;
 $("btnBack").onclick = () => {
