@@ -5,7 +5,8 @@
 <title>第五週作業　替一台車選感測器</title>
 <style>
 :root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
-      --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+      --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B;
+      --amber2:#8A5A00}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:#EEF2F6;color:var(--ink);
@@ -110,6 +111,7 @@ body.sheet #wrap{padding-top:10px}
       <div class="hwq" id="q2t"></div>
       <div class="hwn" id="q2n"></div>
       <div class="grid g2"><select id="mCols"></select><select id="mHz"></select></div>
+      <div class="hwn" id="q2note" style="color:var(--amber2);margin:5px 0 0"></div>
       <div id="q2calc" style="margin-top:8px"></div>
       <div class="hwn" style="margin-top:10px" id="q2a"></div>
       <div class="grid g2"><select id="hwPts"></select><select id="hwOk2048"></select></div>
@@ -142,7 +144,7 @@ body.sheet #wrap{padding-top:10px}
 
 <script>
 
-const MODELS = {"os1":{"name":"Ouster OS1-64","zh":"旋轉式光達","vi":"Lidar quay 360°","kind":"lidar","calc":{"type":"lidar","ch":64,"vfov":42.4,"cols":1024,"hfov":360,"hz":10,"range10":90,"modes":{"cols":[512,1024,2048],"hz":[10,20]}}},"at128":{"name":"Hesai AT128P","zh":"固定式前向光達","vi":"Lidar cố định hướng trước","kind":"lidar","calc":{"type":"lidar","ch":128,"vfov":25.4,"cols":1200,"hfov":120,"hz":10,"range10":210,"dh":0.1,"dv":0.2}},"ar0233":{"name":"onsemi AR0233AT","zh":"車用影像感測器","vi":"Cảm biến ảnh ô tô","kind":"cam","calc":{"type":"cam","px":2048,"pitch":3,"f":8,"h":1.5}},"ld16":{"name":"LD-16","zh":"便宜的 16 線光達（教學用）","vi":"Lidar 16 kênh giá rẻ (tự đặt)","kind":"lidar","calc":{"type":"lidar","ch":16,"vfov":30,"cols":900,"hfov":360,"hz":10,"range10":40}}};
+const MODELS = {"os1":{"name":"Ouster OS1-64","zh":"旋轉式光達","vi":"Lidar quay 360°","kind":"lidar","calc":{"type":"lidar","ch":64,"vfov":42.4,"cols":1024,"hfov":360,"hz":10,"range10":90,"modes":{"cols":[512,1024,2048],"hz":[10,20],"hzFor":{"512":[10,20],"1024":[10,20],"2048":[10]}}}},"at128":{"name":"Hesai AT128P","zh":"固定式前向光達","vi":"Lidar cố định hướng trước","kind":"lidar","calc":{"type":"lidar","ch":128,"vfov":25.4,"cols":1200,"hfov":120,"hz":10,"range10":210,"dh":0.1,"dv":0.2}},"ar0233":{"name":"onsemi AR0233AT","zh":"車用影像感測器","vi":"Cảm biến ảnh ô tô","kind":"cam","calc":{"type":"cam","px":2048,"pitch":3,"f":8,"h":1.5}},"ld16":{"name":"LD-16","zh":"便宜的 16 線光達（教學用）","vi":"Lidar 16 kênh giá rẻ (tự đặt)","kind":"lidar","calc":{"type":"lidar","ch":16,"vfov":30,"cols":900,"hfov":360,"hz":10,"range10":40}}};
 const SCENES = {"campus":{"zh":"校園接駁","vi":"Xe đưa đón trong trường","v":20,"d":40,"tgt":{"w":0.5,"h":1.7,"zh":"行人","vi":"người đi bộ"},"zhNote":"時速 20，要在 40 公尺外認出行人","viNote":"20 km/h, nhận ra người ở 40 m"},"hanoi":{"zh":"河內尖峰","vi":"Giờ cao điểm Hà Nội","v":40,"d":40,"tgt":{"w":0.8,"h":1.6,"zh":"機車","vi":"xe máy"},"zhNote":"時速 40，要在 40 公尺外認出機車","viNote":"40 km/h, nhận ra xe máy ở 40 m"},"hiway":{"zh":"國道","vi":"Đường cao tốc","v":100,"d":150,"tgt":{"w":1.8,"h":1.5,"zh":"汽車","vi":"ô tô"},"zhNote":"時速 100，要在 150 公尺外看到車","viNote":"100 km/h, thấy xe ở 150 m"}};
 const HW_M = [["os1","Ouster OS1-64"],["at128","Hesai AT128P"],["ar0233","onsemi AR0233AT"],["ld16","LD-16"]], HW_S = [["campus","校園 20","Trường 20"],["hanoi","河內 40","Hà Nội 40"],["hiway","國道 100","Cao tốc 100"]], HW_PTS = ["3","9","18","36"];
 const HW_COST = [["資料量加倍，而且 2048 點／圈配不了 20 Hz","Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],["要多花錢買更貴的型號","Phải mua model đắt hơn"],["測距會從 90 公尺變短","Tầm đo giảm xuống dưới 90 m"],["垂直線束數會變少","Số kênh dọc giảm đi"]], HW_CONCL = [["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。","OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。","OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。","OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],["OS1 不好用。","OS1 không tốt."]];
@@ -265,12 +267,25 @@ function tab12() {
 }
 
 // ── 第二題 ──
+// 這個點數配得了哪幾個轉速。規格書的 Lidar Operating Modes 是一條一條列的
+// （x 512 @ 10 或 20、x 1024 @ 10 或 20、x 2048 @ 10），不是點數任選 × 轉速任選。
+// 2048 @ 20 Hz 根本不存在，不能讓學生選得出來——第二題問的「代價」正是這件事。
+const hzOpts = (c, cols) => (c.modes.hzFor && c.modes.hzFor[cols]) || c.modes.hz;
+
 function q2() {
   const c = MODELS.os1.calc;
+  const ok = hzOpts(c, Q2.cols);
+  if (!ok.includes(Q2.hz)) Q2.hz = ok[0];        // 切到 2048 的時候把 20 Hz 收回來
   $("mCols").innerHTML = c.modes.cols.map((x) =>
     '<option value="' + x + '"' + (x === Q2.cols ? " selected" : "") + ">" + x + L(" 點／圈", " điểm/vòng") + "</option>").join("");
-  $("mHz").innerHTML = c.modes.hz.map((x) =>
+  $("mHz").innerHTML = ok.map((x) =>
     '<option value="' + x + '"' + (x === Q2.hz ? " selected" : "") + ">" + x + " Hz</option>").join("");
+  // 注意：這一整塊是寫進產出頁面的程式碼，而 build_hw.js 的 HTML 是模板字串，
+  // 所以這裡不能用模板插值（會在產生的時候就被吃掉），一律字串串接。
+  $("q2note").innerHTML = ok.length < c.modes.hz.length
+    ? L("<b>" + Q2.cols + " 點／圈只有 " + ok.join(" / ") + " Hz</b>——規格書的 Lidar Operating Modes 就是這樣寫的。要最密的點，就得轉慢一點。",
+        "<b>" + Q2.cols + " điểm/vòng chỉ có " + ok.join(" / ") + " Hz</b> — bảng Lidar Operating Modes ghi vậy. Muốn dày điểm thì phải quay chậm lại.")
+    : "";
   $("q2calc").innerHTML = calcHtml("os1", "hanoi", Q2.cols, Q2.hz, true);
   $("mCols").onchange = (e) => { Q2.cols = +e.target.value; q2(); };
   $("mHz").onchange = (e) => { Q2.hz = +e.target.value; q2(); };
