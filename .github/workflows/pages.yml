@@ -13,6 +13,7 @@ on:
       - '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf'
       - '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf'
       - '第五週(10-08)/第五週_規格判讀台.html'
+      - '第五週(10-08)/第五週_作業.html'
       - '第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf'
       - '第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf'
       - '第五週(10-08)/第五週_第1節_簡報.pdf'
@@ -51,6 +52,7 @@ jobs:
             第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf
             第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf
             第五週(10-08)/第五週_規格判讀台.html
+            第五週(10-08)/第五週_作業.html
             第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf
             第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf
             第五週(10-08)/第五週_第1節_簡報.pdf
@@ -64,7 +66,7 @@ jobs:
       - name: Prepare the public student pages
         shell: bash
         run: |
-          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec
+          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec _site/week5/hw
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/index.html
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/week2/levels/index.html
           cp -- '第三週(09-24)/第三週_感測器實驗室.html' _site/week3/lab/index.html
@@ -77,6 +79,7 @@ jobs:
           cp -- '第四週(10-01)/自動駕駛原理_第四週_課程講義.pdf' _site/week4/note-zh.pdf
           cp -- '第四週(10-01)/Nguyên lý xe tự lái_Tuần 4_Tài liệu học tập.pdf' _site/week4/note-vi.pdf
           cp -- '第五週(10-08)/第五週_規格判讀台.html' _site/week5/spec/index.html
+          cp -- '第五週(10-08)/第五週_作業.html' _site/week5/hw/index.html
           cp -- '第五週(10-08)/自動駕駛原理_第五週_課程講義.pdf' _site/week5/note-zh.pdf
           cp -- '第五週(10-08)/Nguyên lý xe tự lái_Tuần 5_Tài liệu học tập.pdf' _site/week5/note-vi.pdf
           # 簡報的學生版：PDF 不含備忘稿，動圖只留第一格（每張動圖的第一格都是故意放結論那一格）

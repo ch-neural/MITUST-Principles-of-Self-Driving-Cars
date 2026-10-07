@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第五週作業　替一台車選感測器</title>
+<style>
+:root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+      --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#EEF2F6;color:var(--ink);
+     font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;font-size:14px;line-height:1.5}
+#wrap{max-width:760px;margin:0 auto;padding:10px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+h1{font-size:17px;margin:0;color:var(--navy)}
+h1 small{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:1px}
+.hwq{margin:0 0 4px;font-weight:700;font-size:14px;color:var(--navy)}
+.hwn{font-size:12px;color:var(--mute);margin-bottom:7px;line-height:1.5}
+button{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);
+       border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--teal)}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.go{background:var(--teal);color:#fff;border-color:var(--teal-d);font-weight:700}
+input,select{font-family:inherit;font-size:13px;padding:7px 8px;border:1px solid var(--line);
+             border-radius:7px;background:#fff;color:var(--ink);width:100%;min-height:36px}
+.grid{display:grid;gap:7px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+/* 十二格 */
+.hwtab{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.hwtab th,.hwtab td{border:1px solid var(--line);padding:0;text-align:center}
+.hwtab th{background:var(--card);font-weight:700;font-size:11.5px;padding:5px 3px;line-height:1.3}
+.hwtab td.mdl,.hwtab th.mdl{text-align:left;width:31%;font-size:12px;padding:6px 7px;background:var(--card);font-weight:700}
+.cell{display:block;width:100%;border:none;border-radius:0;background:none;padding:10px 2px;
+      font-size:13px;color:var(--mute);min-height:40px}
+.cell.ok{background:#E8F6F0;color:#1C5E45;font-weight:700}
+.cell.ng{background:#FDECEC;color:#96271F;font-weight:700}
+.cell.open{outline:2px solid var(--teal);outline-offset:-2px}
+.exp td{padding:0;border-top:none}
+.expbox{background:var(--card);border-top:2px solid var(--teal);padding:10px 11px;text-align:left}
+/* 判讀 */
+.res{font-size:12.5px;color:var(--mute);line-height:1.5}
+.res b{color:var(--ink)}
+.res .big{display:block;font-size:13.5px;color:var(--navy);font-weight:700;margin:3px 0}
+.line{display:flex;gap:8px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;
+      margin-top:5px;background:#fff;font-size:12px;align-items:flex-start}
+.line .k{flex:0 0 44%;color:var(--navy2);font-weight:700}
+.line .v{flex:1 1 auto}
+.line .v.bad{color:var(--red)}.line .v.good{color:var(--ok)}
+.line .v.n{color:var(--mute)}
+.verdict{border-radius:7px;padding:8px 10px;margin-top:8px;font-size:12.5px;line-height:1.5}
+.verdict.pass{background:#E8F6F0;border:1px solid var(--ok);color:#1C5E45}
+.verdict.fail{background:#FDECEC;border:1px solid var(--red);color:#96271F}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.pick button{font-weight:700;font-size:14px;padding:10px}
+.pick button.sel{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tfrow{margin-top:7px}
+.tfrow select{margin-top:4px}
+.prog{font-size:12px;color:var(--mute);text-align:right}
+.prog b{color:var(--teal-d);font-size:14px}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.lang button{padding:5px 9px;font-size:11.5px}
+.foot{position:sticky;bottom:0;background:#EEF2F6;padding:8px 0 10px;margin-top:-2px}
+/* 作答單 */
+#sheet{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:14px 16px;display:none}
+#sheet h3{margin:0 0 2px;font-size:16px;color:var(--navy)}
+#sheet .who{font-size:14px;font-weight:700}
+#sheet .when{font-size:11.5px;color:var(--mute);margin-bottom:9px}
+#sheet .sec{font-size:12px;color:var(--teal-d);font-weight:700;margin:10px 0 3px}
+#sheet .ans{font-size:12.5px;line-height:1.55}
+#sheet .miss{color:var(--red)}
+#sheet .hwtab td{padding:5px 3px;font-size:12.5px}
+/* 作答單模式：姓名欄、進度、題目全收掉，整個畫面截下去就是答案
+   （姓名和日期作答單自己會印，留著輸入框只會讓截圖變醜） */
+body.sheet #qs,body.sheet .foot button#btnSheet,body.sheet #wrap>.panel:first-child{display:none}
+body.sheet #sheet{display:block}
+body.sheet #wrap{padding-top:10px}
+@media (max-width:560px){
+  .hwtab td.mdl,.hwtab th.mdl{width:27%;font-size:11px}
+  .cell{font-size:12px}
+  /* 窄螢幕改成上下兩行。沒有 flex-wrap 的話 .k 吃 100% 卻還留在同一行，
+     兩邊一起被壓扁，整格會被拉到 100 px 高 */
+  .line{flex-wrap:wrap;gap:2px}
+  .line .k{flex:0 0 100%}
+  .line .v{flex:0 0 100%}
+}
+@media print{body{background:#fff}.foot,#qs{display:none}}</style>
+</head><body>
+<div id="wrap">
+  <div class="panel">
+    <div class="top">
+      <h1>第五週作業　替一台車選感測器<small>Bài tuần 5 — Chọn cảm biến cho một chiếc xe</small></h1>
+      <div class="lang"><button id="btnZh" class="on">中文</button><button id="btnVi">Tiếng Việt</button></div>
+    </div>
+    <div class="grid g2" style="margin-top:9px">
+      <input type="text" id="hwName"><input type="text" id="hwSid">
+    </div>
+    <div class="prog" style="margin-top:7px" id="progBox"></div>
+  </div>
+
+  <div id="qs">
+    <div class="panel">
+      <div class="hwq" id="q1t"></div>
+      <div class="hwn" id="q1n"></div>
+      <table class="hwtab" id="tab12"></table>
+    </div>
+
+    <div class="panel">
+      <div class="hwq" id="q2t"></div>
+      <div class="hwn" id="q2n"></div>
+      <div class="grid g2"><select id="mCols"></select><select id="mHz"></select></div>
+      <div id="q2calc" style="margin-top:8px"></div>
+      <div class="hwn" style="margin-top:10px" id="q2a"></div>
+      <div class="grid g2"><select id="hwPts"></select><select id="hwOk2048"></select></div>
+      <div class="hwn" style="margin-top:8px" id="q2c"></div>
+      <select id="hwCost"></select>
+    </div>
+
+    <div class="panel">
+      <div class="hwq" id="q3t"></div>
+      <div class="hwn" id="q3n"></div>
+      <select id="hwConcl"></select>
+    </div>
+
+    <div class="panel">
+      <div class="hwq" id="q4t"></div>
+      <div id="q4"></div>
+    </div>
+  </div>
+
+  <div id="sheet"></div>
+
+  <div class="foot">
+    <div class="grid g2">
+      <button id="btnSheet" class="go"></button>
+      <button id="btnBack" style="display:none"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const MODELS = {"os1":{"name":"Ouster OS1-64","zh":"旋轉式光達","vi":"Lidar quay 360°","kind":"lidar","calc":{"type":"lidar","ch":64,"vfov":42.4,"cols":1024,"hfov":360,"hz":10,"range10":90,"modes":{"cols":[512,1024,2048],"hz":[10,20]}}},"at128":{"name":"Hesai AT128P","zh":"固定式前向光達","vi":"Lidar cố định hướng trước","kind":"lidar","calc":{"type":"lidar","ch":128,"vfov":25.4,"cols":1200,"hfov":120,"hz":10,"range10":210,"dh":0.1,"dv":0.2}},"ar0233":{"name":"onsemi AR0233AT","zh":"車用影像感測器","vi":"Cảm biến ảnh ô tô","kind":"cam","calc":{"type":"cam","px":2048,"pitch":3,"f":8,"h":1.5}},"ld16":{"name":"LD-16","zh":"便宜的 16 線光達（教學用）","vi":"Lidar 16 kênh giá rẻ (tự đặt)","kind":"lidar","calc":{"type":"lidar","ch":16,"vfov":30,"cols":900,"hfov":360,"hz":10,"range10":40}}};
+const SCENES = {"campus":{"zh":"校園接駁","vi":"Xe đưa đón trong trường","v":20,"d":40,"tgt":{"w":0.5,"h":1.7,"zh":"行人","vi":"người đi bộ"},"zhNote":"時速 20，要在 40 公尺外認出行人","viNote":"20 km/h, nhận ra người ở 40 m"},"hanoi":{"zh":"河內尖峰","vi":"Giờ cao điểm Hà Nội","v":40,"d":40,"tgt":{"w":0.8,"h":1.6,"zh":"機車","vi":"xe máy"},"zhNote":"時速 40，要在 40 公尺外認出機車","viNote":"40 km/h, nhận ra xe máy ở 40 m"},"hiway":{"zh":"國道","vi":"Đường cao tốc","v":100,"d":150,"tgt":{"w":1.8,"h":1.5,"zh":"汽車","vi":"ô tô"},"zhNote":"時速 100，要在 150 公尺外看到車","viNote":"100 km/h, thấy xe ở 150 m"}};
+const HW_M = [["os1","Ouster OS1-64"],["at128","Hesai AT128P"],["ar0233","onsemi AR0233AT"],["ld16","LD-16"]], HW_S = [["campus","校園 20","Trường 20"],["hanoi","河內 40","Hà Nội 40"],["hiway","國道 100","Cao tốc 100"]], HW_PTS = ["3","9","18","36"];
+const HW_COST = [["資料量加倍，而且 2048 點／圈配不了 20 Hz","Dữ liệu tăng gấp đôi, và 2048 điểm/vòng không chạy được 20 Hz"],["要多花錢買更貴的型號","Phải mua model đắt hơn"],["測距會從 90 公尺變短","Tầm đo giảm xuống dưới 90 m"],["垂直線束數會變少","Số kênh dọc giảm đi"]], HW_CONCL = [["OS1 在河內尖峰不夠用，因為 40 公尺的機車身上只有 9 個點、門檻是 10 個；測距 90 公尺是夠的。","OS1 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 9 điểm (ngưỡng 10); tầm đo 90 m thì đủ."],["OS1 在河內尖峰不夠用，因為測距只有 90 公尺，不夠遠。","OS1 không đủ vì tầm đo chỉ 90 m, quá ngắn."],["OS1 在河內尖峰夠用，因為它每秒有 262 萬個點，很多。","OS1 đủ vì có 2,62 triệu điểm mỗi giây, rất nhiều."],["OS1 不好用。","OS1 không tốt."]];
+const HW_TF = [["① 規格表寫「測距 200 公尺」，就表示 200 公尺內的東西都看得到。","① «Tầm 200 m» nghĩa là mọi thứ trong 200 m đều thấy."],["② 同一顆影像感測器，視野是固定的。","② Cùng một cảm biến ảnh thì góc nhìn cố định."],["③ 兩顆光達比每秒點數，點數大的那顆，遠處的人一定看得比較清楚。","③ Lidar nào nhiều điểm/giây hơn thì chắc chắn nhìn người ở xa rõ hơn."],["④ 兩顆感測器各自都好，合起來就一定好。","④ Hai cảm biến đều tốt thì ghép lại chắc chắn tốt."]], HW_WHY = [[["沒問條件：測距要看是對百分之幾反射率量的。OS1 對白色 170 m，對黑色只剩 90 m。","Chưa hỏi điều kiện: tầm đo đo với vật phản xạ bao nhiêu %? Trắng 170 m, đen 90 m."],["因為 200 公尺太遠了，沒有感測器做得到。","Vì 200 m quá xa, không cảm biến nào làm được."],["因為那是在實驗室量的，路上量不到。","Vì đo trong phòng thí nghiệm, ra đường thì không."]],[["視野是鏡頭決定的。同一塊晶片，8 mm 鏡頭看 42°，3.6 mm 看 81°。","Góc nhìn do ống kính quyết định: cùng một chip, 8 mm → 42°, 3,6 mm → 81°."],["因為視野會隨著解析度模式改變。","Vì góc nhìn đổi theo chế độ phân giải."],["因為感測器裝上車之後角度會跑掉。","Vì lắp lên xe rồi góc sẽ lệch."]],[["每秒點數要先換成角度。OS1 262 萬點灑滿 360°，40 m 的目標上只有 9 點；AT128P 150 萬點集中在 120°，同一個目標有 121 點。","Phải đổi điểm/giây sang góc. OS1 2,62 triệu rải khắp 360° → 9 điểm; AT128P 1,5 triệu dồn trong 120° → 121 điểm."],["因為點數大的那顆比較貴，貴的不一定好。","Vì cái nhiều điểm thì đắt hơn, đắt chưa chắc tốt."],["因為同一顆光達切到 2048 點，點數加倍也看不清楚。","Vì cùng một lidar đổi sang 2048 điểm cũng không rõ hơn."]],[["還有標定和時間同步兩關。差一度，50 公尺外就差將近一公尺。","Còn hiệu chuẩn và đồng bộ thời gian: lệch 1° thì ở 50 m lệch gần 1 m."],["因為兩顆感測器會互相干擾。","Vì hai cảm biến gây nhiễu lẫn nhau."],["因為合起來之後更新率會變慢。","Vì ghép lại thì tốc độ cập nhật chậm đi."]]];
+const DEF_COLS = 1024, DEF_HZ = 10;
+const MIN_PTS = 10, MAX_ERR = 1.5, R = Math.PI / 180;
+
+const $ = (id) => document.getElementById(id);
+let ZH = true;
+const L = (zh, vi) => (ZH ? zh : vi);
+
+// ── 存檔：和判讀台共用同一個 key，同一個網域下兩頁互通 ──
+const HW_KEY = "w5hw";
+let HW = { name: "", sid: "", g: {}, pts: "", ok2048: "", cost: "", concl: "",
+           tf: [["", ""], ["", ""], ["", ""], ["", ""]] };
+try { const r = localStorage.getItem(HW_KEY); if (r) HW = Object.assign(HW, JSON.parse(r)); }
+catch (e) { /* 無痕視窗：照常能寫，關掉就沒了 */ }
+const save = () => { try { localStorage.setItem(HW_KEY, JSON.stringify(HW)); } catch (e) {} };
+
+const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
+
+// ── 判定：和判讀台同一套算法，verify_hw.js 會逐格比對 ──
+function judge(mk, sk, cols, hz) {
+  const c = MODELS[mk].calc, s = SCENES[sk], need = brake(s.v) + 5;
+  const lines = []; let ok = true, pts = 0;
+  if (c.type === "lidar") {
+    const dv = c.dv || c.vfov / (c.ch - 1);
+    const dh = c.dh || c.hfov / (c.modes ? cols : c.cols);
+    const hzN = c.modes ? hz : c.hz, T = s.tgt;
+    pts = (() => {
+      const nv = Math.min(c.ch, 2 * Math.atan(T.h / 2 / s.d) / R / dv);
+      const nh = 2 * Math.atan(T.w / 2 / s.d) / R / dh;
+      return Math.max(0, Math.floor(nv)) * Math.max(0, Math.floor(nh));
+    })();
+    const reach = c.range10 >= need;
+    if (!reach) ok = false;
+    lines.push([L("測距 " + c.range10 + " m", "Tầm " + c.range10 + " m"),
+      reach ? L("夠，門檻 " + need.toFixed(0) + " m", "Đủ, ngưỡng " + need.toFixed(0) + " m")
+            : L("不夠，門檻 " + need.toFixed(0) + " m，差 " + (need - c.range10).toFixed(0) + " m",
+                "Thiếu " + (need - c.range10).toFixed(0) + " m so với ngưỡng " + need.toFixed(0) + " m"), reach]);
+    lines.push([L("角解析度 " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°",
+                  "Phân giải " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°"),
+      L(s.d + " m 的" + s.tgt.zh + "身上有 " + pts + " 個點，門檻 " + MIN_PTS + " 個",
+        s.tgt.vi + " ở " + s.d + " m có " + pts + " điểm, ngưỡng " + MIN_PTS), pts >= MIN_PTS]);
+    if (pts < MIN_PTS) ok = false;
+    lines.push([L("更新率 " + hzN + " Hz", hzN + " Hz"),
+      L("每 " + (1000 / hzN).toFixed(0) + " 毫秒一張；這段時間車子前進 " + (s.v / 3.6 / hzN).toFixed(1) + " m",
+        "Mỗi " + (1000 / hzN).toFixed(0) + " ms một khung; xe đi " + (s.v / 3.6 / hzN).toFixed(1) + " m"), null]);
+  } else {
+    const fov = 2 * Math.atan(c.px * c.pitch / 1000 / 2 / c.f) / R;
+    const th = fov / c.px * R;
+    const err = s.d * s.d * th / c.h;
+    lines.push([L("配 " + c.f + " mm 鏡頭 → 視野 " + fov.toFixed(0) + "°", "Ống kính " + c.f + " mm → " + fov.toFixed(0) + "°"),
+      L("感測器規格表沒有視野，是鏡頭決定的", "Bảng cảm biến không có góc nhìn"), null]);
+    lines.push([L("每像素 " + (fov / c.px).toFixed(4) + "°", "Mỗi điểm ảnh " + (fov / c.px).toFixed(4) + "°"),
+      L(s.d + " m 處估距誤差 ±" + err.toFixed(2) + " m，門檻 ±" + MAX_ERR + " m",
+        "Sai số ở " + s.d + " m: ±" + err.toFixed(2) + " m, ngưỡng ±" + MAX_ERR + " m"), err < MAX_ERR]);
+    if (err >= MAX_ERR) ok = false;
+    lines.push([L("更新率 60 fps", "60 fps"),
+      L("每 17 毫秒一張；這段時間車子前進 " + (s.v / 3.6 / 60).toFixed(2) + " m",
+        "Mỗi 17 ms; xe đi " + (s.v / 3.6 / 60).toFixed(2) + " m"), null]);
+    lines.push([L("測距", "Đo khoảng cách"),
+      L("規格表上沒有，距離是算出來的，而且要假設路面是平的", "Không có trong bảng"), null]);
+  }
+  return { ok, pts, need, lines };
+}
+
+// 判讀區的 HTML：十二格展開時和第二題共用同一塊
+function calcHtml(mk, sk, cols, hz, withHead) {
+  const s = SCENES[sk], r = judge(mk, sk, cols, hz);
+  let h = "";
+  if (withHead)
+    h += '<div class="res"><b>' + MODELS[mk].name + " × " + L(s.zh, s.vi) + "</b>　" + L(s.zhNote, s.viNote) +
+         '<span class="big">' + L("煞停要 ", "Cần ") + brake(s.v).toFixed(0) + L(" m　→　至少要看到 ", " m → phải thấy tối thiểu ") +
+         r.need.toFixed(0) + " m</span></div>";
+  h += r.lines.map(([k, v, good]) =>
+    '<div class="line"><div class="k">' + k + '</div><div class="v ' +
+    (good === null ? "n" : good ? "good" : "bad") + '">' + v + (good === null ? "" : good ? "　✓" : "　✗") +
+    "</div></div>").join("");
+  h += '<div class="verdict ' + (r.ok ? "pass" : "fail") + '">' + (r.ok
+    ? L("這一顆在這個情境撐得住。接下來要問的是價錢、功耗和裝得上去嗎。", "Model này đủ dùng. Câu hỏi tiếp theo là giá, điện và chỗ lắp.")
+    : L("這一顆在這個情境不夠用。上面打 ✗ 那一行就是卡住的地方。", "Không đủ. Dòng có dấu ✗ ở trên là chỗ bị chặn.")) + "</div>";
+  return h;
+}
+
+// ── 第一題：十二格，點一格就地展開 ──
+let openCell = "";
+function tab12() {
+  const cellTxt = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không đủ") : "—";
+  let h = '<tr><th class="mdl"></th>' + HW_S.map((x, i) =>
+    "<th>" + L("第" + "一二三"[i] + "欄", "Cột " + (i + 1)) + "<br>" + L(x[1], x[2]) + "</th>").join("") + "</tr>";
+  for (const [mk, nm] of HW_M) {
+    h += '<tr><td class="mdl">' + nm + "</td>" + HW_S.map(([sk]) => {
+      const key = mk + "_" + sk, v = HW.g[key] || "";
+      return '<td><button class="cell ' + v + (openCell === key ? " open" : "") +
+             '" data-cell="' + key + '">' + cellTxt(v) + "</button></td>";
+    }).join("") + "</tr>";
+    if (openCell && openCell.startsWith(mk + "_")) {
+      const sk = openCell.slice(mk.length + 1), v = HW.g[openCell] || "";
+      h += '<tr class="exp"><td colspan="4"><div class="expbox">' +
+           calcHtml(mk, sk, DEF_COLS, DEF_HZ, true) +
+           '<div class="pick"><button data-pick="ok" class="' + (v === "ok" ? "sel" : "") + '">' +
+           L("夠", "Đủ") + '</button><button data-pick="ng" class="' + (v === "ng" ? "sel" : "") + '">' +
+           L("不夠", "Không đủ") + "</button></div></div></td></tr>";
+    }
+  }
+  $("tab12").innerHTML = h;
+  document.querySelectorAll("[data-cell]").forEach((b) => b.onclick = () => {
+    openCell = openCell === b.dataset.cell ? "" : b.dataset.cell;
+    tab12();
+    if (openCell) {
+      const e = document.querySelector(".exp");
+      if (e) e.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  });
+  document.querySelectorAll("[data-pick]").forEach((b) => b.onclick = () => {
+    HW.g[openCell] = HW.g[openCell] === b.dataset.pick ? "" : b.dataset.pick;
+    save(); tab12(); prog();
+  });
+}
+
+// ── 第二題 ──
+function q2() {
+  const c = MODELS.os1.calc;
+  $("mCols").innerHTML = c.modes.cols.map((x) =>
+    '<option value="' + x + '"' + (x === Q2.cols ? " selected" : "") + ">" + x + L(" 點／圈", " điểm/vòng") + "</option>").join("");
+  $("mHz").innerHTML = c.modes.hz.map((x) =>
+    '<option value="' + x + '"' + (x === Q2.hz ? " selected" : "") + ">" + x + " Hz</option>").join("");
+  $("q2calc").innerHTML = calcHtml("os1", "hanoi", Q2.cols, Q2.hz, true);
+  $("mCols").onchange = (e) => { Q2.cols = +e.target.value; q2(); };
+  $("mHz").onchange = (e) => { Q2.hz = +e.target.value; q2(); };
+}
+// 從原廠預設開始，學生自己轉成 2048——一打開就停在 2048 的話，
+// 這一題要他看見的「轉過去會怎樣」就直接送給他了
+const Q2 = { cols: DEF_COLS, hz: DEF_HZ };
+
+// ── 題目文字與下拉 ──
+function fill() {
+  $("hwName").placeholder = L("姓名", "Họ tên"); $("hwName").value = HW.name;
+  $("hwSid").placeholder = L("班級／學號", "Lớp / MSSV"); $("hwSid").value = HW.sid;
+
+  $("q1t").textContent = L("第一題　四個型號 × 三個情境，哪一個撐得住？", "Câu 1 — 4 model × 3 tình huống, cái nào đủ?");
+  $("q1n").innerHTML = L("點表格裡的<b>任何一格</b>，那一組合的判讀就會在底下展開。看完再選「夠」或「不夠」。十二格都要選。",
+                         "Bấm vào <b>bất kỳ ô nào</b>, phần đọc thông số sẽ mở ra ngay dưới. Xem xong chọn «Đủ» hoặc «Không đủ». Phải làm cả 12 ô.");
+  $("q2t").textContent = L("第二題　河內尖峰：OS1 換成 2048 點／圈", "Câu 2 — Hà Nội: OS1 đổi sang 2048 điểm/vòng");
+  $("q2n").innerHTML = L("第一題用的是原廠預設 " + DEF_COLS + " 點／圈 " + DEF_HZ + " Hz。這一題自己把下面左邊那個轉成 <b>2048</b>，看判讀怎麼變。",
+                         "Câu 1 dùng mặc định " + DEF_COLS + " @ " + DEF_HZ + " Hz. Câu này hãy đổi ô bên trái thành <b>2048</b> và xem kết quả đổi thế nào.");
+  $("q2a").textContent = L("轉成 2048 之後，40 公尺的機車身上有幾個點？夠不夠？", "Sau khi đổi sang 2048: xe máy ở 40 m có mấy điểm? Đủ không?");
+  $("q2c").textContent = L("換這個模式要付什麼代價？", "Đổi chế độ này phải trả giá gì?");
+  $("q3t").textContent = L("第三題　結論句", "Câu 3 — Câu kết luận");
+  $("q3n").innerHTML = L("要寫出卡在哪一行。例：「LD-16 在河內尖峰不夠用，因為 40 公尺的機車身上只有 2 個點，雖然它的測距 40 公尺是足夠的。」",
+                         "Phải nói rõ tắc ở dòng nào. VD: «LD-16 không đủ ở Hà Nội vì xe máy ở 40 m chỉ có 2 điểm, dù tầm đo 40 m là đủ.»");
+  $("q4t").textContent = L("第四題　四句話，對或錯，再選一個理由", "Câu 4 — Bốn câu: đúng hay sai, kèm lý do");
+  $("btnSheet").textContent = L("產生作答單（交這一頁）", "Tạo phiếu trả lời (nộp trang này)");
+  $("btnBack").textContent = L("← 回去改", "← Quay lại sửa");
+
+  const opt = (v, cur, txt) => '<option value="' + v + '"' + (String(cur) === String(v) ? " selected" : "") + ">" + txt + "</option>";
+  $("hwPts").innerHTML = opt("", HW.pts, L("機車身上幾個點", "Bao nhiêu điểm")) +
+    HW_PTS.map((o) => opt(o, HW.pts, o + L(" 個點", " điểm"))).join("");
+  $("hwOk2048").innerHTML = opt("", HW.ok2048, L("換模式後：夠／不夠", "Sau khi đổi: đủ / không")) +
+    opt("ok", HW.ok2048, L("夠", "Đủ")) + opt("ng", HW.ok2048, L("不夠", "Không đủ"));
+  $("hwCost").innerHTML = opt("", HW.cost, L("── 請選 ──", "── Chọn ──")) +
+    HW_COST.map((o, i) => opt(i, HW.cost, L(o[0], o[1]))).join("");
+  $("hwConcl").innerHTML = opt("", HW.concl, L("── 請選 ──", "── Chọn ──")) +
+    HW_CONCL.map((o, i) => opt(i, HW.concl, L(o[0], o[1]))).join("");
+  $("q4").innerHTML = HW_TF.map((q, i) =>
+    '<div class="tfrow"><div class="hwn" style="margin-bottom:0">' + L(q[0], q[1]) + "</div>" +
+    '<select data-tf="' + i + '">' + opt("", HW.tf[i][0], "—") +
+      opt("T", HW.tf[i][0], L("對", "Đúng")) + opt("F", HW.tf[i][0], L("錯", "Sai")) + "</select>" +
+    '<select data-tfr="' + i + '">' + opt("", HW.tf[i][1], L("── 選一個理由 ──", "── Chọn lý do ──")) +
+      HW_WHY[i].map((o, j) => opt(j, HW.tf[i][1], L(o[0], o[1]))).join("") + "</select></div>").join("");
+
+  const bindIn = (id, k) => $(id).oninput = (e) => { HW[k] = e.target.value; save(); prog(); };
+  bindIn("hwName", "name"); bindIn("hwSid", "sid");
+  const bindSel = (id, k) => $(id).onchange = (e) => { HW[k] = e.target.value; save(); prog(); };
+  bindSel("hwPts", "pts"); bindSel("hwOk2048", "ok2048"); bindSel("hwCost", "cost"); bindSel("hwConcl", "concl");
+  document.querySelectorAll("[data-tf]").forEach((el) =>
+    el.onchange = (e) => { HW.tf[+e.target.dataset.tf][0] = e.target.value; save(); prog(); });
+  document.querySelectorAll("[data-tfr]").forEach((el) =>
+    el.onchange = (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; save(); prog(); });
+}
+
+// ── 進度：十二格 12＋第二題 3＋結論 1＋四句話 8 ＝ 24 ──
+function prog() {
+  let n = 0;
+  HW_M.forEach(([mk]) => HW_S.forEach(([sk]) => { if (HW.g[mk + "_" + sk]) n++; }));
+  ["pts", "ok2048", "cost", "concl"].forEach((k) => { if (HW[k] !== "") n++; });
+  HW.tf.forEach(([a, b]) => { if (a !== "") n++; if (b !== "") n++; });
+  $("progBox").innerHTML = L("已經填了 ", "Đã điền ") + "<b>" + n + "</b> / 24" +
+    (n === 24 ? L("　全部填完了 ✓", "　Xong hết ✓") : "");
+}
+
+// ── 作答單 ──
+function sheet() {
+  const miss = (t) => (t && String(t).trim() ? String(t)
+    : '<span class="miss">' + L("（沒寫）", "(chưa điền)") + "</span>");
+  const cell = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không") : "—";
+  const d = new Date(), two = (n) => String(n).padStart(2, "0");
+  $("sheet").innerHTML =
+    "<h3>" + L("第五週作業　替一台車選感測器", "Bài tuần 5 — Chọn cảm biến") + "</h3>" +
+    '<div class="who">' + miss(HW.name) + "　" + (HW.sid || "") + "</div>" +
+    '<div class="when">' + d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate()) +
+      " " + two(d.getHours()) + ":" + two(d.getMinutes()) + "</div>" +
+    '<table class="hwtab"><tr><th class="mdl"></th>' + HW_S.map((x, i) =>
+      "<th>" + L("第" + "一二三"[i] + "欄", "Cột " + (i + 1)) + "<br>" + L(x[1], x[2]) + "</th>").join("") + "</tr>" +
+    HW_M.map(([k, n]) => '<tr><td class="mdl">' + n + "</td>" +
+      HW_S.map(([sk]) => "<td>" + cell(HW.g[k + "_" + sk]) + "</td>").join("") + "</tr>").join("") + "</table>" +
+    '<div class="sec">' + L("OS1 換成 2048 點／圈", "OS1 → 2048 điểm/vòng") + "</div>" +
+    '<div class="ans">' + miss(HW.pts) + L(" 個點", " điểm") + "　→　" + cell(HW.ok2048) +
+      "<br>" + L("代價：", "Phải trả giá: ") + (HW.cost === "" ? miss("") : L(HW_COST[+HW.cost][0], HW_COST[+HW.cost][1])) + "</div>" +
+    '<div class="sec">' + L("結論", "Kết luận") + "</div>" +
+    '<div class="ans">' + (HW.concl === "" ? miss("") : L(HW_CONCL[+HW.concl][0], HW_CONCL[+HW.concl][1])) + "</div>" +
+    '<div class="sec">' + L("四句話", "Bốn câu") + "</div>" +
+    '<div class="ans">' + HW_TF.map((q, i) => L(q[0], q[1]).slice(0, 2) + " " +
+      (HW.tf[i][0] === "T" ? L("對", "Đúng") : HW.tf[i][0] === "F" ? L("錯", "Sai") : "—") + "　" +
+      (HW.tf[i][1] === "" ? miss("") : L(HW_WHY[i][+HW.tf[i][1]][0], HW_WHY[i][+HW.tf[i][1]][1]))).join("<br>") + "</div>";
+  document.body.classList.add("sheet");
+  $("btnBack").style.display = "";
+  window.scrollTo(0, 0);
+}
+
+function draw() { fill(); tab12(); q2(); prog(); }
+
+$("btnSheet").onclick = sheet;
+$("btnBack").onclick = () => {
+  document.body.classList.remove("sheet");
+  $("btnBack").style.display = "none";
+  window.scrollTo(0, 0);
+};
+$("btnZh").onclick = () => { ZH = true; $("btnZh").classList.add("on"); $("btnVi").classList.remove("on");
+  document.documentElement.lang = "zh-Hant"; draw(); if (document.body.classList.contains("sheet")) sheet(); };
+$("btnVi").onclick = () => { ZH = false; $("btnVi").classList.add("on"); $("btnZh").classList.remove("on");
+  document.documentElement.lang = "vi"; draw(); if (document.body.classList.contains("sheet")) sheet(); };
+
+draw();
+</script>
+</body></html>
