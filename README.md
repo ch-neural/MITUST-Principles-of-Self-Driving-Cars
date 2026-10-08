@@ -19,7 +19,7 @@
 | [第三週](第三週%2809-24%29/) | 09/24 | 三節簡報（講稿在備忘稿）、中文與越南文學生講義、感測器實驗室（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week3/lab/)，手機可用）、A4 課堂練習學習單與教師解答 |
 | [第四週](第四週%2810-01%29/) | 10/01 | 三節簡報（講稿在備忘稿）、自駕模擬器（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week4/sim/)）|
 | [第五週](第五週%2810-08%29/) | 10/08 | 三節簡報（講稿在備忘稿）、規格判讀台（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week5/spec/)）、作業頁（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week5/hw/)）|
-| [第六週](第六週%2810-15%29/) | 10/15 | 規格判讀台第六週版：上週四顆加雷達、超音波、衛星定位、慣性各兩顆，五個情境（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week6/spec/)）、作業頁（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week6/hw/)）；簡報待定稿 |
+| [第六週](第六週%2810-15%29/) | 10/15 | 三節簡報（講稿在備忘稿）、規格判讀台第六週版：上週四顆加雷達、超音波、衛星定位、慣性各兩顆，五個情境（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week6/spec/)）、作業頁（[線上版](https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week6/hw/)）|
 
 第一、二週包含正式簡報、教師講稿、學生講義及需要的活動附件。第二週另提供中文、越南文學生講義，六組 A4 ODD 學習單與教師解答，以及第一至二週的雙語課程大綱與重點。第三週提供三節簡報（老師講稿放在簡報的備忘稿裡，不另附講稿檔）、中文與越南文各一份的學生講義、課堂用的感測器實驗室網頁與一份 A4 課堂練習學習單（含教師解答）。第四週提供三節簡報與課堂用的自駕模擬器（含固定式／旋轉式光達切換）。第五週提供三節簡報與課堂用的規格判讀台：學生在上面讀四個型號的規格表、找出四個關鍵數字，再算這顆在指定情境下夠不夠用。作業另外開一頁：學生在那一頁點「型號 × 情境」的任一格，判讀就在原地展開，看完直接選夠或不夠，填完按一顆鈕產生可以截圖交出來的作答單。作業頁的型號、情境與判定門檻都是從規格判讀台產生的，兩邊不會各說各話。第六週把判讀台加到十二個型號、五個情境（多了停車場、隧道），每顆有自己的四題，三個小工具換成雷達角解析度、定位精度對車道、IMU 撐多久；作業頁四張小表 22 格加結論句與四句對錯，流程與第五週相同。兩支課堂工具都以 HTTPS 公開：第三週感測器實驗室手機、平板、筆電都能操作，第四週自駕模擬器建議用筆電。網址：https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week3/lab/　與　https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week4/sim/
 
