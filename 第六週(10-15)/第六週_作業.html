@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第六週作業　雷達、超音波、衛星與慣性</title>
+<style>
+:root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+      --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B;--amber2:#8A5A00}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#EEF2F6;color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;font-size:14px;line-height:1.5}
+#wrap{max-width:760px;margin:0 auto;padding:10px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+h1{font-size:17px;margin:0;color:var(--navy)}
+h1 small{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:1px}
+.hwq{margin:0 0 4px;font-weight:700;font-size:14px;color:var(--navy)}
+.hwn{font-size:12px;color:var(--mute);margin-bottom:7px;line-height:1.5}
+button{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--teal)}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.go{background:var(--teal);color:#fff;border-color:var(--teal-d);font-weight:700}
+input,select{font-family:inherit;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);width:100%;min-height:36px}
+.grid{display:grid;gap:7px}.g2{grid-template-columns:1fr 1fr}
+.hwtab{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;margin-top:4px}
+.hwtab th,.hwtab td{border:1px solid var(--line);padding:0;text-align:center}
+.hwtab th{background:var(--card);font-weight:700;font-size:11.5px;padding:5px 3px;line-height:1.3}
+.hwtab td.mdl,.hwtab th.mdl{text-align:left;width:34%;font-size:12px;padding:6px 7px;background:var(--card);font-weight:700}
+.cell{display:block;width:100%;border:none;border-radius:0;background:none;padding:10px 2px;font-size:13px;color:var(--mute);min-height:40px}
+.cell.ok{background:#E8F6F0;color:#1C5E45;font-weight:700}
+.cell.ng{background:#FDECEC;color:#96271F;font-weight:700}
+.cell.open{outline:2px solid var(--teal);outline-offset:-2px}
+.exp td{padding:0;border-top:none}
+.expbox{background:var(--card);border-top:2px solid var(--teal);padding:10px 11px;text-align:left}
+.res{font-size:12.5px;color:var(--mute);line-height:1.5}
+.res b{color:var(--ink)}
+.res .big{display:block;font-size:13.5px;color:var(--navy);font-weight:700;margin:3px 0}
+.res .sm{display:block;font-size:11px;margin-top:2px}
+.line{display:flex;gap:8px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;margin-top:5px;background:#fff;font-size:12px;align-items:flex-start}
+.line .k{flex:0 0 42%;color:var(--navy2);font-weight:700}
+.line .v{flex:1 1 auto}
+.line .v.bad{color:var(--red)}.line .v.good{color:var(--ok)}.line .v.n{color:var(--mute)}.line .v.warn{color:var(--amber2)}
+.verdict{border-radius:7px;padding:8px 10px;margin-top:8px;font-size:12.5px;line-height:1.5}
+.verdict.pass{background:#E8F6F0;border:1px solid var(--ok);color:#1C5E45}
+.verdict.fail{background:#FDECEC;border:1px solid var(--red);color:#96271F}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.pick button{font-weight:700;font-size:14px;padding:10px}
+.pick button.sel{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tfrow{margin-top:7px}
+.tfrow select{margin-top:4px}
+.prog{font-size:12px;color:var(--mute);text-align:right}
+.prog b{color:var(--teal-d);font-size:14px}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.lang button{padding:5px 9px;font-size:11.5px}
+.foot{position:sticky;bottom:0;background:#EEF2F6;padding:8px 0 10px;margin-top:-2px}
+#sheet{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:14px 16px;display:none}
+#sheet h3{margin:0 0 2px;font-size:16px;color:var(--navy)}
+#sheet .who{font-size:14px;font-weight:700}
+#sheet .when{font-size:11.5px;color:var(--mute);margin-bottom:9px}
+#sheet .sec{font-size:12px;color:var(--teal-d);font-weight:700;margin:10px 0 3px}
+#sheet .ans{font-size:12.5px;line-height:1.55}
+#sheet .miss{color:var(--red)}
+#sheet .hwtab td{padding:5px 3px;font-size:12.5px}
+body.sheet #qs,body.sheet .foot button#btnSheet,body.sheet .foot button#btnWipe,body.sheet #wrap>.panel:first-child{display:none}
+button.danger{background:var(--red);color:#fff;border-color:var(--red)}
+body.sheet #sheet{display:block}
+body.sheet #wrap{padding-top:10px}
+.speclink{display:inline-block;margin-top:6px;font-size:12px;color:var(--teal-d)}
+@media (max-width:560px){
+  .hwtab td.mdl,.hwtab th.mdl{width:30%;font-size:11px}
+  .cell{font-size:12px}
+  .line{flex-wrap:wrap;gap:2px}
+  .line .k{flex:0 0 100%}
+  .line .v{flex:0 0 100%}
+}
+@media print{body{background:#fff}.foot,#qs{display:none}}
+</style>
+</head><body>
+<div id="wrap">
+  <div class="panel">
+    <div class="top">
+      <h1>第六週作業　雷達、超音波、衛星與慣性<small>Bài tuần 6 — Radar, siêu âm, vệ tinh và quán tính</small></h1>
+      <div class="lang"><button id="btnZh" class="on">中文</button><button id="btnVi">Tiếng Việt</button></div>
+    </div>
+    <div class="grid g2" style="margin-top:9px">
+      <input type="text" id="hwName"><input type="text" id="hwSid">
+    </div>
+    <div class="prog" style="margin-top:7px" id="progBox"></div>
+    <a class="speclink" id="specLink" href="https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week6/spec/" target="_blank" rel="noopener"></a>
+  </div>
+
+  <div id="qs">
+    <div id="tables"></div>
+    <div class="panel">
+      <div class="hwq" id="q5t"></div>
+      <div class="hwn" id="q5n"></div>
+      <select id="hwConcl"></select>
+    </div>
+    <div class="panel">
+      <div class="hwq" id="q6t"></div>
+      <div id="q6"></div>
+    </div>
+  </div>
+
+  <div id="sheet"></div>
+
+  <div class="foot">
+    <div class="grid g2">
+      <button id="btnSheet" class="go"></button>
+      <button id="btnWipe"></button>
+      <button id="btnBack" style="display:none"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MODELS = {"os1":{"name":"Ouster OS1-64","zh":"旋轉式光達","vi":"Lidar quay 360°","kind":"lidar","calc":{"type":"lidar","ch":64,"vfov":42.4,"cols":1024,"hfov":360,"hz":10,"range10":90,"modes":{"cols":[512,1024,2048],"hz":[10,20],"hzFor":{"512":[10,20],"1024":[10,20],"2048":[10]}}}},"at128":{"name":"Hesai AT128P","zh":"固定式前向光達","vi":"Lidar cố định hướng trước","kind":"lidar","calc":{"type":"lidar","ch":128,"vfov":25.4,"cols":1200,"hfov":120,"hz":10,"range10":210,"dh":0.1,"dv":0.2}},"ar0233":{"name":"onsemi AR0233AT","zh":"車用影像感測器","vi":"Cảm biến ảnh ô tô","kind":"cam","calc":{"type":"cam","px":2048,"pitch":3,"f":8,"h":1.5}},"ld16":{"name":"LD-16","zh":"便宜的 16 線光達（教學用）","vi":"Lidar 16 kênh giá rẻ (tự đặt)","kind":"lidar","calc":{"type":"lidar","ch":16,"vfov":30,"cols":900,"hfov":360,"hz":10,"range10":40}},"ars408":{"name":"Continental ARS 408-21","zh":"77 GHz 長距雷達（2018）","vi":"Radar tầm xa 77 GHz (2018)","kind":"radar","calc":{"type":"radar","rangeFar":250,"rangeNear":70,"fovFar":9,"fovNear":60,"azRes":1.6,"elev":false,"velRes":0.37,"cycle":72}},"ars548":{"name":"AUMOVIO ARS 548 RDI","zh":"77 GHz 4D 成像雷達（2025）","vi":"Radar 4D 77 GHz (2025)","kind":"radar","calc":{"type":"radar","rangeFar":300,"rangeNear":null,"fovFar":60,"fovNear":null,"azRes":1.2,"azResNote":["用波束寬當上限","lấy độ rộng chùm làm giới hạn"],"elev":true,"elevAcc":0.1,"velRes":0.35,"cycle":50}},"hcsr04":{"name":"HC-SR04","zh":"教學用超音波模組（幾十塊台幣）","vi":"Mô-đun siêu âm học tập (vài chục nghìn đồng)","kind":"sonar","calc":{"type":"sonar","rangeMax":4,"rangeMin":0.02,"angle":15,"freq":40,"cycle":60}},"uss65":{"name":"Bosch USS Gen 6 (6.5)","zh":"車用超音波感測器","vi":"Cảm biến siêu âm ô tô","kind":"sonar","calc":{"type":"sonar","rangeMax":5.5,"rangeMin":0.15,"angle":null,"freq":"43–60","cycle":null}},"neom8n":{"name":"u-blox NEO-M8N","zh":"單頻衛星定位模組（導航等級）","vi":"Mô-đun GNSS một tần (cấp dẫn đường)","kind":"gnss","calc":{"type":"gnss","cep":2.5,"cepRTK":null,"ppm":0,"rate":5,"ttff":26}},"zedf9p":{"name":"u-blox ZED-F9P","zh":"多頻 RTK 衛星定位模組（公分級）","vi":"Mô-đun GNSS đa tần RTK (cấp cm)","kind":"gnss","calc":{"type":"gnss","cep":1.5,"cepRTK":0.01,"ppm":1,"rate":8,"ttff":25,"conv":10}},"icm20948":{"name":"TDK ICM-20948","zh":"手機等級九軸 IMU（3 × 3 mm）","vi":"IMU 9 trục cấp điện thoại (3 × 3 mm)","kind":"imu","calc":{"type":"imu","bias":null,"zro":5,"zroTemp":0.05,"noise":0.015,"rate":1125}},"adis16470":{"name":"Analog Devices ADIS16470","zh":"工業級 MEMS IMU","vi":"IMU MEMS cấp công nghiệp","kind":"imu","calc":{"type":"imu","bias":8,"arw":0.34,"rate":2000}}};
+const SCENES = {"campus":{"zh":"校園接駁","vi":"Xe đưa đón trong trường","v":20,"d":40,"margin":5,"tgt":{"w":0.5,"h":1.7,"zh":"行人","vi":"người đi bộ"},"zhNote":"時速 20，要在 40 公尺外認出行人","viNote":"20 km/h, nhận ra người ở 40 m","sky":"open","outage":1,"skyZh":"校園開闊，天空看得到","skyVi":"Sân trường thoáng, thấy trời","outZh":"偶爾被樹或屋簷擋 1 秒","outVi":"Thỉnh thoảng bị cây che 1 s"},"hanoi":{"zh":"河內尖峰","vi":"Giờ cao điểm Hà Nội","v":40,"d":40,"margin":5,"tgt":{"w":0.8,"h":1.6,"zh":"機車","vi":"xe máy"},"zhNote":"時速 40，要在 40 公尺外認出機車","viNote":"40 km/h, nhận ra xe máy ở 40 m","sky":"canyon","outage":10,"skyZh":"高樓窄巷：訊號會從牆上反射（多路徑）","skyVi":"Phố hẹp nhà cao: tín hiệu dội tường (đa đường)","outZh":"本課假設一段窄巷有 10 秒算不出可靠的位置","outVi":"Lớp giả định 10 s không có vị trí tin được"},"hiway":{"zh":"國道","vi":"Đường cao tốc","v":100,"d":150,"margin":5,"tgt":{"w":1.8,"h":1.5,"zh":"汽車","vi":"ô tô"},"zhNote":"時速 100，要在 150 公尺外看到車","viNote":"100 km/h, thấy xe ở 150 m","sky":"open","outage":1,"skyZh":"國道開闊，天空看得到","skyVi":"Cao tốc thoáng, thấy trời","outZh":"過一座跨越橋大約斷 1 秒","outVi":"Qua một cây cầu vượt mất khoảng 1 s"},"park":{"zh":"停車場","vi":"Bãi đỗ xe","v":5,"d":2,"margin":0.5,"tgt":{"w":0.3,"h":1.1,"zh":"小孩","vi":"trẻ em"},"zhNote":"時速 5，倒車時要在 2 公尺外看到小孩；室內","viNote":"5 km/h, lùi xe phải thấy trẻ em ở 2 m; trong nhà","sky":"none","outage":60,"skyZh":"室內停車場，完全收不到衛星","skyVi":"Bãi xe trong nhà, không có vệ tinh","outZh":"整段倒車入庫約 60 秒都沒有衛星","outVi":"Cả đoạn lùi vào chỗ ~60 s không có vệ tinh"},"tunnel":{"zh":"隧道","vi":"Đường hầm","v":80,"d":100,"margin":5,"tgt":{"w":1.8,"h":1.5,"zh":"汽車","vi":"ô tô"},"zhNote":"時速 80，要在 100 公尺外看到車；雪山隧道 12.9 km","viNote":"80 km/h, thấy xe ở 100 m; hầm Tuyết Sơn 12,9 km","sky":"none","outage":580,"skyZh":"隧道裡完全收不到衛星","skyVi":"Trong hầm không có vệ tinh","outZh":"12.9 km ÷ 80 km/h ≈ 580 秒沒有衛星","outVi":"12,9 km ÷ 80 km/h ≈ 580 s không có vệ tinh"}};
+const CONST = {"MIN_PTS":10,"MAX_ERR":1.5,"LANE_W":3.5,"POS_ERR":0.5,"BASE_KM":20,"IMU_DPS":0.5,"IMU_DT":10,"SOUND":340};
+const DEF_COLS = 1024, DEF_HZ = 10;
+const HW_Q = [{"key":"q1","models":["ars408","ars548"],"scenes":["campus","hanoi","hiway"],"zh":"第一題　雷達兩顆 × 三個情境（和上週那張表比）","vi":"Câu 1 — Hai radar × ba tình huống (so với bảng tuần trước)","nZh":"點表格裡的<b>任何一格</b>，那一組合的判讀就在底下展開，看完選「夠」或「不夠」。做完拿出上週的作答單：國道那一欄 AT128P 過了但只剩 12 個點，ARS 408 測距 250 m 綽綽有餘，卻卡在另一行。","nVi":"Bấm <b>bất kỳ ô nào</b>, phần đọc sẽ mở ra bên dưới; xem xong chọn «Đủ» hoặc «Không đủ». Làm xong lấy phiếu tuần trước ra: cột cao tốc AT128P đủ nhưng chỉ còn 12 điểm, ARS 408 tầm 250 m thừa sức nhưng tắc ở dòng khác."},{"key":"q2","models":["hcsr04","uss65"],"scenes":["park","campus"],"zh":"第二題　超音波兩顆 × 停車場、校園","vi":"Câu 2 — Hai siêu âm × bãi đỗ xe, sân trường","nZh":"一顆是幾十塊台幣的教學模組，一顆是車用的。兩個情境只差在車速：時速 5 和時速 20。","nVi":"Một cái là mô-đun học tập vài chục nghìn, một cái là linh kiện ô tô. Hai tình huống chỉ khác tốc độ: 5 và 20 km/h."},{"key":"q3","models":["neom8n","zedf9p"],"scenes":["campus","hanoi","tunnel"],"zh":"第三題　衛星定位兩顆 × 校園、河內、隧道","vi":"Câu 3 — Hai GNSS × sân trường, Hà Nội, hầm","nZh":"這一題問的不是「看不看得到」，是「知不知道自己在哪個車道」。注意河內那一欄：RTK 本來 1 公分，一失鎖就退回 1.5 公尺。","nVi":"Câu này không hỏi «thấy không» mà hỏi «biết mình ở làn nào không». Chú ý cột Hà Nội: RTK vốn 1 cm, mất khoá là lùi về 1,5 m."},{"key":"q4","models":["icm20948","adis16470"],"scenes":["hanoi","park","tunnel"],"zh":"第四題　慣性兩顆 × 河內、停車場、隧道","vi":"Câu 4 — Hai IMU × Hà Nội, bãi đỗ xe, hầm","nZh":"問的是「衛星斷掉那幾秒，它撐不撐得住」。手機級的規格書沒印偏差穩定度，判讀用的是本課的估計值（0.5 °/s），展開的那一行會標琥珀色。","nVi":"Hỏi «mấy giây mất vệ tinh, nó giữ được không». Datasheet cấp điện thoại không in độ ổn định; phần đọc dùng ước lượng của lớp (0,5 °/s), dòng đó tô màu hổ phách."}], HW_CONCL = [["雪山隧道裡沒有一顆 IMU 撐得住：8 °/h 的也只撐 34 秒，隧道要 580 秒。所以隧道裡要靠相機看車道線、輪速和高精地圖來補，不是換一顆更貴的 IMU。","Trong hầm Tuyết Sơn không IMU nào giữ nổi: loại 8 °/h cũng chỉ 34 s, hầm cần 580 s. Nên trong hầm phải nhờ camera nhìn vạch làn, tốc độ bánh và bản đồ HD, không phải đổi IMU đắt hơn."],["雪山隧道裡 ADIS16470 撐得住，因為它是工業級，比手機級好兩百倍。","Trong hầm Tuyết Sơn ADIS16470 giữ được vì nó là cấp công nghiệp, tốt hơn cấp điện thoại 200 lần."],["隧道裡用 ZED-F9P 的 RTK 就可以了，它的精度是 1 公分。","Trong hầm dùng RTK của ZED-F9P là được, độ chính xác 1 cm."],["IMU 不好用。","IMU không tốt."]], HW_TF = [["① 雷達測距 250 公尺，所以 150 公尺外的車，它一定知道在哪一個車道。","① Radar đo 250 m, nên xe ở 150 m nó chắc chắn biết ở làn nào."],["② 超音波量不到 5 公尺以外的東西，所以它沒有用。","② Siêu âm không đo được quá 5 m, nên nó vô dụng."],["③ 規格表寫精度 2.5 m，表示每一次定位的誤差都不會超過 2.5 m。","③ Bảng ghi độ chính xác 2,5 m, nghĩa là mỗi lần định vị sai số không vượt 2,5 m."],["④ IMU 不靠外界，所以隧道裡靠它就夠了。","④ IMU không cần bên ngoài, nên trong hầm chỉ cần nó là đủ."]], HW_WHY = [[["測距夠不代表分得出車道：1.6° 在 150 公尺攤成 4.2 公尺，比一個車道（3.5 m）還寬。","Tầm đo đủ không có nghĩa là biết làn: 1,6° ở 150 m rộng 4,2 m, hơn một làn (3,5 m)."],["因為雷達在下雨的時候看不到。","Vì radar không thấy khi mưa."],["因為 150 公尺超過它的近場 70 公尺。","Vì 150 m vượt vùng gần 70 m."],["測距寫 250 公尺就是 250 公尺內什麼都量得準，包括在哪一道。","Ghi 250 m là trong 250 m cái gì cũng đo đúng, kể cả làn."]],[["停車場時速 5、2 公尺內，它最便宜又夠用；每一種感測器各有自己的情境，沒有一種三個情境都贏。","Bãi đỗ xe 5 km/h, trong 2 m, nó rẻ nhất mà đủ; mỗi cảm biến có tình huống riêng, không cái nào thắng cả ba."],["因為它可以換成更貴的型號，量到 50 公尺。","Vì có thể đổi sang loại đắt hơn đo 50 m."],["因為它比光達準。","Vì nó chính xác hơn lidar."],["看不到 5 公尺以外的感測器，裝在車上根本沒有意義。","Cảm biến không thấy quá 5 m thì gắn lên xe vô nghĩa."]],[["CEP 是 50%：一半的定位點在 2.5 公尺內，另一半在外面。跟上週「>90% detection probability」一樣，是機率，不是保證。","CEP là 50%: một nửa số điểm trong 2,5 m, nửa kia ngoài. Giống «>90% detection probability» tuần trước: xác suất, không phải bảo đảm."],["因為精度要看天氣，下雨會變差。","Vì độ chính xác tuỳ thời tiết, mưa thì kém."],["因為那是在實驗室量的，路上量不到。","Vì đo trong phòng thí nghiệm, ra đường thì không."],["規格表上的數字就是廠商保證的上限，寫 2.5 m 就不會超過 2.5 m。","Số trong bảng là giới hạn hãng bảo đảm, ghi 2,5 m thì không vượt 2,5 m."]],[["它會漂：橫向誤差隨時間平方長，8 °/h 的在時速 80 下 34 秒就偏 0.5 公尺；隧道要靠別的東西補。","Nó trôi: sai số ngang tăng theo bình phương thời gian; loại 8 °/h ở 80 km/h sau 34 s đã lệch 0,5 m; trong hầm phải nhờ thứ khác."],["因為隧道裡沒有光，IMU 看不到。","Vì trong hầm không có ánh sáng, IMU không thấy."],["因為 IMU 的更新率太慢。","Vì tốc độ cập nhật của IMU quá chậm."],["IMU 完全不靠外界，所以外界怎麼變它都不會錯。","IMU hoàn toàn không cần bên ngoài, nên bên ngoài thế nào nó cũng không sai."]]];
+</script>
+<script>
+/* 判定：一顆感測器放進一個情境，夠不夠用。判讀台和作業頁都直接嵌這一個檔，
+ * 所以兩邊永遠是同一套算式（src/verify_hw.js 還是會逐格比對一次）。
+ *
+ * 寫成純瀏覽器 JS，不用任何外面的東西；build_*.js 把這個檔的原文塞進 <script>。
+ * Node 要用的時候 require 進來（最後一行）。
+ *
+ *   judge(m, s, C, L, opt) → { ok, kind, head, lines, pts }
+ *     m    型號（MODELS[k]），用 m.calc
+ *     s    情境（SCENES[k]）
+ *     C    門檻（CONST）
+ *     L    (zh, vi) => 目前語言的那一句
+ *     opt  { cols, hz }：OS1 的可設定模式
+ *   lines 的每一項是 [標籤, 說明, good]，good 是 true／false／null（灰色：只是代價，不是門檻）／"warn"
+ *   kind  "see"（看得到東西嗎）／"pos"（知道自己在哪嗎）／"hold"（撐得過沒衛星的這段嗎）
+ */
+const R = Math.PI / 180;
+const brake = (v) => { const ms = v / 3.6; return ms * 0.3 + ms * ms / 12; };
+const fmt = (x, n) => (Math.round(x * Math.pow(10, n)) / Math.pow(10, n)).toFixed(n);
+
+function judge(m, s, C, L, opt) {
+  const c = m.calc, T = s.tgt, v = s.v / 3.6;
+  const need = brake(s.v) + s.margin, rm = Math.max(need, s.d);
+  const lines = [];
+  let ok = true, pts = 0, kind = "see", head = {};
+  const seeHead = () => ({ brake: brake(s.v), need, rm, margin: s.margin });
+
+  if (c.type === "lidar") {
+    head = seeHead();
+    const cols = opt && opt.cols ? opt.cols : (c.modes ? 1024 : c.cols);
+    const hz = c.modes ? (opt && opt.hz ? opt.hz : 10) : c.hz;
+    const dv = c.dv || c.vfov / (c.ch - 1);
+    const dh = c.dh || c.hfov / (c.modes ? cols : c.cols);
+    pts = (() => {
+      const nv = Math.min(c.ch, 2 * Math.atan(T.h / 2 / s.d) / R / dv);
+      const nh = 2 * Math.atan(T.w / 2 / s.d) / R / dh;
+      return Math.max(0, Math.floor(nv)) * Math.max(0, Math.floor(nh));
+    })();
+    const reach = c.range10 >= rm;
+    if (!reach) ok = false;
+    lines.push([L("測距 " + c.range10 + " m", "Tầm " + c.range10 + " m"),
+      reach ? L("夠，門檻 " + rm.toFixed(0) + " m", "Đủ, ngưỡng " + rm.toFixed(0) + " m")
+            : L("不夠，門檻 " + rm.toFixed(0) + " m，差 " + (rm - c.range10).toFixed(0) + " m",
+                "Thiếu " + (rm - c.range10).toFixed(0) + " m so với ngưỡng " + rm.toFixed(0) + " m"), reach]);
+    lines.push([L("角解析度 " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°", "Phân giải " + dh.toFixed(2) + "° × " + dv.toFixed(2) + "°"),
+      L(s.d + " m 的" + T.zh + "身上有 " + pts + " 個點，門檻 " + C.MIN_PTS + " 個",
+        T.vi + " ở " + s.d + " m có " + pts + " điểm, ngưỡng " + C.MIN_PTS), pts >= C.MIN_PTS]);
+    if (pts < C.MIN_PTS) ok = false;
+    lines.push([L("更新率 " + hz + " Hz", hz + " Hz"),
+      L("每 " + (1000 / hz).toFixed(0) + " 毫秒一張；這段時間車子前進 " + (v / hz).toFixed(1) + " m",
+        "Mỗi " + (1000 / hz).toFixed(0) + " ms một khung; xe đi " + (v / hz).toFixed(1) + " m"), null]);
+
+  } else if (c.type === "cam") {
+    head = seeHead();
+    const fov = 2 * Math.atan(c.px * c.pitch / 1000 / 2 / c.f) / R;
+    const th = fov / c.px * R;
+    const err = s.d * s.d * th / c.h;
+    lines.push([L("配 " + c.f + " mm 鏡頭 → 視野 " + fov.toFixed(0) + "°", "Ống kính " + c.f + " mm → " + fov.toFixed(0) + "°"),
+      L("感測器規格表沒有視野，是鏡頭決定的", "Bảng cảm biến không có góc nhìn"), null]);
+    lines.push([L("每像素 " + (fov / c.px).toFixed(4) + "°", "Mỗi điểm ảnh " + (fov / c.px).toFixed(4) + "°"),
+      L(s.d + " m 處估距誤差 ±" + err.toFixed(2) + " m，門檻 ±" + C.MAX_ERR + " m",
+        "Sai số ở " + s.d + " m: ±" + err.toFixed(2) + " m, ngưỡng ±" + C.MAX_ERR + " m"), err < C.MAX_ERR]);
+    if (err >= C.MAX_ERR) ok = false;
+    lines.push([L("更新率 60 fps", "60 fps"),
+      L("每 17 毫秒一張；這段時間車子前進 " + (v / 60).toFixed(2) + " m", "Mỗi 17 ms; xe đi " + (v / 60).toFixed(2) + " m"), null]);
+    lines.push([L("測距", "Đo khoảng cách"),
+      L("規格表上沒有，距離是算出來的，而且要假設路面是平的", "Không có trong bảng"), null]);
+
+  } else if (c.type === "radar") {
+    head = seeHead();
+    const reach = c.rangeFar >= rm;
+    if (!reach) ok = false;
+    lines.push([L("測距 " + c.rangeFar + " m（遠場）", "Tầm " + c.rangeFar + " m (vùng xa)"),
+      reach ? L("夠，門檻 " + rm.toFixed(0) + " m", "Đủ, ngưỡng " + rm.toFixed(0) + " m")
+            : L("不夠，門檻 " + rm.toFixed(0) + " m", "Thiếu so với ngưỡng " + rm.toFixed(0) + " m"), reach]);
+    if (c.fovNear != null) {
+      const near = s.d <= c.rangeNear;
+      lines.push([L("視野", "Góc nhìn"),
+        near ? L(s.d + " m 在近場：±" + c.fovNear + "°，近場測距 " + c.rangeNear + " m", s.d + " m thuộc vùng gần: ±" + c.fovNear + "°, tầm " + c.rangeNear + " m")
+             : L(s.d + " m 已經在遠場：只有 ±" + c.fovFar + "°，側面切進來的看不到", s.d + " m thuộc vùng xa: chỉ ±" + c.fovFar + "°, không thấy xe cắt ngang từ bên"),
+        near ? null : "warn"]);
+    } else {
+      lines.push([L("視野 ±" + c.fovFar + "°", "Góc nhìn ±" + c.fovFar + "°"),
+        L("一組視野管到底，沒有分遠近場", "Một góc nhìn cho mọi khoảng cách"), null]);
+    }
+    const sep = s.d * Math.tan(c.azRes * R);
+    const lane = sep <= C.LANE_W;
+    if (!lane) ok = false;
+    lines.push([L("角解析度 " + c.azRes + "°" + (c.azResNote ? "（" + c.azResNote[0] + "）" : ""),
+                  "Phân giải " + c.azRes + "°" + (c.azResNote ? " (" + c.azResNote[1] + ")" : "")),
+      L(s.d + " m 處一束攤成 " + sep.toFixed(1) + " m，" + (lane ? "比一個車道窄，分得出在哪一道" : "比一個車道還寬，分不出在哪一道") + "（門檻 " + C.LANE_W + " m）",
+        "Ở " + s.d + " m chùm rộng " + sep.toFixed(1) + " m, " + (lane ? "hẹp hơn một làn, biết ở làn nào" : "rộng hơn một làn, không biết ở làn nào") + " (ngưỡng " + C.LANE_W + " m)"), lane]);
+    const twoW = 1.0;
+    lines.push([L("兩台並排的" + T.zh, "Hai " + T.vi + " đi song song"),
+      sep < twoW ? L("相隔 1 m 分得開，是兩個目標", "Cách nhau 1 m vẫn tách được: hai mục tiêu")
+                 : L("相隔 1 m 會黏成一個目標（一束 " + sep.toFixed(1) + " m 比縫還寬）", "Cách nhau 1 m sẽ dính thành một mục tiêu (chùm " + sep.toFixed(1) + " m rộng hơn khe)"), null]);
+    lines.push([L("高度", "Độ cao"),
+      c.elev ? L("量得出高度（準確度 ±" + c.elevAcc + "°）：分得出橋下的車和橋", "Đo được độ cao (±" + c.elevAcc + "°): tách được xe dưới cầu và cầu")
+             : L("沒有高度：橋和橋下的車、路上的輪胎分不出來，容易把靜止的東西丟掉", "Không có độ cao: cầu và xe dưới cầu, lốp trên đường không tách được"), null]);
+    lines.push([L("速度解析度 " + c.velRes + " km/h", "Phân giải tốc độ " + c.velRes + " km/h"),
+      L("速度是直接量到的，不用等下一張畫面", "Tốc độ đo trực tiếp, không cần đợi khung sau"), null]);
+    const hz = 1000 / c.cycle;
+    lines.push([L("更新：每 " + c.cycle + " 毫秒一輪（" + hz.toFixed(0) + " Hz）", "Mỗi " + c.cycle + " ms một chu kỳ (" + hz.toFixed(0) + " Hz)"),
+      L("這段時間車子前進 " + (v * c.cycle / 1000).toFixed(1) + " m", "Xe đi " + (v * c.cycle / 1000).toFixed(1) + " m"), null]);
+
+  } else if (c.type === "sonar") {
+    head = seeHead();
+    const reach = c.rangeMax >= rm;
+    if (!reach) ok = false;
+    lines.push([L("測距 " + c.rangeMax + " m（最近 " + c.rangeMin + " m）", "Tầm " + c.rangeMax + " m (gần nhất " + c.rangeMin + " m)"),
+      reach ? L("夠，門檻 " + rm.toFixed(0) + " m", "Đủ, ngưỡng " + rm.toFixed(0) + " m")
+            : L("不夠，門檻 " + rm.toFixed(0) + " m，差 " + (rm - c.rangeMax).toFixed(1) + " m", "Thiếu " + (rm - c.rangeMax).toFixed(1) + " m so với ngưỡng " + rm.toFixed(0) + " m"), reach]);
+    if (c.angle != null) {
+      const wid = 2 * s.d * Math.tan(c.angle / 2 * R);
+      lines.push([L("波束角 " + c.angle + "°", "Góc chùm " + c.angle + "°"),
+        L(s.d + " m 處只蓋到 " + wid.toFixed(1) + " m 寬，車頭要裝好幾顆", "Ở " + s.d + " m chỉ phủ " + wid.toFixed(1) + " m, đầu xe phải gắn nhiều cái"), null]);
+    } else {
+      lines.push([L("波束角", "Góc chùm"), L("規格表上沒有這一行", "Bảng không có dòng này"), null]);
+    }
+    const rt = 2 * c.rangeMax / C.SOUND * 1000;
+    const cyc = c.cycle || rt;
+    lines.push([L("更新：聲速 " + C.SOUND + " m/s", "Tốc độ âm " + C.SOUND + " m/s"),
+      L(c.rangeMax + " m 來回 " + rt.toFixed(0) + " 毫秒" + (c.cycle ? "；建議每 " + c.cycle + " 毫秒量一次" : "；表上沒寫週期") + "；這段時間車子前進 " + (v * cyc / 1000).toFixed(2) + " m",
+        c.rangeMax + " m đi về " + rt.toFixed(0) + " ms" + (c.cycle ? "; nên đo mỗi " + c.cycle + " ms" : "") + "; xe đi " + (v * cyc / 1000).toFixed(2) + " m"), null]);
+    if (s.v > 20) lines.push([L("車速", "Tốc độ"),
+      L("時速 " + s.v + "：煞停 " + brake(s.v).toFixed(0) + " m 早就超過它看得到的距離——超音波是停車用的", "Ở " + s.v + " km/h, quãng phanh " + brake(s.v).toFixed(0) + " m đã vượt tầm nhìn của nó — siêu âm là để đỗ xe"), "warn"]);
+
+  } else if (c.type === "gnss") {
+    kind = "pos";
+    let eff = null, how = "";
+    if (s.sky === "none") { ok = false; }
+    else if (s.sky === "open" && c.cepRTK != null) { eff = c.cepRTK + c.ppm * C.BASE_KM / 1000; how = "rtk"; }
+    else { eff = c.cep; how = c.cepRTK != null ? "lost" : "plain"; }
+    head = { sky: s.sky, eff, how };
+    lines.push([L("天空", "Bầu trời"),
+      L(s.skyZh, s.skyVi), s.sky === "none" ? false : s.sky === "canyon" ? "warn" : null]);
+    if (s.sky === "none") {
+      lines.push([L("精度", "Độ chính xác"), L("收不到衛星，沒有位置可言", "Không có vệ tinh, không có vị trí"), false]);
+    } else {
+      const good = eff <= C.POS_ERR;
+      if (!good) ok = false;
+      const txt = how === "rtk"
+        ? L("RTK：0.01 m + 1 ppm，基準站 " + C.BASE_KM + " km → " + eff.toFixed(2) + " m，門檻 " + C.POS_ERR + " m", "RTK: 0,01 m + 1 ppm, trạm gốc " + C.BASE_KM + " km → " + eff.toFixed(2) + " m, ngưỡng " + C.POS_ERR + " m")
+        : how === "lost"
+        ? L("多路徑讓 RTK 失鎖，退回單機解 " + c.cep + " m CEP，門檻 " + C.POS_ERR + " m", "Đa đường làm mất RTK, còn " + c.cep + " m CEP, ngưỡng " + C.POS_ERR + " m")
+        : L(c.cep + " m CEP（一半的點落在 " + c.cep + " m 內），門檻 " + C.POS_ERR + " m", c.cep + " m CEP (một nửa số điểm trong " + c.cep + " m), ngưỡng " + C.POS_ERR + " m");
+      lines.push([L("精度", "Độ chính xác"), txt, good]);
+    }
+    lines.push([L("更新率 " + c.rate + " Hz", c.rate + " Hz"),
+      L("每 " + (1000 / c.rate).toFixed(0) + " 毫秒一個位置；這段時間車子前進 " + (v / c.rate).toFixed(1) + " m",
+        "Mỗi " + (1000 / c.rate).toFixed(0) + " ms một vị trí; xe đi " + (v / c.rate).toFixed(1) + " m"), null]);
+    lines.push([L("冷開機 " + c.ttff + " 秒", "Khởi động lạnh " + c.ttff + " s"),
+      L("開機後要等這麼久才有第一個位置", "Bật máy phải đợi chừng này mới có vị trí đầu tiên"), null]);
+
+  } else if (c.type === "imu") {
+    kind = "hold";
+    const biasDh = c.bias != null ? c.bias : C.IMU_DPS * 3600;
+    const b = biasDh / 3600 * R;
+    const tHold = Math.sqrt(2 * C.POS_ERR / (v * b));
+    head = { biasDh, tHold, outage: s.outage };
+    lines.push([L("陀螺儀偏差", "Độ trôi con quay"),
+      c.bias != null
+        ? L(c.bias + " °/h（規格表 In-Run Bias Stability 那一行）", c.bias + " °/h (dòng In-Run Bias Stability)")
+        : L("規格表沒有這一行；本課用溫度係數 " + c.zroTemp + " °/s/°C × " + C.IMU_DT + " °C = " + C.IMU_DPS + " °/s（" + biasDh + " °/h）估",
+            "Bảng không có dòng này; lớp ước lượng " + c.zroTemp + " °/s/°C × " + C.IMU_DT + " °C = " + C.IMU_DPS + " °/s (" + biasDh + " °/h)"),
+      c.bias != null ? null : "warn"]);
+    const hold = tHold >= s.outage;
+    if (!hold) ok = false;
+    lines.push([L("撐多久", "Giữ được bao lâu"),
+      L("橫向誤差 ≈ 車速 × 偏差 × t² ÷ 2 → " + tHold.toFixed(0) + " 秒內偏不到 " + C.POS_ERR + " m；這裡要撐 " + s.outage + " 秒（" + s.outZh + "）",
+        "Sai số ngang ≈ v × trôi × t² ÷ 2 → " + tHold.toFixed(0) + " s mới lệch " + C.POS_ERR + " m; ở đây cần " + s.outage + " s (" + s.outVi + ")"), hold]);
+    lines.push([L("更新率 " + c.rate + " Hz", c.rate + " Hz"),
+      L("一秒給幾百到上千次，隧道裡照常工作——它不靠外界", "Hàng trăm đến hàng nghìn lần mỗi giây, trong hầm vẫn chạy — không cần bên ngoài"), null]);
+  }
+  return { ok, kind, head, lines, pts };
+}
+
+
+</script>
+<script>
+// 第六週作業頁的畫面程式。資料與 judge() 由 build_hw.js 先塞進頁面。
+const $ = (id) => document.getElementById(id);
+let ZH = true;
+const L = (zh, vi) => (ZH ? zh : vi);
+
+// ── 存檔：存在這台裝置上，切分頁或關掉再開都還在 ──
+const HW_KEY = "w6hw";
+const blank = () => ({ name: "", sid: "", g: {}, concl: "", tf: [["", ""], ["", ""], ["", ""], ["", ""]] });
+let HW = blank();
+try { const r = localStorage.getItem(HW_KEY); if (r) HW = Object.assign(blank(), JSON.parse(r)); } catch (e) {}
+const save = () => { try { localStorage.setItem(HW_KEY, JSON.stringify(HW)); } catch (e) {} };
+
+const cls = (g) => (g === null ? "n" : g === "warn" ? "warn" : g ? "good" : "bad");
+const mark = (g) => (g === null ? "" : g === "warn" ? "　⚠" : g ? "　✓" : "　✗");
+
+// 判讀區的 HTML：和判讀台用同一個 judge()，抬頭依「這一顆在回答哪一種問題」換
+function calcHtml(mk, sk) {
+  const m = MODELS[mk], s = SCENES[sk];
+  const r = judge(m, s, CONST, L, { cols: DEF_COLS, hz: DEF_HZ });
+  let h = '<div class="res"><b>' + m.name + " × " + L(s.zh, s.vi) + "</b>　";
+  if (r.kind === "see") {
+    h += L(s.zhNote, s.viNote) + '<span class="big">' +
+      L("煞停要 " + r.head.brake.toFixed(1) + " m，加餘裕 " + r.head.margin + " m → " + r.head.need.toFixed(1) + " m；目標在 " + s.d + " m　→　測距門檻 " + r.head.rm.toFixed(0) + " m",
+        "Dừng " + r.head.brake.toFixed(1) + " m, cộng dự phòng " + r.head.margin + " m → " + r.head.need.toFixed(1) + " m; vật ở " + s.d + " m → ngưỡng " + r.head.rm.toFixed(0) + " m") + "</span>";
+  } else if (r.kind === "pos") {
+    h += L(s.skyZh, s.skyVi) + '<span class="big">' +
+      L("問的是「知不知道自己在哪個車道」：橫向誤差要 ≤ " + CONST.POS_ERR + " m", "Hỏi «biết mình ở làn nào không»: sai số ngang ≤ " + CONST.POS_ERR + " m") + "</span>";
+  } else {
+    h += L(s.outZh, s.outVi) + '<span class="big">' +
+      L("問的是「衛星斷掉 " + s.outage + " 秒，它撐不撐得住」：橫向誤差要 ≤ " + CONST.POS_ERR + " m", "Hỏi «mất vệ tinh " + s.outage + " s, nó giữ được không»: sai số ngang ≤ " + CONST.POS_ERR + " m") + "</span>";
+  }
+  h += "</div>";
+  h += r.lines.map(([k, v, g]) => '<div class="line"><div class="k">' + k + '</div><div class="v ' + cls(g) + '">' + v + mark(g) + "</div></div>").join("");
+  const V = r.kind === "see"
+    ? [L("這一顆在這個情境撐得住。接下來要問的是價錢、功耗和裝得上去嗎。", "Model này đủ dùng. Câu hỏi tiếp theo là giá, điện và chỗ lắp."),
+       L("這一顆在這個情境不夠用。上面打 ✗ 那一行就是卡住的地方。", "Không đủ. Dòng có dấu ✗ ở trên là chỗ bị chặn.")]
+    : r.kind === "pos"
+    ? [L("這一顆在這個情境知道自己在哪個車道。", "Model này biết mình ở làn nào."),
+       L("這一顆在這個情境不知道自己在哪個車道。打 ✗ 那一行就是原因。", "Không biết mình ở làn nào. Dòng ✗ là lý do.")]
+    : [L("衛星斷掉的這段時間，它撐得住。", "Trong lúc mất vệ tinh, nó giữ được."),
+       L("撐不到這段時間結束。要靠別的東西來補——輪速、相機看車道線、高精地圖（第五章）。", "Không giữ được tới cuối. Phải nhờ thứ khác — tốc độ bánh xe, camera nhìn vạch làn, bản đồ HD (chương 5).")];
+  h += '<div class="verdict ' + (r.ok ? "pass" : "fail") + '">' + (r.ok ? V[0] : V[1]) + "</div>";
+  return h;
+}
+
+// ── 四張表：點一格就地展開 ──
+let openCell = "";
+function tables() {
+  const cellTxt = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không đủ") : "—";
+  $("tables").innerHTML = HW_Q.map((q) => {
+    let h = '<div class="panel"><div class="hwq">' + L(q.zh, q.vi) + '</div><div class="hwn">' + L(q.nZh, q.nVi) + "</div>";
+    h += '<table class="hwtab"><tr><th class="mdl"></th>' + q.scenes.map((sk) =>
+      "<th>" + L(SCENES[sk].zh, SCENES[sk].vi) + "<br>" + SCENES[sk].v + " km/h</th>").join("") + "</tr>";
+    for (const mk of q.models) {
+      h += '<tr><td class="mdl">' + MODELS[mk].name + "</td>" + q.scenes.map((sk) => {
+        const key = mk + "_" + sk, v = HW.g[key] || "";
+        return '<td><button class="cell ' + v + (openCell === key ? " open" : "") + '" data-cell="' + key + '">' + cellTxt(v) + "</button></td>";
+      }).join("") + "</tr>";
+      if (openCell && openCell.startsWith(mk + "_") && q.scenes.includes(openCell.slice(mk.length + 1))) {
+        const sk = openCell.slice(mk.length + 1), v = HW.g[openCell] || "";
+        h += '<tr class="exp"><td colspan="' + (q.scenes.length + 1) + '"><div class="expbox">' + calcHtml(mk, sk) +
+          '<div class="pick"><button data-pick="ok" class="' + (v === "ok" ? "sel" : "") + '">' + L("夠", "Đủ") +
+          '</button><button data-pick="ng" class="' + (v === "ng" ? "sel" : "") + '">' + L("不夠", "Không đủ") + "</button></div></div></td></tr>";
+      }
+    }
+    return h + "</table></div>";
+  }).join("");
+  document.querySelectorAll("[data-cell]").forEach((b) => b.onclick = () => {
+    openCell = openCell === b.dataset.cell ? "" : b.dataset.cell;
+    tables();
+    if (openCell) { const e = document.querySelector(".exp"); if (e) e.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  });
+  document.querySelectorAll("[data-pick]").forEach((b) => b.onclick = () => {
+    HW.g[openCell] = HW.g[openCell] === b.dataset.pick ? "" : b.dataset.pick;
+    save(); tables(); prog();
+  });
+}
+
+const CELLS = [];
+HW_Q.forEach((q) => q.models.forEach((mk) => q.scenes.forEach((sk) => CELLS.push(mk + "_" + sk))));
+const TOTAL = CELLS.length + 1 + 8;
+
+function fill() {
+  $("hwName").placeholder = L("姓名", "Họ tên"); $("hwName").value = HW.name;
+  $("hwSid").placeholder = L("班級／學號", "Lớp / MSSV"); $("hwSid").value = HW.sid;
+  $("specLink").textContent = L("← 規格判讀台（第六週版）在另一頁", "← Bàn đọc thông số (tuần 6) ở trang khác");
+  $("q5t").textContent = L("第五題　替「隧道」寫一句結論", "Câu 5 — Viết một câu kết luận cho «đường hầm»");
+  $("q5n").innerHTML = L("講的是第四題最右邊那一欄：雪山隧道 12.9 公里，衛星斷 580 秒。四句選一句，要選那句把<b>卡在哪一行、該怎麼補</b>都講對的。",
+                         "Nói về cột ngoài cùng bên phải của câu 4: hầm Tuyết Sơn 12,9 km, mất vệ tinh 580 s. Chọn câu nói đúng cả <b>tắc ở dòng nào và bù bằng gì</b>.");
+  $("q6t").textContent = L("第六題　四句話，對或錯，再選一個理由", "Câu 6 — Bốn câu: đúng hay sai, kèm lý do");
+  $("btnSheet").textContent = L("產生作答單（交這一頁）", "Tạo phiếu trả lời (nộp trang này)");
+  if (!wipeTimer) wipeReset();
+  $("btnBack").textContent = L("← 回去改", "← Quay lại sửa");
+  const opt = (v, cur, txt) => '<option value="' + v + '"' + (String(cur) === String(v) ? " selected" : "") + ">" + txt + "</option>";
+  $("hwConcl").innerHTML = opt("", HW.concl, L("── 請選 ──", "── Chọn ──")) + HW_CONCL.map((o, i) => opt(i, HW.concl, L(o[0], o[1]))).join("");
+  $("q6").innerHTML = HW_TF.map((q, i) =>
+    '<div class="tfrow"><div class="hwn" style="margin-bottom:0">' + L(q[0], q[1]) + "</div>" +
+    '<select data-tf="' + i + '">' + opt("", HW.tf[i][0], "—") + opt("T", HW.tf[i][0], L("對", "Đúng")) + opt("F", HW.tf[i][0], L("錯", "Sai")) + "</select>" +
+    '<select data-tfr="' + i + '">' + opt("", HW.tf[i][1], L("── 選一個理由 ──", "── Chọn lý do ──")) +
+      HW_WHY[i].map((o, j) => opt(j, HW.tf[i][1], L(o[0], o[1]))).join("") + "</select></div>").join("");
+  const bindIn = (id, k) => $(id).oninput = (e) => { HW[k] = e.target.value; save(); prog(); };
+  bindIn("hwName", "name"); bindIn("hwSid", "sid");
+  $("hwConcl").onchange = (e) => { HW.concl = e.target.value; save(); prog(); };
+  document.querySelectorAll("[data-tf]").forEach((el) => el.onchange = (e) => { HW.tf[+e.target.dataset.tf][0] = e.target.value; save(); prog(); });
+  document.querySelectorAll("[data-tfr]").forEach((el) => el.onchange = (e) => { HW.tf[+e.target.dataset.tfr][1] = e.target.value; save(); prog(); });
+}
+
+function prog() {
+  let n = 0;
+  CELLS.forEach((k) => { if (HW.g[k]) n++; });
+  if (HW.concl !== "") n++;
+  HW.tf.forEach(([a, b]) => { if (a !== "") n++; if (b !== "") n++; });
+  $("progBox").innerHTML = L("已經填了 ", "Đã điền ") + "<b>" + n + "</b> / " + TOTAL + (n === TOTAL ? L("　全部填完了 ✓", "　Xong hết ✓") : "");
+}
+
+function sheet() {
+  const miss = (t) => (t && String(t).trim() ? String(t) : '<span class="miss">' + L("（沒寫）", "(chưa điền)") + "</span>");
+  const cell = (v) => v === "ok" ? L("夠", "Đủ") : v === "ng" ? L("不夠", "Không") : "—";
+  const d = new Date(), two = (n) => String(n).padStart(2, "0");
+  let h = "<h3>" + L("第六週作業　雷達、超音波、衛星與慣性", "Bài tuần 6 — Radar, siêu âm, vệ tinh, quán tính") + "</h3>" +
+    '<div class="who">' + miss(HW.name) + "　" + (HW.sid || "") + "</div>" +
+    '<div class="when">' + d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate()) + " " + two(d.getHours()) + ":" + two(d.getMinutes()) + "</div>";
+  HW_Q.forEach((q) => {
+    h += '<div class="sec">' + L(q.zh, q.vi) + '</div><table class="hwtab"><tr><th class="mdl"></th>' +
+      q.scenes.map((sk) => "<th>" + L(SCENES[sk].zh, SCENES[sk].vi) + "</th>").join("") + "</tr>" +
+      q.models.map((mk) => '<tr><td class="mdl">' + MODELS[mk].name + "</td>" + q.scenes.map((sk) => "<td>" + cell(HW.g[mk + "_" + sk]) + "</td>").join("") + "</tr>").join("") + "</table>";
+  });
+  h += '<div class="sec">' + L("隧道的結論", "Kết luận cho hầm") + '</div><div class="ans">' + (HW.concl === "" ? miss("") : L(HW_CONCL[+HW.concl][0], HW_CONCL[+HW.concl][1])) + "</div>";
+  h += '<div class="sec">' + L("四句話", "Bốn câu") + '</div><div class="ans">' + HW_TF.map((q, i) => L(q[0], q[1]).slice(0, 2) + " " +
+    (HW.tf[i][0] === "T" ? L("對", "Đúng") : HW.tf[i][0] === "F" ? L("錯", "Sai") : "—") + "　" +
+    (HW.tf[i][1] === "" ? miss("") : L(HW_WHY[i][+HW.tf[i][1]][0], HW_WHY[i][+HW.tf[i][1]][1]))).join("<br>") + "</div>";
+  $("sheet").innerHTML = h;
+  document.body.classList.add("sheet");
+  $("btnBack").style.display = "";
+  window.scrollTo(0, 0);
+}
+
+function draw() { fill(); tables(); prog(); }
+
+let wipeTimer = null;
+function wipeReset() { const b = $("btnWipe"); if (!b) return; b.textContent = L("全部清空", "Xoá hết"); b.classList.remove("danger"); }
+$("btnWipe").onclick = () => {
+  const b = $("btnWipe");
+  if (!wipeTimer) {
+    b.textContent = L("再按一次：整份作業都會清掉", "Bấm lần nữa: xoá toàn bộ bài");
+    b.classList.add("danger");
+    wipeTimer = setTimeout(() => { wipeTimer = null; wipeReset(); }, 3000);
+    return;
+  }
+  clearTimeout(wipeTimer); wipeTimer = null;
+  HW = blank(); save(); openCell = ""; draw(); window.scrollTo(0, 0);
+};
+$("btnSheet").onclick = sheet;
+$("btnBack").onclick = () => { document.body.classList.remove("sheet"); $("btnBack").style.display = "none"; window.scrollTo(0, 0); };
+$("btnZh").onclick = () => { ZH = true; $("btnZh").classList.add("on"); $("btnVi").classList.remove("on"); document.documentElement.lang = "zh-Hant"; draw(); if (document.body.classList.contains("sheet")) sheet(); };
+$("btnVi").onclick = () => { ZH = false; $("btnVi").classList.add("on"); $("btnZh").classList.remove("on"); document.documentElement.lang = "vi"; draw(); if (document.body.classList.contains("sheet")) sheet(); };
+
+draw();
+
+</script>
+</body></html>

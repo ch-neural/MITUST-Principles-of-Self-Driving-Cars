@@ -19,6 +19,8 @@ on:
       - '第五週(10-08)/第五週_第1節_簡報.pdf'
       - '第五週(10-08)/第五週_第2節_簡報.pdf'
       - '第五週(10-08)/第五週_第3節_簡報.pdf'
+      - '第六週(10-15)/第六週_規格判讀台.html'
+      - '第六週(10-15)/第六週_作業.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -58,6 +60,8 @@ jobs:
             第五週(10-08)/第五週_第1節_簡報.pdf
             第五週(10-08)/第五週_第2節_簡報.pdf
             第五週(10-08)/第五週_第3節_簡報.pdf
+            第六週(10-15)/第六週_規格判讀台.html
+            第六週(10-15)/第六週_作業.html
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -66,7 +70,7 @@ jobs:
       - name: Prepare the public student pages
         shell: bash
         run: |
-          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec _site/week5/hw
+          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec _site/week5/hw _site/week6/spec _site/week6/hw
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/index.html
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/week2/levels/index.html
           cp -- '第三週(09-24)/第三週_感測器實驗室.html' _site/week3/lab/index.html
@@ -86,6 +90,9 @@ jobs:
           cp -- '第五週(10-08)/第五週_第1節_簡報.pdf' _site/week5/slides-1.pdf
           cp -- '第五週(10-08)/第五週_第2節_簡報.pdf' _site/week5/slides-2.pdf
           cp -- '第五週(10-08)/第五週_第3節_簡報.pdf' _site/week5/slides-3.pdf
+          # 第六週：判讀台（上週四顆＋雷達、超音波、GNSS、IMU 各兩顆）與作業頁
+          cp -- '第六週(10-15)/第六週_規格判讀台.html' _site/week6/spec/index.html
+          cp -- '第六週(10-15)/第六週_作業.html' _site/week6/hw/index.html
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4
