@@ -321,7 +321,10 @@ function judge(m, s, C, L, opt) {
     lines.push([L("測距 " + c.rangeMax + " m（最近 " + c.rangeMin + " m）", "Tầm " + c.rangeMax + " m (gần nhất " + c.rangeMin + " m)"),
       reach ? L("夠，門檻 " + rm.toFixed(0) + " m", "Đủ, ngưỡng " + rm.toFixed(0) + " m")
             : L("不夠，門檻 " + rm.toFixed(0) + " m，差 " + (rm - c.rangeMax).toFixed(1) + " m", "Thiếu " + (rm - c.rangeMax).toFixed(1) + " m so với ngưỡng " + rm.toFixed(0) + " m"), reach]);
-    if (c.angle != null) {
+    if (c.angle != null && s.d > c.rangeMax) {
+      lines.push([L("波束角 " + c.angle + "°", "Góc chùm " + c.angle + "°"),
+        L("目標在 " + s.d + " m，已經超過它的測距，波束角在這裡用不上", "Vật ở " + s.d + " m đã quá tầm đo, góc chùm không còn ý nghĩa"), null]);
+    } else if (c.angle != null) {
       const wid = 2 * s.d * Math.tan(c.angle / 2 * R);
       lines.push([L("波束角 " + c.angle + "°", "Góc chùm " + c.angle + "°"),
         L(s.d + " m 處只蓋到 " + wid.toFixed(1) + " m 寬，車頭要裝好幾顆", "Ở " + s.d + " m chỉ phủ " + wid.toFixed(1) + " m, đầu xe phải gắn nhiều cái"), null]);
