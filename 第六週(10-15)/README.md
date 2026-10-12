@@ -56,7 +56,7 @@
 看過但沒用：TVBS「GPS衛星導航 三角測量」EZR54_PEDU4（原本放第 2 節第 6 張，老師覺得不夠像多顆衛星定位的解說，2026-10-12 換掉）、TED-Ed「How does your smartphone know your location?」70cDSUI4XKE（有繁中與越南文字幕，但大半在講原子鐘與量子力學，講多顆衛星只有 4:02–4:33，可當備案）、unfa「How GPS works」（2D、沒講第四顆）、Emlid RTK（偏技術）、DC Rainmaker 紐約跑步（新手錶誤差太小看不出）、Uber Engineering 城市 GPS（0:25–2:30 可當第 9 張備案，英文演講）、Sparkfun IMU yaw drift（無聲、畫質差，第 14 張找不到合適的漂移影片）。
 三節的備忘稿都用 `tools_notes_fit.py` 比對過，每一張都印得出來。
 
-**PDF 還沒轉**：等老師確認簡報不再改之後再轉（學生版不含備忘稿），轉好一併放到 week6/。
+**簡報 PDF**（2026-10-12 轉）：`第六週_第N節_簡報.pdf`，LibreOffice 轉，不含備忘稿（學生版），影片與網頁連結保留。簡報再改的話要重轉。
 
 ## 三節的主線
 
