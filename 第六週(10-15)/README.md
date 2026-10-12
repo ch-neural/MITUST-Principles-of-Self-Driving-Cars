@@ -43,14 +43,14 @@
 |---|---|---|---|
 | 第 2 節第 3 張 | DPV Technology「HC-SR04 working principle」vf2lW4LkmMQ，2:02，英文 | 0:00–1:12 | 0:26 唸 40 kHz（對照表格誤植 40Hz）；1:01 除以二 |
 | 第 2 節第 4 張 | 北都汽車小學堂「倒車雷達的進化史」lV-MiiOEGIA，3:18，中文 | 2:00–3:07 | 2:03 說「電波式的感應」是錯的（超音波是聲音），口白請學生抓錯；綠 120–60 cm、黃 60–40、紅 40 內 |
-| 第 2 節第 6 張 | TVBS「GPS衛星導航 三角測量」EZR54_PEDU4，1:55，中文 | 0:49–結束 | 標題的「三角測量」應為三邊測量，口白有更正；1:22 第四顆衛星解時間 |
+| 第 2 節第 6 張 | JNChen「手機沒接線，怎麼知道你在哪？｜GPS 定位原理」R_mY4GLhauk，4:41，中文動畫＋中文字幕 | 0:58–2:52 | 1:27–1:44 兩圓兩點、三圓一點、三邊定位；2:10 影片說按暫停（真的暫停問第四顆）；2:41 四方程式解 x、y、z、時鐘誤差。2026-07 上傳、觀看數很少，課前先點一次確認還在 |
 | 第 2 節第 8 張 | u-blox「Centimeter-level precise position with RTK」28_YpdN8Thw，2:34，英文 | 0:00–1:07 | 0:50 基準站送 Corrections；結尾推的是 NEO-M8P |
 | 第 2 節第 9 張 | Garmin Taiwan「什麼是GPS?」u54tYw5_NsY，1:45，中文 | 1:08–1:28 | 大樓玻璃反射、遮擋、樹木 |
 | 第 2 節第 9 張 | Teltonika「Dead Reckoning」U6rOEcyo6xU，0:52，無旁白 | 全片 | 紅線 GPS signal lost 停在入口，藍線用加速度計＋陀螺儀推進停車場；廣告，只講能撐不講會飄 |
 | 第 2 節第 11 張 | Bosch Mobility「gyroscope for ESP」XsjvaYAFN1M，1:30，英文 | 全片 | 梳狀結構、科氏力、電容；裝在安全氣囊控制器 |
 | 第 3 節第 8 張 | Waymo「sensor fusion」Vwrz1hfVeSM，1:03，英文（燒字幕） | 全片 | 相機／光達／雷達；0:40 not backups to each other |
 
-看過但沒用：unfa「How GPS works」（2D、沒講第四顆）、Emlid RTK（偏技術）、DC Rainmaker 紐約跑步（新手錶誤差太小看不出）、Uber Engineering 城市 GPS（0:25–2:30 可當第 9 張備案，英文演講）、Sparkfun IMU yaw drift（無聲、畫質差，第 14 張找不到合適的漂移影片）。
+看過但沒用：TVBS「GPS衛星導航 三角測量」EZR54_PEDU4（原本放第 2 節第 6 張，老師覺得不夠像多顆衛星定位的解說，2026-10-12 換掉）、TED-Ed「How does your smartphone know your location?」70cDSUI4XKE（有繁中與越南文字幕，但大半在講原子鐘與量子力學，講多顆衛星只有 4:02–4:33，可當備案）、unfa「How GPS works」（2D、沒講第四顆）、Emlid RTK（偏技術）、DC Rainmaker 紐約跑步（新手錶誤差太小看不出）、Uber Engineering 城市 GPS（0:25–2:30 可當第 9 張備案，英文演講）、Sparkfun IMU yaw drift（無聲、畫質差，第 14 張找不到合適的漂移影片）。
 三節的備忘稿都用 `tools_notes_fit.py` 比對過，每一張都印得出來。
 
 **PDF 還沒轉**：等老師確認簡報不再改之後再轉（學生版不含備忘稿），轉好一併放到 week6/。
