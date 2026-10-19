@@ -37,7 +37,7 @@
 
 - **nuScenes**（Motional），v1.0-mini，授權 CC BY-NC-SA 4.0（非商業使用、註明出處、同樣方式分享）。雷達是 Continental ARS 408-21，點照官方工具的預設方式過濾；光達是 Velodyne HDL-32E。投影、數點、速度與鳥瞰圖由課程自己寫的程式完成，不用官方套件。投影片上每一張都標了場景編號。
 - 第 1 節第 6 張照片取自 Wikimedia Commons：左 `Rain on windshield (52352547682).jpg`（NPS／Joshua Tree National Park，公有領域）；右 `Road in autumn fog, Germany (Marburg) 2016-10-27.jpg`（Ludwig Sebastian Micheler，CC BY-SA 4.0）。
-- 第 1 節第 12 張動圖取自第五週（課程自製），第 14 張漂移曲線取自第六週。第 2 節第 2 張動圖為課程自製（高度放大畫）。
+- 第 1 節第 12 張動圖取自第五週（課程自製），第 14 張漂移曲線取自第六週。第 2 節第 2 張動圖為課程自製（高度放大畫）；第 9 張定位融合動圖為課程自製（三條曲線寬度照誤差畫，隧道那段是示意）。
 - nuScenes 的規模、地點比例、標註方式與隱私處理：H. Caesar et al., *nuScenes: A multimodal dataset for autonomous driving*, CVPR 2020（arXiv 1903.11027）。第 3 節資料車俯視圖、立體框與各類數量長條圖都由 mini 版資料畫出（`src/tools_nusc_intro.py`）。
 - 「人的雷達反射比車弱」：E. Schubert et al., *Human RCS Measurements and Dummy Requirements for the Assessment of Radar Based Active Pedestrian Safety Systems*, IRS 2013。新一代 4D 雷達看行人的成績：View-of-Delft 資料集（Palffy et al., IEEE RA-L 2022）與 RadarPillars（arXiv 2408.05020）。
 - 影片（線上連結，播放需要網路）：Mark Rober `IQJL3htsDyQ`、工研院 `zTLa0CFpyXY`、Valeo `vhjFmzcD-iQ`（第 1 節）；NVIDIA DRIVE Labs `cMlGyIJH5L8`（第 2 節）。都下載看過畫面，口白裡的時間點是從畫面或旁白轉寫讀的。
