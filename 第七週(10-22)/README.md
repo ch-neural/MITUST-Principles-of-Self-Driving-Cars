@@ -25,7 +25,7 @@
 
 | 檔案 | 用途 |
 |---|---|
-| `第七週_第1節_簡報.pptx` | 16 張／50 分。三種壞法（看不到、看錯、看不到卻說沒事）、失效對照表、雨霧（兩張實拍照片＋兩支影片）、夜間與雷達的 nuScenes 真實畫面、雷達的點大多不在車上（鳥瞰圖）、十段場景的統計、鏡面與多路徑、髒污（影片）、IMU 漂移、雷達看人：看得到但抓不穩（鳥瞰圖＋光達）、新一代雷達怎麼看人、看不到卻說沒事 |
+| `第七週_第1節_簡報.pptx` | 17 張／53 分。前四週每週一句結論（第三到第六週）、三種壞法（看不到、看錯、看不到卻說沒事）、失效對照表、雨霧（兩張實拍照片＋兩支影片）、夜間與雷達的 nuScenes 真實畫面、雷達的點大多不在車上（鳥瞰圖）、十段場景的統計、鏡面與多路徑、髒污（影片）、IMU 漂移、雷達看人：看得到但抓不穩（鳥瞰圖＋光達）、新一代雷達怎麼看人、看不到卻說沒事 |
 | `第七週_第2節_簡報.pptx` | 12 張／55 分。兩顆說的不一樣（自製動圖：頭頂路牌和路牌下的車，雷達報出同一個點）、互補與備援、標定（光達故意轉偏 4 度）、時間同步（光達早 0.2 秒，橫越的車點留在原地）、前期／中期／後期融合、對應（影片）、聽誰的、定位融合、降級、五組常見的搭檔 |
 | `第七週_第3節_簡報.pptx` | 12 張／58 分。開兩個網頁、認識 nuScenes、觀察台怎麼用、任務一到六的提問（答案在備忘稿；任務七的結論句在作業頁）、新一代雷達補上高度、小結與下週預告 |
 | `第七週_nuScenes觀察台.html` | 課堂工具，單檔，約 950 KB |
@@ -36,7 +36,7 @@
 ## 資料與圖片來源
 
 - **nuScenes**（Motional），v1.0-mini，授權 CC BY-NC-SA 4.0（非商業使用、註明出處、同樣方式分享）。雷達是 Continental ARS 408-21，點照官方工具的預設方式過濾；光達是 Velodyne HDL-32E。投影、數點、速度與鳥瞰圖由課程自己寫的程式完成，不用官方套件。投影片上每一張都標了場景編號。
-- 第 1 節第 5 張照片取自 Wikimedia Commons：左 `Rain on windshield (52352547682).jpg`（NPS／Joshua Tree National Park，公有領域）；右 `Road in autumn fog, Germany (Marburg) 2016-10-27.jpg`（Ludwig Sebastian Micheler，CC BY-SA 4.0）。
-- 第 1 節第 10 張動圖取自第五週（課程自製），第 12 張漂移曲線取自第六週。第 2 節第 2 張動圖為課程自製（高度放大畫）。
+- 第 1 節第 6 張照片取自 Wikimedia Commons：左 `Rain on windshield (52352547682).jpg`（NPS／Joshua Tree National Park，公有領域）；右 `Road in autumn fog, Germany (Marburg) 2016-10-27.jpg`（Ludwig Sebastian Micheler，CC BY-SA 4.0）。
+- 第 1 節第 11 張動圖取自第五週（課程自製），第 13 張漂移曲線取自第六週。第 2 節第 2 張動圖為課程自製（高度放大畫）。
 - 「人的雷達反射比車弱」：E. Schubert et al., *Human RCS Measurements and Dummy Requirements for the Assessment of Radar Based Active Pedestrian Safety Systems*, IRS 2013。新一代 4D 雷達看行人的成績：View-of-Delft 資料集（Palffy et al., IEEE RA-L 2022）與 RadarPillars（arXiv 2408.05020）。
 - 影片（線上連結，播放需要網路）：Mark Rober `IQJL3htsDyQ`、工研院 `zTLa0CFpyXY`、Valeo `vhjFmzcD-iQ`（第 1 節）；NVIDIA DRIVE Labs `cMlGyIJH5L8`（第 2 節）。都下載看過畫面，口白裡的時間點是從畫面或旁白轉寫讀的。
