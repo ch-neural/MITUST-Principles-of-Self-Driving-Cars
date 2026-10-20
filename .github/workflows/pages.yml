@@ -23,6 +23,8 @@ on:
       - '第六週(10-15)/第六週_作業.html'
       - '第七週(10-22)/第七週_nuScenes觀察台.html'
       - '第七週(10-22)/第七週_作業.html'
+      - '第七週(10-22)/自動駕駛原理_第七週_課程講義.pdf'
+      - '第七週(10-22)/Nguyên lý xe tự lái_Tuần 7_Tài liệu học tập.pdf'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -66,6 +68,8 @@ jobs:
             第六週(10-15)/第六週_作業.html
             第七週(10-22)/第七週_nuScenes觀察台.html
             第七週(10-22)/第七週_作業.html
+            第七週(10-22)/自動駕駛原理_第七週_課程講義.pdf
+            第七週(10-22)/Nguyên lý xe tự lái_Tuần 7_Tài liệu học tập.pdf
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -100,6 +104,8 @@ jobs:
           # 第七週：nuScenes 觀察台（四個真實畫面，資料 CC BY-NC-SA 4.0）與作業頁
           cp -- '第七週(10-22)/第七週_nuScenes觀察台.html' _site/week7/nusc/index.html
           cp -- '第七週(10-22)/第七週_作業.html' _site/week7/hw/index.html
+          cp -- '第七週(10-22)/自動駕駛原理_第七週_課程講義.pdf' _site/week7/note-zh.pdf
+          cp -- '第七週(10-22)/Nguyên lý xe tự lái_Tuần 7_Tài liệu học tập.pdf' _site/week7/note-vi.pdf
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4
