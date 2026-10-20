@@ -27,7 +27,7 @@
 |---|---|
 | `第七週_第1節_簡報.pptx` | 18 張／55 分。前四週每週一句結論（第三到第六週）、三種壞法（看不到、看錯、看不到卻說沒事）、失效對照表、雨霧（兩張實拍照片＋兩支影片）、夜間與雷達的 nuScenes 真實畫面、雷達的點大多不在車上（鳥瞰圖）、同樣一台車 10／17／24／41 公尺的光達點（421／64／12／2）、十段場景的統計、鏡面與多路徑、髒污（影片）、IMU 漂移、雷達看人：看得到但抓不穩（鳥瞰圖＋光達）、新一代雷達怎麼看人、看不到卻說沒事 |
 | `第七週_第2節_簡報.pptx` | 12 張／55 分。兩顆說的不一樣（自製動圖：頭頂路牌和路牌下的車，雷達報出同一個點）、互補與備援、標定（光達故意轉偏 4 度）、時間同步（光達早 0.2 秒，橫越的車點留在原地）、前期／中期／後期融合、對應（影片）、聽誰的、定位融合、降級、五組常見的搭檔 |
-| `第七週_第3節_簡報.pptx` | 15 張／67 分。開兩個網頁、認識 nuScenes（規模、資料車的 12 顆感測器、人工標註立體框、能不能直接用在河內：機車只有汽車的十六分之一）、觀察台怎麼用、任務一到六的提問（答案在備忘稿；任務七的結論句在作業頁）、新一代雷達補上高度、小結與下週預告 |
+| `第七週_第3節_簡報.pptx` | 16 張／77 分。先看影片（MATLAB「What Is Sensor Fusion?」3:45–11:35，融合的四個好處）、開兩個網頁、認識 nuScenes（規模、資料車的 12 顆感測器、人工標註立體框、能不能直接用在河內：機車只有汽車的十六分之一）、觀察台怎麼用、任務一到六的提問（答案在備忘稿；任務七的結論句在作業頁）、新一代雷達補上高度、小結與下週預告 |
 | `自動駕駛原理_第七週_課程講義.docx` / `.pdf` | 學生講義（中文），23 頁：前四週回顧、3.8 失效條件（三種壞法、失效對照表逐列說明、nuScenes 真實畫面）、3.9 感測器融合（標定、同步、前中後期、聽誰的、加權定位、降級、五組搭檔）、3.10 nuScenes（資料車、標註、觀察台用法）、3.11 台灣與越南、習題與參考答案、術語表、參考資料。線上版 https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week7/note-zh.pdf |
 | `Nguyên lý xe tự lái_Tuần 7_Tài liệu học tập.docx` / `.pdf` | 同一份講義的越南文版，21 頁（`src/note_data.js` 單一來源，`LANG_OUT=zh|vi node build_note_bi.js`）。線上版 …/week7/note-vi.pdf |
 | `第七週_nuScenes觀察台.html` | 課堂工具，單檔，約 950 KB |
@@ -42,4 +42,4 @@
 - 第 1 節第 12 張動圖取自第五週（課程自製），第 14 張漂移曲線取自第六週。第 2 節第 2 張動圖為課程自製（高度放大畫）；第 9 張定位融合動圖為課程自製（三條曲線寬度照誤差畫，隧道那段是示意）；第 10 張降級動圖為課程自製（示意：雨變大、L2 請接手、L4 靠右邊路肩停）。
 - nuScenes 的規模、地點比例、標註方式與隱私處理：H. Caesar et al., *nuScenes: A multimodal dataset for autonomous driving*, CVPR 2020（arXiv 1903.11027）。第 3 節資料車俯視圖、立體框與各類數量長條圖都由 mini 版資料畫出（`src/tools_nusc_intro.py`）。
 - 「人的雷達反射比車弱」：E. Schubert et al., *Human RCS Measurements and Dummy Requirements for the Assessment of Radar Based Active Pedestrian Safety Systems*, IRS 2013。新一代 4D 雷達看行人的成績：View-of-Delft 資料集（Palffy et al., IEEE RA-L 2022）與 RadarPillars（arXiv 2408.05020）。
-- 影片（線上連結，播放需要網路）：Mark Rober `IQJL3htsDyQ`、工研院 `zTLa0CFpyXY`、Valeo `vhjFmzcD-iQ`（第 1 節）；NVIDIA DRIVE Labs `cMlGyIJH5L8`（第 2 節）。都下載看過畫面，口白裡的時間點是從畫面或旁白轉寫讀的。
+- 影片（線上連結，播放需要網路）：Mark Rober `IQJL3htsDyQ`、工研院 `zTLa0CFpyXY`、Valeo `vhjFmzcD-iQ`（第 1 節）；NVIDIA DRIVE Labs `cMlGyIJH5L8`（第 2 節）；MATLAB Tech Talk `6qV3YjFppuc`（第 3 節第 2 張）。都下載看過畫面，口白裡的時間點是從畫面或旁白轉寫讀的。
