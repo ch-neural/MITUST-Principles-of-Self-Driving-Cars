@@ -80,6 +80,8 @@
     <div class="panel">
       <h2 data-zh="一、前方相機（同一個瞬間）" data-vi="1. Camera phía trước (cùng một khoảnh khắc)"></h2>
       <div class="note" id="sceNote"></div>
+      <div class="note" data-zh="注意：雷達量不出高度，所有雷達點都畫在離地約半公尺的高度，遠處的點會疊到近處的框裡。看圓圈的顏色：藍色的在遠處，不在那個近處的人或車身上。"
+           data-vi="Chú ý: radar không đo được độ cao, mọi điểm radar vẽ ở độ cao khoảng nửa mét, điểm ở xa sẽ chồng lên hộp ở gần. Xem màu vòng tròn: màu xanh là ở xa, không nằm trên người hay xe ở gần."></div>
       <div class="tog">
         <button id="tL" class="on" data-zh="光達點" data-vi="Điểm lidar"></button>
         <button id="tR" class="on" data-zh="雷達點" data-vi="Điểm radar"></button>
@@ -162,9 +164,11 @@ function drawCam() {
       g.strokeStyle = i === sel ? "#FFD400" : (b.nr > 0 ? "#3BE07A" : "#FFB020");
       g.strokeRect(b.cam[0], b.cam[1], b.cam[2] - b.cam[0], b.cam[3] - b.cam[1]);
     });
-    if (show.R) for (const [u, v, , s] of f.rc) {
-      g.beginPath(); g.arc(u, v, 8, 0, Math.PI * 2); g.lineWidth = 3; g.strokeStyle = "#FF3B30";
-      if (s > MOVING) { g.fillStyle = "rgba(255,59,48,.85)"; g.fill(); }
+    // 雷達圈的顏色＝距離（跟光達點同一套：紅近、藍遠）。雷達量不出高度，畫到照片上時，
+    // 遠處的點會疊在近處的框裡（2026-10-21 老師指出斑馬線那一格的困惑）；看顏色就知道它其實在多遠。
+    if (show.R) for (const [u, v, d, s] of f.rc) {
+      g.beginPath(); g.arc(u, v, 8, 0, Math.PI * 2); g.lineWidth = 3.5; g.strokeStyle = dcol(d);
+      if (s > MOVING) { g.fillStyle = dcol(d); g.fill(); }
       g.stroke();
     }
     // 合起來：相機說是什麼＋光達說多遠＋雷達說多快，寫在框上。
@@ -193,7 +197,7 @@ function drawCam() {
   const nMov = f.rc.filter((r) => r[3] > MOVING).length;
   $("legCam").innerHTML =
     `<span><i style="background:linear-gradient(90deg,#ff5a00,#00e6ff)"></i>${L("光達點：顏色＝距離（紅近、藍遠）", "Điểm lidar: màu = khoảng cách (đỏ gần, xanh xa)")}</span>` +
-    `<span><i style="background:#FF3B30"></i>${L("雷達點：實心＝在動，空心＝靜止", "Điểm radar: đặc = đang chạy, rỗng = đứng yên")}（${nMov}／${f.rc.length}）</span>` +
+    `<span><i style="background:transparent;border:3px solid #7a5fd0"></i>${L("雷達點（圓圈）：顏色也是距離；實心＝在動，空心＝靜止", "Điểm radar (vòng tròn): màu cũng là khoảng cách; đặc = đang chạy, rỗng = đứng yên")}（${nMov}／${f.rc.length}）</span>` +
     `<span><i class="sq" style="background:#3BE07A"></i>${L("框：有雷達點", "Hộp: có điểm radar")}</span>` +
     `<span><i class="sq" style="background:#FFB020"></i>${L("框：沒有雷達點", "Hộp: không có điểm radar")}</span>`;
 }
