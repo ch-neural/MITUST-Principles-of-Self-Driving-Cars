@@ -105,10 +105,11 @@
     <div class="stats" id="stats"></div>
     <div class="note" data-zh="下表是這一格每個物體（50 公尺內）的框裡有幾個光達點、幾個雷達點，數字取自官方標註。點一列，兩張圖上會標出那個物體。紅字是一個雷達點都沒有。"
          data-vi="Bảng dưới: mỗi vật (trong 50 m) có bao nhiêu điểm lidar, bao nhiêu điểm radar trong hộp, số liệu từ nhãn chính thức. Bấm một dòng, hai hình sẽ đánh dấu vật đó. Chữ đỏ là không có điểm radar nào."></div>
-    <div class="note" data-zh="「前方相機畫面」：● 表示這個物體在前方那台相機拍得到的範圍裡；沒有 ● 的，寫它在車子的哪一邊。表格列的是車子周圍一整圈的物體，所以大部分都不在前方相機的畫面裡。這一欄不是「相機有沒有認出來」——框是人工標註的。"
-         data-vi="«Ảnh camera trước»: ● là vật nằm trong vùng camera phía trước chụp được; không có ● thì ghi vật ở phía nào của xe. Bảng liệt kê vật quanh cả vòng xe, nên phần lớn không nằm trong ảnh camera trước. Cột này không phải «camera có nhận ra không» — hộp do người gán nhãn."></div>
-    <div class="note" data-zh="「雷達：多快」是雷達量到的、朝自己的車靠近或遠離的速度（都卜勒只量得到這一段，橫著走的會接近 0）。只用圖上畫出來的雷達點算；官方點數有算、但被過濾掉的點不算，所以偶爾會「有點數、沒有速度」。"
-         data-vi="«Radar: nhanh bao nhiêu» là tốc độ lại gần hoặc ra xa xe mình mà radar đo được (Doppler chỉ đo được phần này, đi ngang thì gần 0). Chỉ tính các điểm radar vẽ trên hình; điểm đã bị lọc thì không tính, nên đôi khi «có số điểm, không có tốc độ»."></div>
+    <div class="note" data-zh="表格預設只列前方相機畫面裡的物體；按「周圍一圈全部」，會列出車子周圍 50 公尺內所有物體，沒有 ● 的寫它在車子的哪一邊。「前方相機畫面」這一欄不是「相機有沒有認出來」——框是人工標註的。"
+         data-vi="Bảng mặc định chỉ liệt kê vật trong ảnh camera trước; bấm «Tất cả quanh xe» sẽ liệt kê mọi vật trong 50 m quanh xe, vật không có ● ghi nó ở phía nào của xe. Cột «Ảnh camera trước» không phải «camera có nhận ra không» — hộp do người gán nhãn."></div>
+    <div class="note" data-zh="「雷達：多快」是那個東西自己在路上走多快：nuScenes 的雷達資料已經把我們自己的車速扣掉了，所以停著的東西是 ≈0，就算我們的車在開也一樣。而且只量得到「往我們這邊來（靠近）／往遠處去（遠離）」那一段，橫著走的會接近 0。只用圖上畫出來的雷達點算；官方點數有算、但被過濾掉的點不算，所以偶爾會「有點數、沒有速度」。"
+         data-vi="«Radar: nhanh bao nhiêu» là tốc độ của chính vật đó trên đường: dữ liệu radar của nuScenes đã trừ tốc độ xe mình, nên vật đứng yên là ≈0, kể cả khi xe mình đang chạy. Và chỉ đo được phần «về phía mình (lại gần) / ra xa (ra xa)», đi ngang thì gần 0. Chỉ tính các điểm radar vẽ trên hình; điểm đã bị lọc thì không tính, nên đôi khi «có số điểm, không có tốc độ»."></div>
+    <div class="tog" id="tblTog"><button id="tCamOnly" class="on"></button><button id="tAll"></button></div>
     <div class="tblwrap"><table><thead><tr>
       <th data-zh="物體" data-vi="Vật"></th><th data-zh="距離" data-vi="Cách"></th>
       <th data-zh="光達點" data-vi="Lidar"></th><th data-zh="雷達點" data-vi="Radar"></th><th data-zh="雷達：多快 km/h" data-vi="Radar: km/h"></th><th data-zh="前方相機畫面" data-vi="Ảnh camera trước"></th>
@@ -126,6 +127,7 @@ const FRAMES = [{"key":"day","scene":"scene-0553","idx":24,"zh":"波士頓・白
 // 第七週 nuScenes 觀察台的畫面程式。資料 FRAMES 由 build_nusc.js 從 nusc_data.js 塞進頁面。
 const $ = (id) => document.getElementById(id);
 let ZH = true, cur = 0, sel = -1;
+let camOnly = true;                     // 表格預設只列前方相機畫面裡的物體（2026-10-21：全部列出來太長，學生會漏看）
 const show = { L: true, R: true, B: false, F: false };
 const L = (zh, vi) => (ZH ? zh : vi);
 const CAT = {
@@ -241,7 +243,12 @@ function sideTxt(b, f) {
 
 function table() {
   const f = FRAMES[cur];
-  const rows = f.boxes.map((b, i) => ({ b, i })).filter((r) => r.b.d <= 50).sort((a, b) => a.b.d - b.b.d);
+  const all = f.boxes.map((b, i) => ({ b, i })).filter((r) => r.b.d <= 50);
+  const nCam = all.filter((r) => r.b.cam).length;
+  $("tCamOnly").textContent = L(`只看前方相機畫面裡的（${nCam}）`, `Chỉ vật trong ảnh camera trước (${nCam})`);
+  $("tAll").textContent = L(`周圍一圈全部（${all.length}）`, `Tất cả quanh xe (${all.length})`);
+  $("tCamOnly").classList.toggle("on", camOnly); $("tAll").classList.toggle("on", !camOnly);
+  const rows = all.filter((r) => !camOnly || r.b.cam).sort((a, b) => a.b.d - b.b.d);
   $("tbody").innerHTML = rows.map(({ b, i }) =>
     `<tr data-i="${i}" class="${b.nr === 0 ? "zero" : ""} ${i === sel ? "sel" : ""}"><td>${L(...CAT[b.k])}</td><td>${b.d.toFixed(1)} m</td>` +
     `<td>${b.nl}</td><td class="r">${b.nr}</td><td>${rvTxt(b)}</td><td>${b.cam ? "●" : `<span class="side">${sideTxt(b, f)}</span>`}</td></tr>`).join("");
@@ -268,6 +275,8 @@ function draw() {
 // 直接在電腦上打開 html 檔時，那個資料夾不存在，改連同一個資料夾裡的作業檔。
 if (!/\/week7\/nusc\/?(index\.html)?$/.test(location.pathname)) $("hwLink").href = "第七週_作業.html";
 
+$("tCamOnly").onclick = () => { camOnly = true; table(); };
+$("tAll").onclick = () => { camOnly = false; table(); };
 ["L", "R", "B", "F"].forEach((k) => $("t" + k).onclick = () => { show[k] = !show[k]; draw(); });
 $("btnZh").onclick = () => { ZH = true; $("btnZh").classList.add("on"); $("btnVi").classList.remove("on"); draw(); };
 $("btnVi").onclick = () => { ZH = false; $("btnVi").classList.add("on"); $("btnZh").classList.remove("on"); draw(); };
