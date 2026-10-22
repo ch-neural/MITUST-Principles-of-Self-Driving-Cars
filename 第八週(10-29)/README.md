@@ -26,10 +26,10 @@
 
 | 檔案 | 用途 |
 |---|---|
-| `第八週_第1節_簡報.pptx` | 23 張／73 分。本週三節、照片是 432 萬個數字（真實像素）、數字怎麼來的（感光格→濾色片→補齊，每色 0–255）、補齊怎麼算（鄰居平均，真實數字算一次）、顏色和數字的關係（基本顏色＋照片上真的點，白天與晚上）、規則寫不完（nuScenes 真實裁切的車和人）、寫規則／機器學習／深度學習比較表、機器學習的真實例子（人選「框的高÷寬」、電腦學出門檻 1.03；碰到機車錯一半）、「學」就是猜、對答案、改一點點、為什麼只改一點點（動畫：同一批例子用三種學習率學一次，球在山谷曲線上走：太小太慢、太大亂跳）、深度學習自己學出的特徵（YOLOX 第一層 32 個濾鏡）、一層一層看（YOLOX 真的中間層結果）、偵測的三樣輸出、分類／偵測／分割、門檻的取捨（同一張夜間照片 0.3 vs 0.7）、404 張照片的門檻表、一遠就漏（距離圖）、晚上也漏、框＋光達＝距離、立體框、鳥瞰圖與佔據網格 |
+| `第八週_第1節_簡報.pptx` | 24 張／77 分。本週三節、照片是 432 萬個數字（真實像素）、數字怎麼來的（感光格→濾色片→補齊，每色 0–255）、補齊怎麼算（鄰居平均，真實數字算一次）、顏色和數字的關係（基本顏色＋照片上真的點，白天與晚上）、規則寫不完（nuScenes 真實裁切的車和人）、寫規則／機器學習／深度學習比較表、機器學習的真實例子（人選「框的高÷寬」、電腦學出門檻 1.03；碰到機車錯一半）、「學」就是猜、對答案、改一點點、為什麼只改一點點（動畫：同一批例子用三種學習率學一次，球在山谷曲線上走：太小太慢、太大亂跳）、深度學習自己學出的特徵（YOLOX 第一層 32 個濾鏡＝照片的「筆畫」）、濾鏡怎麼用（三個濾鏡在照片上真的反應：紅色、直邊、橫邊）、一層一層看（YOLOX 真的中間層結果）、偵測的三樣輸出、分類／偵測／分割、門檻的取捨（同一張夜間照片 0.3 vs 0.7）、404 張照片的門檻表、一遠就漏（距離圖）、晚上也漏、框＋光達＝距離、立體框、鳥瞰圖與佔據網格 |
 | `第八週_第2節_簡報.pptx` | 11 張／50 分。標註是模型的課本（練習台畫面）、nuScenes 標了多少（機車只有汽車的十六分之一）、官方標註規則節錄（附英文原文）、騎士包進車的框、IoU、打開練習台、任務一到四（各約 12 分鐘）、台灣與越南：本地資料要自己標 |
 | `第八週_第3節_簡報.pptx` | 15 張／50 分。考試四件事、八週地圖、分級表、ODD 六格與讀條件、六種感測器、煞停距離表、規格表六個數字、失效對照表、融合五句話、最常講錯的八句話、圖表判讀四步驟、模擬考 |
-| `自動駕駛原理_第八週_課程講義.docx` / `.pdf` | 學生講義（中文），20 頁。線上版 https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week8/note-zh.pdf |
+| `自動駕駛原理_第八週_課程講義.docx` / `.pdf` | 學生講義（中文），21 頁。線上版 https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week8/note-zh.pdf |
 | `Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.docx` / `.pdf` | 越南文版，17 頁。線上版 …/week8/note-vi.pdf |
 | `第八週_標註練習台.html` | 課堂工具，單檔，約 670 KB |
 | `第八週_期中模擬考.html` | 模擬考，單檔，約 120 KB |
@@ -43,12 +43,12 @@
 | 第 1 節第 4 張 數字怎麼來 | Computerphile「Capturing Digital Images (The Bayer Filter)」`LWxu4rkZBLw` | 0:17–3:25 |
 | 第 1 節第 5 張 補齊怎麼算 | 同上 | 3:02–5:46 |
 | 第 1 節第 11 張 為什麼只改一點點 | 3Blue1Brown「Gradient descent, how neural networks learn」`IHZwWFHWa-w` | 5:12–6:54 |
-| 第 1 節第 13 張 一層一層看 | 3Blue1Brown「But what is a neural network?」`aircAruvnKk` | 5:32–8:39 |
-| 第 1 節第 14 張 偵測器給什麼 | TED，Joseph Redmon「How computers learn to recognize objects instantly」`Cgxsv1riJhI` | 0:12–4:30 |
-| 第 1 節第 15 張 分類／偵測／分割 | NVIDIA DRIVE Labs Ep.14（panoptic segmentation）`HS1wV9NMLr8` | 全片 1:27 |
-| 第 1 節第 16 張 門檻 | 同上 TED | 5:10–5:48 |
-| 第 1 節第 19 張 晚上 | NVIDIA DRIVE Labs Ep.19（夜間行人、active learning）`4aq13pB9s7c` | 全片 1:51 |
-| 第 1 節第 22 張 鳥瞰圖、佔據網格 | Cyrill Stachniss「Occupancy Grid - 5 Minutes with Cyrill」`8ckhPViqneg` | 0:04–2:21 |
+| 第 1 節第 14 張 一層一層看 | 3Blue1Brown「But what is a neural network?」`aircAruvnKk` | 5:32–8:39 |
+| 第 1 節第 15 張 偵測器給什麼 | TED，Joseph Redmon「How computers learn to recognize objects instantly」`Cgxsv1riJhI` | 0:12–4:30 |
+| 第 1 節第 16 張 分類／偵測／分割 | NVIDIA DRIVE Labs Ep.14（panoptic segmentation）`HS1wV9NMLr8` | 全片 1:27 |
+| 第 1 節第 17 張 門檻 | 同上 TED | 5:10–5:48 |
+| 第 1 節第 20 張 晚上 | NVIDIA DRIVE Labs Ep.19（夜間行人、active learning）`4aq13pB9s7c` | 全片 1:51 |
+| 第 1 節第 23 張 鳥瞰圖、佔據網格 | Cyrill Stachniss「Occupancy Grid - 5 Minutes with Cyrill」`8ckhPViqneg` | 0:04–2:21 |
 | 第 2 節第 4 張 標註規則 | CVAT「Lecture 5. Bounding box – Overview」`TDae8RkGbKk` | 0:16–2:47 |
 
 看過但沒有採用：IBM Technology「Machine Learning vs Deep Learning」（後半說深度學習不需要標註資料、屬於非監督式學習，和本課用 COCO 標註資料訓練的例子不一致，容易混淆）。
@@ -59,6 +59,6 @@
 - **物件偵測模型 YOLOX-s**（Megvii，Apache-2.0，COCO 80 類），官方 ONNX 檔（releases 0.1.1rc0），在 nuScenes mini 前方相機全部 404 個關鍵畫面上實際跑過；投影片上的偵測框、分數、門檻表、距離圖都是這次跑出來的結果，不是示意。
   「抓到」的判定：官方立體框投影的外接長方形當參考，同一組類別、IoU ≥ 0.3。
 - **nuScenes 標註規則**：nuscenes-devkit `docs/instructions_nuscenes.md`（讀取 2026-10-22），第 2 節表格附英文原文。
-- 第 1 節第 11、12 張是 YOLOX-s 真的第一層濾鏡與中間層結果（第 12 張每個深度挑一個通道代表，後兩個挑「在人身上比背景亮最多」的）；第 2 節 IoU 圖的學生框是把同一個框平移產生的示範。
+- 第 1 節第 12、13、14 張是 YOLOX-s 真的第一層濾鏡、三個濾鏡的反應與中間層結果（第 12 張每個深度挑一個通道代表，後兩個挑「在人身上比背景亮最多」的）；第 2 節 IoU 圖的學生框是把同一個框平移產生的示範。
 - 第 1 節第 4 張相機規格：H. Caesar et al., *nuScenes*, CVPR 2020 表 1（1/1.8 吋 CMOS、1600×900、自動曝光、JPEG）；濾色片排列與「補齊」是一般彩色相機的做法，論文沒寫 nuScenes 的排列。第 4 張 ①② 兩格是用照片數字算的示意。
 - 第 2 節各類別框數長條圖取自第七週。
