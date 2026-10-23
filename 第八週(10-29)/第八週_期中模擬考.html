@@ -49,7 +49,7 @@
 </head>
 <body class="noen">
 <div id="stick"><div id="topbar">
-  <h1>Thi thử giữa kỳ　期中模擬考<small>Tuần 1 – tiết 1 tuần 8 · 28 câu · đề tiếng Việt, có tiếng Trung đối chiếu (giống đề thi thật)・第一週～第八週第 1 節・28 題・越南文為主、中文對照</small></h1>
+  <h1>Thi thử giữa kỳ　期中模擬考<small>Tuần 1 – tiết 2 tuần 8 · 28 câu · đề tiếng Việt, có tiếng Trung đối chiếu (giống đề thi thật)・第一週～第八週第 2 節・28 題・越南文為主、中文對照</small></h1>
   <button id="bEn">English</button>
 </div></div>
 <main>
@@ -71,7 +71,7 @@
   <div class="src">題目與答案都出自本課第一到八週的投影片、講義與作業。nuScenes 資料：Motional，CC BY-NC-SA 4.0；偵測模型 YOLOX-s（Apache-2.0）。</div>
 </main>
 <script>
-/* 第八週 期中模擬考題庫（第一週到第八週第 1 節）。題目越南文為主、中文對照（期中考的格式，2026-10-23 老師決定），另附英文（預設不顯示）。
+/* 第八週 期中模擬考題庫（第一週到第八週第 2 節）。題目越南文為主、中文對照（期中考的格式，2026-10-23 老師決定），另附英文（預設不顯示）。
  * 每一題的答案與說明都出自課程教材，出處寫在 src 註解（w = 週次）。跨週說法不一致的地方（河內園區巴士算 L 幾、
  * Waymo 感測器數量、時速 50 煞停距離用 1 秒還是 0.3 秒反應）一律避開或在題目裡寫明假設。
  * 正確選項刻意不放在固定位置。
@@ -319,7 +319,7 @@ Q({ id: 24, w: 7, src: "第七週 l2.js #7–8",
   ans: "obj",
   why: { zh: "每一種融合都要對應，但前期是點對像素、中期是格對格（用標定算出來），後期是兩張物體清單互相配對，要靠位置、速度去判斷，最容易出錯。",
          vi: "Cách ghép nào cũng phải ghép đôi; ghép muộn là hai danh sách vật ghép với nhau, phải phán đoán theo vị trí, tốc độ, dễ sai nhất." } }),
-// ── 第八週 第 1 節 ─────────────────────────────────────
+// ── 第八週 第 1、2 節 ─────────────────────────────────────
 Q({ id: 25, w: 8, src: "第八週 l1.js #18（門檻表）",
   zh: "物件偵測把分數門檻從 0.3 調高到 0.7，會發生什麼事？",
   en: "An object detector raises its score threshold from 0.3 to 0.7. What happens?",
