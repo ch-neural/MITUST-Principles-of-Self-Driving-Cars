@@ -76,8 +76,8 @@
   <div>
     <div class="panel">
       <h2 id="taskTitle"></h2>
-      <div class="note" data-zh="選一個類別，在照片上按住拖曳畫框。點一下框可以選它，再按「刪掉」或換類別。手機請橫過來。"
-           data-vi="Chọn một loại, nhấn giữ và kéo trên ảnh để vẽ khung. Chạm vào khung để chọn, rồi bấm «Xoá» hoặc đổi loại. Điện thoại thì xoay ngang."></div>
+      <div class="note" data-zh="選一個類別，在照片上按住拖曳畫框。點一下框選它：拖框的中間可以移動，拖四角或四邊的白色小方塊可以調大小（電腦也可以用方向鍵微調，Shift 一次 10 格）；選了再按「刪掉」或換類別。點空白處取消選取。手機請橫過來。"
+           data-vi="Chọn một loại, nhấn giữ và kéo trên ảnh để vẽ khung. Chạm vào khung để chọn: kéo phần giữa để di chuyển, kéo các ô vuông trắng ở góc hoặc cạnh để đổi kích thước (máy tính có thể dùng phím mũi tên, Shift = 10 điểm); chọn rồi bấm «Xoá» hoặc đổi loại. Chạm chỗ trống để bỏ chọn. Điện thoại thì xoay ngang."></div>
       <div class="bar cls">
         <button data-g="veh" class="on"><span class="sw" style="background:var(--veh)"></span><span data-zh="車" data-vi="Xe"></span></button>
         <button data-g="ped"><span class="sw" style="background:var(--ped)"></span><span data-zh="行人" data-vi="Người"></span></button>
@@ -237,7 +237,11 @@ function draw() {
       tag(m.b[0], m.b[1], txt, r.extra || (r.same === false) ? "#FFB3B3" : COL[m.g]);
     }
   });
-  if (drag) rect(drag.b, COL[cls], 2, [6, 4]);
+  if (drag && drag.mode === "new") rect(drag.b, COL[cls], 2, [6, 4]);
+  if (sel >= 0 && mine[sel]) handles(mine[sel].b).forEach(([hx, hy]) => {          // 選取的框：8 個把手
+    const h = handleSize(); g.fillStyle = "#FFFFFF"; g.fillRect(hx - h / 2, hy - h / 2, h, h);
+    g.lineWidth = 2; g.strokeStyle = "#0B1F3A"; g.strokeRect(hx - h / 2, hy - h / 2, h, h);
+  });
   panel(res);
 }
 
@@ -279,24 +283,90 @@ function panel(res) {
 // ── 畫框（滑鼠、觸控都用 pointer 事件）──
 let drag = null;
 function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
+const scaleNow = () => cv.width / cv.getBoundingClientRect().width;          // 1 個螢幕像素＝幾個照片像素
+const handleSize = () => Math.max(10, 12 * scaleNow());                      // 把手在螢幕上約 12 像素
+// 8 個把手：左上、上中、右上、右中、右下、下中、左下、左中；每個記住它動哪幾條邊
+const HANDLE_EDGES = [[0, 1], [1], [2, 1], [2], [2, 3], [3], [0, 3], [0]];
+const HANDLE_CURSOR = ["nwse-resize", "ns-resize", "nesw-resize", "ew-resize", "nwse-resize", "ns-resize", "nesw-resize", "ew-resize"];
+function handles(b) {
+  const [x0, y0, x1, y1] = b, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  return [[x0, y0], [mx, y0], [x1, y0], [x1, my], [x1, y1], [mx, y1], [x0, y1], [x0, my]];
+}
+function hitTest(x, y) {
+  // 先看選取的框的把手（觸控時抓得比較寬），再看是不是在選取的框裡面
+  if (sel >= 0 && boxes()[sel]) {
+    const b = boxes()[sel].b, tol = Math.max(14, 20 * scaleNow());
+    const hs = handles(b);
+    for (let k = 0; k < 8; k++) if (Math.abs(x - hs[k][0]) <= tol / 2 + 4 && Math.abs(y - hs[k][1]) <= tol / 2 + 4) return { mode: "resize", k };
+    if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]) return { mode: "move" };
+  }
+  return { mode: "new" };
+}
+const clampBox = (b) => {
+  let [x0, y0, x1, y1] = b;
+  if (x0 > x1) [x0, x1] = [x1, x0]; if (y0 > y1) [y0, y1] = [y1, y0];
+  return [Math.max(0, x0), Math.max(0, y0), Math.min(cv.width, x1), Math.min(cv.height, y1)].map((v) => Math.round(v));
+};
 cv.addEventListener("pointerdown", (e) => {
   if (cur === OWN && !store.own.img) return;
+  e.preventDefault();
   const [x, y] = pos(e);
-  const hitI = boxes().map((m, i) => [m, i]).filter(([m]) => x >= m.b[0] && x <= m.b[2] && y >= m.b[1] && y <= m.b[3])
-    .sort((a, b) => (a[0].b[2] - a[0].b[0]) * (a[0].b[3] - a[0].b[1]) - (b[0].b[2] - b[0].b[0]) * (b[0].b[3] - b[0].b[1]))[0];
-  drag = { x, y, b: [x, y, x, y], hitI: hitI ? hitI[1] : -1 };
+  const h = hitTest(x, y);
+  if (h.mode !== "new") {
+    push();                                            // 移動、調大小前先存一份，可以「復原」
+    drag = { mode: h.mode, k: h.k, x, y, orig: boxes()[sel].b.slice() };
+  } else {
+    const hitI = boxes().map((m, i) => [m, i]).filter(([m]) => x >= m.b[0] && x <= m.b[2] && y >= m.b[1] && y <= m.b[3])
+      .sort((a, b) => (a[0].b[2] - a[0].b[0]) * (a[0].b[3] - a[0].b[1]) - (b[0].b[2] - b[0].b[0]) * (b[0].b[3] - b[0].b[1]))[0];
+    drag = { mode: "new", x, y, b: [x, y, x, y], hitI: hitI ? hitI[1] : -1 };
+  }
   cv.setPointerCapture(e.pointerId);
 });
 cv.addEventListener("pointermove", (e) => {
-  if (!drag) return; const [x, y] = pos(e);
-  drag.b = [Math.min(drag.x, x), Math.min(drag.y, y), Math.max(drag.x, x), Math.max(drag.y, y)]; draw();
+  const [x, y] = pos(e);
+  if (!drag) {                                         // 沒在拖：滑鼠移到把手上換游標
+    const h = hitTest(x, y);
+    cv.style.cursor = h.mode === "resize" ? HANDLE_CURSOR[h.k] : h.mode === "move" ? "move" : "crosshair";
+    return;
+  }
+  if (drag.mode === "new") {
+    drag.b = [Math.min(drag.x, x), Math.min(drag.y, y), Math.max(drag.x, x), Math.max(drag.y, y)];
+  } else if (drag.mode === "move") {
+    const o = drag.orig, w = o[2] - o[0], hh = o[3] - o[1];
+    let nx = o[0] + (x - drag.x), ny = o[1] + (y - drag.y);
+    nx = Math.max(0, Math.min(cv.width - w, nx)); ny = Math.max(0, Math.min(cv.height - hh, ny));
+    boxes()[sel].b = [nx, ny, nx + w, ny + hh].map((v) => Math.round(v));
+  } else {
+    const b = drag.orig.slice(), dx = x - drag.x, dy = y - drag.y;
+    HANDLE_EDGES[drag.k].forEach((ei) => { b[ei] += ei % 2 ? dy : dx; });
+    boxes()[sel].b = clampBox(b);
+  }
+  draw();
 });
 cv.addEventListener("pointerup", () => {
   if (!drag) return;
-  const b = drag.b.map((v, i) => Math.max(0, Math.min(i % 2 ? cv.height : cv.width, v)));
-  if (b[2] - b[0] >= 6 && b[3] - b[1] >= 6) { push(); boxes().push({ b: b.map((v) => Math.round(v)), g: cls }); sel = boxes().length - 1; }
-  else sel = drag.hitI;                                  // 只是點一下：選框
+  if (drag.mode === "new") {
+    const b = clampBox(drag.b);
+    if (b[2] - b[0] >= 6 && b[3] - b[1] >= 6) { push(); boxes().push({ b, g: cls }); sel = boxes().length - 1; }
+    else sel = drag.hitI;                              // 只是點一下：選框（點空白處＝取消選取）
+  } else {
+    const m = boxes()[sel];
+    if (m.b[2] - m.b[0] < 4 || m.b[3] - m.b[1] < 4) { const prev = JSON.parse(hist().pop()); boxes().length = 0; boxes().push(...prev); }  // 拉到太小：退回
+    else if (JSON.stringify(m.b) === JSON.stringify(drag.orig)) hist().pop();                                                     // 沒動到：不留紀錄
+  }
   drag = null; save(); draw();
+});
+// 方向鍵：選取的框移 1 像素（按住 Shift 移 10）；Alt＋方向鍵：右邊／下邊往外或往內（調大小）
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || sel < 0 || !boxes()[sel]) return;
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return;
+  e.preventDefault();
+  const st = e.shiftKey ? 10 : 1, b = boxes()[sel].b.slice();
+  if (e.altKey) { b[2] += d[0] * st; b[3] += d[1] * st; }
+  else { b[0] += d[0] * st; b[2] += d[0] * st; b[1] += d[1] * st; b[3] += d[1] * st; }
+  if (b[2] - b[0] < 4 || b[3] - b[1] < 4 || b[0] < 0 || b[1] < 0 || b[2] > cv.width || b[3] > cv.height) return;
+  push(); boxes()[sel].b = b; save(); draw();
 });
 
 // ── 按鈕 ──
