@@ -22,10 +22,10 @@
   .qh{display:flex;gap:8px;align-items:baseline}
   .qn{font-weight:700;color:var(--teal-d);flex:0 0 auto}
   .wk{font-size:11px;color:#fff;background:var(--navy);border-radius:9px;padding:0 7px;flex:0 0 auto}
-  .zh{font-weight:700}
-  .en{color:#2F4A66;font-size:14px}
-  .vi{color:var(--mute);font-size:13px}
-  body.novi .vi{display:none}
+  .vi{font-weight:700;color:var(--ink);font-size:15.5px}
+  .zh{color:#2F4A66;font-size:14px}
+  .en{color:var(--mute);font-size:13px}
+  body.noen .en{display:none}
   .opts{display:grid;gap:6px;margin-top:8px}
   .opt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;background:var(--card)}
   .opt input{margin-top:5px}
@@ -47,32 +47,31 @@
   .src{font-size:11px;color:var(--mute);margin-top:4px}
 </style>
 </head>
-<body>
+<body class="noen">
 <div id="stick"><div id="topbar">
-  <h1>期中模擬考　Midterm Practice<small>第一週～第八週第 1 節・28 題・題目中英對照（跟期中考一樣）・Tuần 1–8, 28 câu</small></h1>
-  <button id="bVi" class="on">Tiếng Việt ✓</button>
+  <h1>Thi thử giữa kỳ　期中模擬考<small>Tuần 1 – tiết 1 tuần 8 · 28 câu · đề tiếng Việt, có tiếng Trung đối chiếu (giống đề thi thật)・第一週～第八週第 1 節・28 題・越南文為主、中文對照</small></h1>
+  <button id="bEn">English</button>
 </div></div>
 <main>
   <div class="card">
-    <div>期中考：<b>11/5（四）上課時間</b>，佔總成績 15%，概念題與圖表判讀為主，題目中英對照。</div>
-    <div class="en">Midterm: Thu 5 Nov, in class. Concept and chart-reading questions, in Chinese and English.</div>
-    <div class="vi">Thi giữa kỳ: thứ Năm 5/11, trong giờ học. Câu hỏi khái niệm và đọc biểu đồ, song ngữ Trung–Anh.</div>
-    <div style="margin-top:8px" class="vi">Nút «Tiếng Việt» ở góc trên bật/tắt dòng tiếng Việt. Đề thi thật chỉ có tiếng Trung và tiếng Anh.</div>
-    <div style="margin-top:6px">先全部作答，最後按「交卷、看答案」。答錯的題目，看說明，回去翻那一週的講義。</div>
+    <div class="vi">Thi giữa kỳ: <b>thứ Năm 5/11, trong giờ học</b>, 15% tổng điểm. Câu hỏi khái niệm và đọc biểu đồ; đề tiếng Việt là chính, có tiếng Trung đối chiếu.</div>
+    <div class="zh">期中考：11/5（四）上課時間，佔總成績 15%，概念題與圖表判讀為主，題目越南文為主、中文對照。</div>
+    <div class="vi" style="margin-top:8px">Làm hết rồi bấm «Nộp bài, xem đáp án». Câu sai thì đọc giải thích, rồi xem lại tài liệu tuần đó.</div>
+    <div class="zh">先全部作答，最後按「交卷、看答案」。答錯的題目，看說明，回去翻那一週的講義。</div>
   </div>
   <div id="qs"></div>
   <div class="card" id="endCard">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input type="text" id="nm" placeholder="姓名 Họ tên"><input type="text" id="sid" placeholder="學號 MSSV">
-      <button id="bSubmit" style="font-weight:700">交卷、看答案 Submit</button>
-      <button id="bReset">重做 Reset</button>
+      <button id="bSubmit" style="font-weight:700">Nộp bài, xem đáp án　交卷、看答案</button>
+      <button id="bReset">Làm lại　重做</button>
     </div>
     <div id="result" style="margin-top:10px"></div>
   </div>
   <div class="src">題目與答案都出自本課第一到八週的投影片、講義與作業。nuScenes 資料：Motional，CC BY-NC-SA 4.0；偵測模型 YOLOX-s（Apache-2.0）。</div>
 </main>
 <script>
-/* 第八週 期中模擬考題庫（第一週到第八週第 1 節）。題目中英對照（期中考的格式），另附越南文。
+/* 第八週 期中模擬考題庫（第一週到第八週第 1 節）。題目越南文為主、中文對照（期中考的格式，2026-10-23 老師決定），另附英文（預設不顯示）。
  * 每一題的答案與說明都出自課程教材，出處寫在 src 註解（w = 週次）。跨週說法不一致的地方（河內園區巴士算 L 幾、
  * Waymo 感測器數量、時速 50 煞停距離用 1 秒還是 0.3 秒反應）一律避開或在題目裡寫明假設。
  * 正確選項刻意不放在固定位置。
@@ -134,7 +133,7 @@ Q({ id: 6, w: 2, src: "Codex-output 第二週 ODD 學習單教師解答（D 駁�
   zh: "某接駁車的 ODD 寫「照度至少 20 lx」。今天傍晚現場量到 5 lx。這時候：",
   en: "A shuttle's ODD says \"illuminance at least 20 lx\". This evening the measured value is 5 lx. Then:",
   vi: "ODD của một xe đưa đón ghi «độ rọi ít nhất 20 lx». Chiều tối nay đo được 5 lx. Khi đó:",
-  fig: "<table class='fig'><tr><th>條件 Condition</th><th>事件 Event</th></tr><tr><td>照度 ≥ 20 lx</td><td>5 lx</td></tr></table>",
+  fig: "<table class='fig'><tr><th>Điều kiện 條件</th><th>Thực tế 事件</th></tr><tr><td>Độ rọi 照度 ≥ 20 lx</td><td>5 lx</td></tr></table>",
   opts: [op("ok", "符合，開慢一點就好", "Inside the ODD if it drives slower", "Phù hợp, chạy chậm lại là được"),
          op("out", "不符合：「至少 20」是下限，5 低於下限，已經在 ODD 外", "Outside: \"at least 20\" is a lower bound; 5 is below it", "Không phù hợp: «ít nhất 20» là giới hạn dưới, 5 thấp hơn"),
          op("ok2", "符合：5 小於 20，沒有超過", "Inside: 5 is less than 20, so it does not exceed", "Phù hợp: 5 nhỏ hơn 20, không vượt quá"),
@@ -166,7 +165,7 @@ Q({ id: 9, w: 3, src: "第三週 note_data.js 第 101–146 行；學習單 A1",
   zh: "用相機估距離，目標的距離變成兩倍，估距誤差大約變成幾倍？",
   en: "When a camera estimates distance and the target is twice as far, the error becomes about how many times larger?",
   vi: "Camera ước lượng khoảng cách: mục tiêu xa gấp đôi thì sai số lớn khoảng mấy lần?",
-  fig: "<table class='fig'><tr><th>距離 Distance</th><td>10 m</td><td>20 m</td><td>40 m</td></tr><tr><th>誤差 Error</th><td>±0.04 m</td><td>±0.15 m</td><td>±0.58 m</td></tr></table>",
+  fig: "<table class='fig'><tr><th>Khoảng cách 距離</th><td>10 m</td><td>20 m</td><td>40 m</td></tr><tr><th>Sai số 誤差</th><td>±0.04 m</td><td>±0.15 m</td><td>±0.58 m</td></tr></table>",
   opts: [op("2", "2 倍", "2 times", "2 lần"), op("4", "4 倍", "4 times", "4 lần"), op("1", "不變", "Unchanged", "Không đổi"), op("half", "變成一半", "Half", "Một nửa")],
   ans: "4",
   why: { zh: "誤差 ≈ d²×θ÷h，跟距離的平方成正比：距離兩倍，誤差四倍。表上 20 m ±0.15、40 m ±0.58，差不多四倍。光達的誤差則是固定 ±0.02 m，跟距離無關。",
@@ -175,7 +174,7 @@ Q({ id: 10, w: 3, src: "第三週 note_data.js 表 3（64 線行人點數）",
   zh: "64 線光達打在行人身上的點數如下。距離從 10 m 變成 20 m，點數大約剩下多少？",
   en: "Points from a 64-beam lidar on a pedestrian are shown below. From 10 m to 20 m, the number of points drops to about:",
   vi: "Số điểm của lidar 64 tia trên người đi bộ như bảng. Từ 10 m lên 20 m, số điểm còn khoảng:",
-  fig: "<table class='fig'><tr><th>距離 Distance</th><td>10 m</td><td>20 m</td><td>40 m</td></tr><tr><th>點數 Points</th><td>308</td><td>77</td><td>15</td></tr></table>",
+  fig: "<table class='fig'><tr><th>Khoảng cách 距離</th><td>10 m</td><td>20 m</td><td>40 m</td></tr><tr><th>Số điểm 點數</th><td>308</td><td>77</td><td>15</td></tr></table>",
   opts: [op("half", "一半", "Half", "Một nửa"), op("quarter", "四分之一", "One quarter", "Một phần tư"), op("same", "差不多一樣", "About the same", "Gần như nhau"), op("tenth", "十分之一", "One tenth", "Một phần mười")],
   ans: "quarter",
   why: { zh: "308 → 77，剛好四分之一。距離兩倍，物體在光達眼中寬和高都變一半，點數變四分之一；40 m 只剩 15 點。",
@@ -196,7 +195,7 @@ Q({ id: 12, w: 4, src: "第四週 note_data.js 表 2",
   zh: "用第四週的公式（反應 0.3 秒、減速度 6 m/s²），時速 50 的煞停距離約 20 公尺。本課建議射線至少要多長？",
   en: "Using the week-4 formula (0.3 s reaction, 6 m/s² deceleration), stopping distance at 50 km/h is about 20 m. How long should the sensing range be at least, in this course?",
   vi: "Theo công thức tuần 4 (phản ứng 0,3 s, giảm tốc 6 m/s²), quãng dừng ở 50 km/h khoảng 20 m. Môn học khuyên tia ít nhất dài bao nhiêu?",
-  fig: "<table class='fig'><tr><th>時速 km/h</th><td>30</td><td>40</td><td>50</td><td>60</td></tr><tr><th>煞停距離 Stopping</th><td>8 m</td><td>13.6 m</td><td>20 m</td><td>28 m</td></tr><tr><th>射線至少 Range ≥</th><td>10 m</td><td>17 m</td><td>?</td><td>35 m</td></tr></table>",
+  fig: "<table class='fig'><tr><th>km/h 時速</th><td>30</td><td>40</td><td>50</td><td>60</td></tr><tr><th>Quãng dừng 煞停距離</th><td>8 m</td><td>13.6 m</td><td>20 m</td><td>28 m</td></tr><tr><th>Tia ít nhất 射線至少</th><td>10 m</td><td>17 m</td><td>?</td><td>35 m</td></tr></table>",
   opts: [op("10", "10 m", "10 m", "10 m"), op("20", "20 m", "20 m", "20 m"), op("25", "25 m", "25 m", "25 m"), op("50", "50 m", "50 m", "50 m")],
   ans: "25",
   why: { zh: "煞停距離 × 1.25 的餘裕＝25 m（1.25 是本課取的餘裕，不是法規）。比煞停距離晚看到，就一定撞上。",
@@ -286,7 +285,7 @@ Q({ id: 21, w: 7, src: "第七週 l1.js #5 失效對照表",
   zh: "看失效對照表「大雨、濃霧」那一列。哪一種感測器照常（✓）？",
   en: "Look at the \"heavy rain, dense fog\" row of the failure table. Which sensor works as usual (✓)?",
   vi: "Xem hàng «mưa to, sương mù dày» của bảng điều kiện hỏng. Cảm biến nào vẫn bình thường (✓)?",
-  fig: "<table class='fig'><tr><th></th><th>相機 Cam</th><th>光達 Lidar</th><th>雷達 Radar</th><th>超音波 Ultrasonic</th></tr><tr><th>大雨、濃霧 Heavy rain, fog</th><td>✗</td><td>▲</td><td>✓</td><td>▲</td></tr></table><div class='figcap'>✓ 照常 works　▲ 變差 degraded　✗ 失靈 fails</div>",
+  fig: "<table class='fig'><tr><th></th><th>Camera 相機</th><th>Lidar 光達</th><th>Radar 雷達</th><th>Siêu âm 超音波</th></tr><tr><th>Mưa to, sương mù 大雨、濃霧</th><td>✗</td><td>▲</td><td>✓</td><td>▲</td></tr></table><div class='figcap'>✓ bình thường 照常　▲ kém đi 變差　✗ hỏng 失靈</div>",
   opts: [op("cam", "相機", "Camera", "Camera"), op("lidar", "光達", "Lidar", "Lidar"), op("radar", "雷達", "Radar", "Radar"), op("us", "超音波", "Ultrasonic", "Siêu âm")],
   ans: "radar",
   why: { zh: "雷達波長約 4 mm，比雨滴、霧滴大，繞得過去；相機看不遠，光達的雷射會被水滴打散。不過失效表上沒有一欄全是 ✓：雷達在「遠處的行人、機車」那一列是 ✗。",
@@ -325,7 +324,7 @@ Q({ id: 25, w: 8, src: "第八週 l1.js #18（門檻表）",
   zh: "物件偵測把分數門檻從 0.3 調高到 0.7，會發生什麼事？",
   en: "An object detector raises its score threshold from 0.3 to 0.7. What happens?",
   vi: "Bộ phát hiện vật thể nâng ngưỡng điểm từ 0,3 lên 0,7. Điều gì xảy ra?",
-  fig: "<table class='fig'><tr><th>門檻 Threshold</th><th>對不到標註的框 Boxes matching no label</th><th>行人抓到 Pedestrians found</th></tr><tr><td>0.3</td><td>284</td><td>53%</td></tr><tr><td>0.7</td><td>35</td><td>30%</td></tr></table>",
+  fig: "<table class='fig'><tr><th>Ngưỡng 門檻</th><th>Khung không khớp nhãn 對不到標註的框</th><th>Người bắt được 行人抓到</th></tr><tr><td>0.3</td><td>284</td><td>53%</td></tr><tr><td>0.7</td><td>35</td><td>30%</td></tr></table>",
   opts: [op("both", "多報變少，漏掉也變少", "Fewer false alarms and fewer misses", "Báo thừa ít đi, bỏ sót cũng ít đi"),
          op("trade", "多報變少，但漏掉的變多", "Fewer false alarms, but more misses", "Báo thừa ít đi, nhưng bỏ sót nhiều hơn"),
          op("more", "多報變多，漏掉變少", "More false alarms, fewer misses", "Báo thừa nhiều hơn, bỏ sót ít đi"), op("none", "沒有影響", "No effect", "Không ảnh hưởng")],
@@ -368,8 +367,8 @@ const IMGS = {"img/w8_recall.png":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA
 const $ = (id) => document.getElementById(id);
 let done = false;
 const picked = {};
-const WK = ["", "第一週 Tuần 1", "第二週 Tuần 2", "第三週 Tuần 3", "第四週 Tuần 4", "第五週 Tuần 5", "第六週 Tuần 6", "第七週 Tuần 7", "第八週 Tuần 8"];
-const TOPIC = ["", "分級", "ODD・原理", "六種感測器", "模擬・煞停", "相機・光達規格", "雷達・GNSS・IMU", "失效・融合", "偵測・標註"];
+const WK = ["", "Tuần 1 第一週", "Tuần 2 第二週", "Tuần 3 第三週", "Tuần 4 第四週", "Tuần 5 第五週", "Tuần 6 第六週", "Tuần 7 第七週", "Tuần 8 第八週"];
+const TOPIC = ["", "Cấp SAE 分級", "ODD 原理", "6 cảm biến 六種感測器", "Mô phỏng 模擬", "Camera, lidar 規格", "Radar, GNSS, IMU", "Hỏng, hợp nhất 失效・融合", "Phát hiện, gán nhãn 偵測・標註"];
 
 function save() { try { localStorage.setItem("w8review", JSON.stringify({ p: picked, nm: $("nm").value, sid: $("sid").value })); } catch (e) {} }
 function load() {
@@ -384,14 +383,14 @@ function render() {
       if (done && o.v === q.ans) cls = "right";
       else if (done && picked[q.id] === o.v) cls = "wrong";
       return `<label class="opt ${cls}"><input type="radio" name="q${q.id}" value="${o.v}" ${picked[q.id] === o.v ? "checked" : ""} ${done ? "disabled" : ""}>
-        <div><span class="zh">${o.zh}</span>${o.en !== o.zh ? `<span class="en">${o.en}</span>` : ""}${o.vi !== o.zh ? `<span class="vi">${o.vi}</span>` : ""}</div></label>`;
+        <div><span class="vi">${o.vi}</span>${o.zh !== o.vi ? `<span class="zh">${o.zh}</span>` : ""}${o.en !== o.vi && o.en !== o.zh ? `<span class="en">${o.en}</span>` : ""}</div></label>`;
     }).join("");
     const fig = (q.fig || "") + (q.img ? `<img class="fig" src="${IMGS[q.img]}" alt="">` : "");
     return `<div class="card ${st} ${done ? "done" : ""}" id="c${q.id}">
       <div class="qh"><span class="qn">${q.id}.</span><span class="wk">${WK[q.w]}</span></div>
-      <div class="zh">${q.zh}</div><div class="en">${q.en}</div><div class="vi">${q.vi}</div>${fig}
+      <div class="vi">${q.vi}</div><div class="zh">${q.zh}</div><div class="en">${q.en}</div>${fig}
       <div class="opts">${opts}</div>
-      <div class="why">${done && picked[q.id] === q.ans ? "✓ 答對。" : "✗ 正確答案是上面綠色那一個。"}${q.why.zh}<div class="vi" style="margin-top:4px">${q.why.vi}</div></div></div>`;
+      <div class="why"><div class="vi">${done && picked[q.id] === q.ans ? "✓ Đúng. " : "✗ Đáp án đúng là ô màu xanh ở trên. "}${q.why.vi}</div><div class="zh" style="margin-top:4px">${done && picked[q.id] === q.ans ? "✓ 答對。" : "✗ 正確答案是上面綠色那一個。"}${q.why.zh}</div></div></div>`;
   }).join("");
   document.querySelectorAll(".opt input").forEach((el) => el.onchange = () => { picked[+el.name.slice(1)] = el.value; save(); });
 }
@@ -402,14 +401,14 @@ function result() {
   REVIEW.forEach((q) => { const b = byW[q.w] || (byW[q.w] = [0, 0]); b[0]++; b[1] += picked[q.id] === q.ans; });
   const unans = REVIEW.filter((q) => !picked[q.id]).length;
   $("result").innerHTML = `<div class="score"><b>${ok} / ${n}</b>　${$("nm").value || ""} ${$("sid").value || ""}　${new Date().toLocaleString("zh-TW")}</div>` +
-    (unans ? `<div class="vi" style="color:var(--red)">${unans} 題沒作答 · ${unans} câu chưa làm</div>` : "") +
+    (unans ? `<div class="vi" style="color:var(--red)">${unans} câu chưa làm · ${unans} 題沒作答</div>` : "") +
     `<div class="wkrow">${Object.keys(byW).map((w) => { const [a, b] = byW[w]; return `<span class="${b < a ? "low" : ""}">${WK[w]}・${TOPIC[w]}　${b}/${a}</span>`; }).join("")}</div>` +
-    `<div style="margin-top:6px;font-size:13px">紅框的週次有錯題，回去翻那一週的講義。截圖這一塊傳 LINE。<span class="vi"> Tuần có khung đỏ là có câu sai — đọc lại tài liệu tuần đó. Chụp màn hình phần này gửi LINE.</span></div>`;
+    `<div style="margin-top:6px"><div class="vi">Tuần có khung đỏ là có câu sai — đọc lại tài liệu tuần đó. Chụp màn hình phần này gửi LINE.</div><div class="zh">紅框的週次有錯題，回去翻那一週的講義。截圖這一塊傳 LINE。</div></div>`;
 }
 
 $("bSubmit").onclick = () => { done = true; save(); render(); result(); $("endCard").scrollIntoView({ behavior: "smooth" }); };
 $("bReset").onclick = () => { done = false; for (const k in picked) delete picked[k]; save(); render(); $("result").innerHTML = ""; window.scrollTo(0, 0); };
-$("bVi").onclick = () => { const on = document.body.classList.toggle("novi"); $("bVi").classList.toggle("on", !on); $("bVi").textContent = on ? "Tiếng Việt" : "Tiếng Việt ✓"; };
+$("bEn").onclick = () => { const hidden = document.body.classList.toggle("noen"); $("bEn").classList.toggle("on", !hidden); $("bEn").textContent = hidden ? "English" : "English ✓"; };
 $("nm").oninput = save; $("sid").oninput = save;
 load(); render();
 
