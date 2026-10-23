@@ -76,8 +76,8 @@
   <div>
     <div class="panel">
       <h2 id="taskTitle"></h2>
-      <div class="note" data-zh="選一個類別，在照片上按住拖曳畫框。點一下框選它：拖框的中間可以移動，拖四角或四邊的白色小方塊可以調大小（電腦也可以用方向鍵微調，Shift 一次 10 格）；選了再按「刪掉」或換類別。點空白處取消選取。手機請橫過來。"
-           data-vi="Chọn một loại, nhấn giữ và kéo trên ảnh để vẽ khung. Chạm vào khung để chọn: kéo phần giữa để di chuyển, kéo các ô vuông trắng ở góc hoặc cạnh để đổi kích thước (máy tính có thể dùng phím mũi tên, Shift = 10 điểm); chọn rồi bấm «Xoá» hoặc đổi loại. Chạm chỗ trống để bỏ chọn. Điện thoại thì xoay ngang."></div>
+      <div class="note" data-zh="選一個類別，在照片上按住拖曳畫框。要調整已經畫好的框：點它一下選起來，拖中間移動、拖四角或四邊的白色小方塊調大小（電腦可用方向鍵微調，Shift 一次 10 格），也可以按「刪掉」或換類別。框疊在一起時，在同一個地方再點一下，會換選下一個。點空白處取消選取。手機請橫過來。"
+           data-vi="Chọn một loại, nhấn giữ và kéo trên ảnh để vẽ khung. Muốn chỉnh khung đã vẽ: chạm vào để chọn, kéo phần giữa để di chuyển, kéo ô vuông trắng ở góc hoặc cạnh để đổi kích thước (máy tính dùng phím mũi tên, Shift = 10 điểm), cũng có thể bấm «Xoá» hoặc đổi loại. Khung chồng lên nhau: chạm lại cùng chỗ để chọn khung tiếp theo. Chạm chỗ trống để bỏ chọn. Điện thoại thì xoay ngang."></div>
       <div class="bar cls">
         <button data-g="veh" class="on"><span class="sw" style="background:var(--veh)"></span><span data-zh="車" data-vi="Xe"></span></button>
         <button data-g="ped"><span class="sw" style="background:var(--ped)"></span><span data-zh="行人" data-vi="Người"></span></button>
@@ -307,6 +307,10 @@ const clampBox = (b) => {
   if (x0 > x1) [x0, x1] = [x1, x0]; if (y0 > y1) [y0, y1] = [y1, y0];
   return [Math.max(0, x0), Math.max(0, y0), Math.min(cv.width, x1), Math.min(cv.height, y1)].map((v) => Math.round(v));
 };
+const CLICK_PX = 8;                                    // 螢幕上移動不到 8 像素＝點一下（手指、觸控板都會抖一點）
+const boxesAt = (x, y) => boxes().map((m, i) => [m, i]).filter(([m]) => x >= m.b[0] && x <= m.b[2] && y >= m.b[1] && y <= m.b[3])
+  .sort((a, b) => (a[0].b[2] - a[0].b[0]) * (a[0].b[3] - a[0].b[1]) - (b[0].b[2] - b[0].b[0]) * (b[0].b[3] - b[0].b[1]))
+  .map(([, i]) => i);                                   // 這個點底下的框，小的在前
 cv.addEventListener("pointerdown", (e) => {
   if (cur === OWN && !store.own.img) return;
   e.preventDefault();
@@ -316,9 +320,7 @@ cv.addEventListener("pointerdown", (e) => {
     push();                                            // 移動、調大小前先存一份，可以「復原」
     drag = { mode: h.mode, k: h.k, x, y, orig: boxes()[sel].b.slice() };
   } else {
-    const hitI = boxes().map((m, i) => [m, i]).filter(([m]) => x >= m.b[0] && x <= m.b[2] && y >= m.b[1] && y <= m.b[3])
-      .sort((a, b) => (a[0].b[2] - a[0].b[0]) * (a[0].b[3] - a[0].b[1]) - (b[0].b[2] - b[0].b[0]) * (b[0].b[3] - b[0].b[1]))[0];
-    drag = { mode: "new", x, y, b: [x, y, x, y], hitI: hitI ? hitI[1] : -1 };
+    drag = { mode: "new", x, y, b: [x, y, x, y] };
   }
   cv.setPointerCapture(e.pointerId);
 });
@@ -326,9 +328,11 @@ cv.addEventListener("pointermove", (e) => {
   const [x, y] = pos(e);
   if (!drag) {                                         // 沒在拖：滑鼠移到把手上換游標
     const h = hitTest(x, y);
-    cv.style.cursor = h.mode === "resize" ? HANDLE_CURSOR[h.k] : h.mode === "move" ? "move" : "crosshair";
+    cv.style.cursor = h.mode === "resize" ? HANDLE_CURSOR[h.k] : h.mode === "move" ? "move" : boxesAt(x, y).length ? "pointer" : "crosshair";
     return;
   }
+  drag.moved = Math.max(drag.moved || 0, Math.hypot(x - drag.x, y - drag.y) / scaleNow());
+  if (drag.moved < CLICK_PX) return;                   // 還沒拖遠，先當作點一下
   if (drag.mode === "new") {
     drag.b = [Math.min(drag.x, x), Math.min(drag.y, y), Math.max(drag.x, x), Math.max(drag.y, y)];
   } else if (drag.mode === "move") {
@@ -343,16 +347,23 @@ cv.addEventListener("pointermove", (e) => {
   }
   draw();
 });
-cv.addEventListener("pointerup", () => {
+cv.addEventListener("pointerup", (e) => {
   if (!drag) return;
+  const [x, y] = pos(e);
+  const click = (drag.moved || 0) < CLICK_PX;
   if (drag.mode === "new") {
     const b = clampBox(drag.b);
-    if (b[2] - b[0] >= 6 && b[3] - b[1] >= 6) { push(); boxes().push({ b, g: cls }); sel = boxes().length - 1; }
-    else sel = drag.hitI;                              // 只是點一下：選框（點空白處＝取消選取）
+    if (!click && b[2] - b[0] >= 6 && b[3] - b[1] >= 6) { push(); boxes().push({ b, g: cls }); sel = -1; }   // 畫好的框不自動選起來
+    else { const under = boxesAt(drag.x, drag.y); sel = under.length ? under[0] : -1; }                    // 點一下：選最小的那個；點空白＝取消
+  } else if (click) {                                  // 在選取的框上點一下（沒拖）：換選底下的下一個框（框疊在一起時用）
+    boxes()[sel].b = drag.orig; hist().pop();
+    if (drag.mode === "move") {
+      const under = boxesAt(drag.x, drag.y);
+      if (under.length > 1) sel = under[(under.indexOf(sel) + 1) % under.length];
+    }
   } else {
     const m = boxes()[sel];
     if (m.b[2] - m.b[0] < 4 || m.b[3] - m.b[1] < 4) { const prev = JSON.parse(hist().pop()); boxes().length = 0; boxes().push(...prev); }  // 拉到太小：退回
-    else if (JSON.stringify(m.b) === JSON.stringify(drag.orig)) hist().pop();                                                     // 沒動到：不留紀錄
   }
   drag = null; save(); draw();
 });
