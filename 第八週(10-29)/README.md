@@ -30,7 +30,7 @@
 | `第八週_第2節_簡報.pptx` | 11 張／50 分。標註是模型的課本（練習台畫面）、nuScenes 標了多少（機車只有汽車的十六分之一）、官方標註規則節錄（附英文原文）、騎士包進車的框、IoU、打開練習台、任務一到四（各約 12 分鐘）、台灣與越南：本地資料要自己標 |
 | `第八週_第3節_簡報.pptx` | 16 張／50 分。考試四件事、八週地圖、分級表、ODD 六格與讀條件、六種感測器＋IMU（含第二週量測原理）、煞停距離表（含雨天 0.55 倍）、規格表七個數字、失效對照表、融合五句話、第八週電腦怎麼看見與標註、最常講錯的八句話、圖表判讀四步驟、模擬考 |
 | `自動駕駛原理_第八週_課程講義.docx` / `.pdf` | 學生講義（中文），21 頁。線上版 https://ch-neural.github.io/MITUST-Principles-of-Self-Driving-Cars/week8/note-zh.pdf |
-| `Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.docx` / `.pdf` | 越南文版，19 頁。線上版 …/week8/note-vi.pdf |
+| `Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.docx` / `.pdf` | 越南文版，20 頁。線上版 …/week8/note-vi.pdf |
 | `第八週_標註練習台.html` | 課堂工具，單檔，約 670 KB |
 | `第八週_期中模擬考.html` | 模擬考，單檔，約 120 KB |
 
