@@ -19,7 +19,7 @@
   main{max-width:980px;margin:0 auto;padding:12px 14px 40px}
   .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
   .card.ok{border-left:5px solid var(--ok)} .card.bad{border-left:5px solid var(--red)}
-  .qh{display:flex;gap:8px;align-items:baseline}
+  .qh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
   .qn{font-weight:700;color:var(--teal-d);flex:0 0 auto}
   .wk{font-size:11px;color:#fff;background:var(--navy);border-radius:9px;padding:0 7px;flex:0 0 auto}
   .vi{font-weight:700;color:var(--ink);font-size:15.5px}
@@ -32,7 +32,11 @@
   .opt.right{border-color:var(--ok);background:#E7F5EE} .opt.wrong{border-color:var(--red);background:#FDECEB}
   .opt span{display:block}
   .why{display:none;margin-top:8px;background:#FFF7E0;border:1px solid #F3D58A;border-radius:8px;padding:8px 10px;font-size:13.5px}
-  .card.done .why{display:block}
+  .card.done .why,.card.open .why{display:block}
+  .bWhy{margin-left:auto;flex:0 0 auto;font-size:12.5px;padding:4px 10px;color:var(--teal-d);border-color:var(--teal)}
+  .card.open .bWhy{background:var(--teal);color:#fff}
+  .card.done .bWhy{display:none}
+  .peek{font-size:11px;color:#9A6B00;flex:0 0 auto}
   table.fig{border-collapse:collapse;margin:8px 0;font-size:13px}
   table.fig th,table.fig td{border:1px solid var(--line);padding:4px 8px;text-align:center}
   table.fig th{background:var(--card)}
@@ -58,6 +62,8 @@
     <div class="zh">期中考：11/5（四）上課時間，佔總成績 15%，概念題與圖表判讀為主，題目越南文為主、中文對照。</div>
     <div class="vi" style="margin-top:8px">Làm hết rồi bấm «Nộp bài, xem đáp án». Câu sai thì đọc giải thích, rồi xem lại tài liệu tuần đó.</div>
     <div class="zh">先全部作答，最後按「交卷、看答案」。答錯的題目，看說明，回去翻那一週的講義。</div>
+    <div class="vi" style="margin-top:8px">Câu nào không làm được hoặc muốn ôn lại thì bấm nút «Giải thích» ở góc phải câu đó. Phần giải thích có nói luôn đáp án, nên hãy tự nghĩ trước rồi mới bấm. Câu nào đã xem giải thích trước khi nộp sẽ được ghi lại trong kết quả.</div>
+    <div class="zh">答不出來或想複習的題目，可以按該題右上角的「解釋說明」。說明裡會直接講出答案，所以請先自己想過再按。交卷前看過說明的題目，會記在成績那一塊。</div>
   </div>
   <div id="qs"></div>
   <div class="card" id="endCard">
@@ -258,8 +264,8 @@ Q({ id: 18, w: 6, src: "第六週 l1.js #7–9",
          op("blind", "150 m 外完全看不到", "It sees nothing beyond 150 m", "Ngoài 150 m không thấy gì"),
          op("speed", "量不到速度", "It cannot measure speed", "Không đo được tốc độ"), op("rain", "下雨就失靈", "It fails in rain", "Mưa là hỏng")],
   ans: "cant",
-  why: { zh: "40×tan1.6°≈1.1 m、150 m 處 4.2 m。角度粗不等於看不到：目標還在，只是分不出在哪一道。所以跟車的雷達要配相機看車道線。",
-         vi: "Góc thô không có nghĩa là không thấy: vẫn thấy mục tiêu, chỉ không biết ở làn nào. Nên radar bám xe phải đi cùng camera." } }),
+  why: { zh: "角解析度 1.6° 的意思是：在 40 m 外，一束大約 1.1 m 寬（40×tan1.6°）；到了 150 m 外，一束大約 4.2 m 寬，比一個車道還寬。角度粗不等於看不到：目標還在，只是分不出在哪一道。所以跟車的雷達要配相機看車道線。",
+         vi: "Độ phân giải góc 1,6° nghĩa là: ở 40 m một chùm rộng khoảng 1,1 m (40×tan1,6°); ở 150 m rộng khoảng 4,2 m, rộng hơn một làn. Góc thô không có nghĩa là không thấy: vẫn thấy mục tiêu, chỉ không biết ở làn nào. Nên radar bám xe phải đi cùng camera." } }),
 Q({ id: 19, w: 6, src: "第六週 l2.js #7（NEO-M8N 註腳 CEP）",
   zh: "GNSS 模組寫「水平精度 2.5 m CEP」。CEP 是 Circular Error Probable（圓概率誤差）的縮寫。它的意思是：",
   en: "A GNSS module says \"horizontal accuracy 2.5 m CEP\". CEP stands for Circular Error Probable. It means:",
@@ -367,12 +373,14 @@ const IMGS = {"img/w8_recall.png":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA
 const $ = (id) => document.getElementById(id);
 let done = false;
 const picked = {};
+const peeked = {};   // 交卷前按過「解釋說明」的題號
+const opened = {};   // 目前展開說明的題號（不存檔）
 const WK = ["", "Tuần 1 第一週", "Tuần 2 第二週", "Tuần 3 第三週", "Tuần 4 第四週", "Tuần 5 第五週", "Tuần 6 第六週", "Tuần 7 第七週", "Tuần 8 第八週"];
 const TOPIC = ["", "Cấp SAE 分級", "ODD 原理", "6 cảm biến 六種感測器", "Mô phỏng 模擬", "Camera, lidar 規格", "Radar, GNSS, IMU", "Hỏng, hợp nhất 失效・融合", "Phát hiện, gán nhãn 偵測・標註"];
 
-function save() { try { localStorage.setItem("w8review", JSON.stringify({ p: picked, nm: $("nm").value, sid: $("sid").value })); } catch (e) {} }
+function save() { try { localStorage.setItem("w8review", JSON.stringify({ p: picked, k: peeked, nm: $("nm").value, sid: $("sid").value })); } catch (e) {} }
 function load() {
-  try { const o = JSON.parse(localStorage.getItem("w8review") || "null"); if (o) { Object.assign(picked, o.p || {}); $("nm").value = o.nm || ""; $("sid").value = o.sid || ""; } } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem("w8review") || "null"); if (o) { Object.assign(picked, o.p || {}); Object.assign(peeked, o.k || {}); $("nm").value = o.nm || ""; $("sid").value = o.sid || ""; } } catch (e) {}
 }
 
 function render() {
@@ -386,13 +394,23 @@ function render() {
         <div><span class="vi">${o.vi}</span>${o.zh !== o.vi ? `<span class="zh">${o.zh}</span>` : ""}${o.en !== o.vi && o.en !== o.zh ? `<span class="en">${o.en}</span>` : ""}</div></label>`;
     }).join("");
     const fig = (q.fig || "") + (q.img ? `<img class="fig" src="${IMGS[q.img]}" alt="">` : "");
-    return `<div class="card ${st} ${done ? "done" : ""}" id="c${q.id}">
-      <div class="qh"><span class="qn">${q.id}.</span><span class="wk">${WK[q.w]}</span></div>
+    const head = done ? (picked[q.id] === q.ans ? ["✓ Đúng. ", "✓ 答對。"] : ["✗ Đáp án đúng là ô màu xanh ở trên. ", "✗ 正確答案是上面綠色那一個。"]) : ["", ""];
+    return `<div class="card ${st} ${done ? "done" : ""} ${opened[q.id] ? "open" : ""}" id="c${q.id}">
+      <div class="qh"><span class="qn">${q.id}.</span><span class="wk">${WK[q.w]}</span>${peeked[q.id] ? `<span class="peek">đã xem giải thích 看過說明</span>` : ""}<button class="bWhy" data-q="${q.id}">Giải thích　解釋說明</button></div>
       <div class="vi">${q.vi}</div><div class="zh">${q.zh}</div><div class="en">${q.en}</div>${fig}
       <div class="opts">${opts}</div>
-      <div class="why"><div class="vi">${done && picked[q.id] === q.ans ? "✓ Đúng. " : "✗ Đáp án đúng là ô màu xanh ở trên. "}${q.why.vi}</div><div class="zh" style="margin-top:4px">${done && picked[q.id] === q.ans ? "✓ 答對。" : "✗ 正確答案是上面綠色那一個。"}${q.why.zh}</div></div></div>`;
+      <div class="why"><div class="vi">${head[0]}${q.why.vi}</div><div class="zh" style="margin-top:4px">${head[1]}${q.why.zh}</div></div></div>`;
   }).join("");
   document.querySelectorAll(".opt input").forEach((el) => el.onchange = () => { picked[+el.name.slice(1)] = el.value; save(); });
+  document.querySelectorAll(".bWhy").forEach((el) => el.onclick = () => {
+    const id = +el.dataset.q, card = $("c" + id);
+    opened[id] = !opened[id];
+    card.classList.toggle("open", opened[id]);
+    if (opened[id] && !peeked[id]) {
+      peeked[id] = 1; save();
+      card.querySelector(".wk").insertAdjacentHTML("afterend", `<span class="peek">đã xem giải thích 看過說明</span>`);
+    }
+  });
 }
 
 function result() {
@@ -400,14 +418,16 @@ function result() {
   const byW = {};
   REVIEW.forEach((q) => { const b = byW[q.w] || (byW[q.w] = [0, 0]); b[0]++; b[1] += picked[q.id] === q.ans; });
   const unans = REVIEW.filter((q) => !picked[q.id]).length;
+  const pk = REVIEW.filter((q) => peeked[q.id]).map((q) => q.id);
   $("result").innerHTML = `<div class="score"><b>${ok} / ${n}</b>　${$("nm").value || ""} ${$("sid").value || ""}　${new Date().toLocaleString("zh-TW")}</div>` +
     (unans ? `<div class="vi" style="color:var(--red)">${unans} câu chưa làm · ${unans} 題沒作答</div>` : "") +
+    (pk.length ? `<div class="vi" style="color:#9A6B00">Đã xem giải thích trước khi nộp: ${pk.length} câu (câu ${pk.join(", ")}) · 交卷前看過說明：${pk.length} 題（第 ${pk.join("、")} 題）</div>` : "") +
     `<div class="wkrow">${Object.keys(byW).map((w) => { const [a, b] = byW[w]; return `<span class="${b < a ? "low" : ""}">${WK[w]}・${TOPIC[w]}　${b}/${a}</span>`; }).join("")}</div>` +
     `<div style="margin-top:6px"><div class="vi">Tuần có khung đỏ là có câu sai — đọc lại tài liệu tuần đó. Chụp màn hình phần này gửi LINE.</div><div class="zh">紅框的週次有錯題，回去翻那一週的講義。截圖這一塊傳 LINE。</div></div>`;
 }
 
 $("bSubmit").onclick = () => { done = true; save(); render(); result(); $("endCard").scrollIntoView({ behavior: "smooth" }); };
-$("bReset").onclick = () => { done = false; for (const k in picked) delete picked[k]; save(); render(); $("result").innerHTML = ""; window.scrollTo(0, 0); };
+$("bReset").onclick = () => { done = false; for (const o of [picked, peeked, opened]) for (const k in o) delete o[k]; save(); render(); $("result").innerHTML = ""; window.scrollTo(0, 0); };
 $("bEn").onclick = () => { const hidden = document.body.classList.toggle("noen"); $("bEn").classList.toggle("on", !hidden); $("bEn").textContent = hidden ? "English" : "English ✓"; };
 $("nm").oninput = save; $("sid").oninput = save;
 load(); render();
