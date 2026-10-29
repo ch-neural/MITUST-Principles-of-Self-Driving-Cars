@@ -29,6 +29,7 @@ on:
       - '第八週(10-29)/第八週_期中模擬考.html'
       - '第八週(10-29)/自動駕駛原理_第八週_課程講義.pdf'
       - '第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf'
+      - '第九週(11-05)/第九週_期中考_試題.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -78,6 +79,7 @@ jobs:
             第八週(10-29)/第八週_期中模擬考.html
             第八週(10-29)/自動駕駛原理_第八週_課程講義.pdf
             第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf
+            第九週(11-05)/第九週_期中考_試題.html
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -86,7 +88,7 @@ jobs:
       - name: Prepare the public student pages
         shell: bash
         run: |
-          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec _site/week5/hw _site/week6/spec _site/week6/hw _site/week7/nusc _site/week7/hw _site/week8/label _site/week8/review
+          mkdir -p _site/week2/levels _site/week3/lab _site/week3/answers _site/week4/sim _site/week5/spec _site/week5/hw _site/week6/spec _site/week6/hw _site/week7/nusc _site/week7/hw _site/week8/label _site/week8/review _site/week9/exam
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/index.html
           cp -- '第二週(09-17)/第1節_分級練習_30題隨機抽題.html' _site/week2/levels/index.html
           cp -- '第三週(09-24)/第三週_感測器實驗室.html' _site/week3/lab/index.html
@@ -119,6 +121,8 @@ jobs:
           cp -- '第八週(10-29)/第八週_期中模擬考.html' _site/week8/review/index.html
           cp -- '第八週(10-29)/自動駕駛原理_第八週_課程講義.pdf' _site/week8/note-zh.pdf
           cp -- '第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf' _site/week8/note-vi.pdf
+          # 第九週：期中考試題（只有題目，答案寫在紙本答案卷上；教師用答案不放進 repo）
+          cp -- '第九週(11-05)/第九週_期中考_試題.html' _site/week9/exam/index.html
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4
