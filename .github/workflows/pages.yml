@@ -30,6 +30,7 @@ on:
       - '第八週(10-29)/自動駕駛原理_第八週_課程講義.pdf'
       - '第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf'
       - '第九週(11-05)/第九週_期中考_試題.html'
+      - '第九週(11-05)/第九週_考前複習_簡報.pdf'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -80,6 +81,7 @@ jobs:
             第八週(10-29)/自動駕駛原理_第八週_課程講義.pdf
             第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf
             第九週(11-05)/第九週_期中考_試題.html
+            第九週(11-05)/第九週_考前複習_簡報.pdf
           sparse-checkout-cone-mode: false
 
       - name: Configure GitHub Pages
@@ -123,6 +125,8 @@ jobs:
           cp -- '第八週(10-29)/Nguyên lý xe tự lái_Tuần 8_Tài liệu học tập.pdf' _site/week8/note-vi.pdf
           # 第九週：期中考試題（只有題目，答案寫在紙本答案卷上；教師用答案不放進 repo）
           cp -- '第九週(11-05)/第九週_期中考_試題.html' _site/week9/exam/index.html
+          # 考前複習簡報的學生版：PDF 不含備忘稿（講稿），動圖只留第一格
+          cp -- '第九週(11-05)/第九週_考前複習_簡報.pdf' _site/week9/slides.pdf
 
       - name: Upload the website
         uses: actions/upload-pages-artifact@v4
