@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手機定位散布量測 · Đo độ phân tán vị trí</title>
+<style>
+  :root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+        --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#EEF2F6;color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:15px;line-height:1.55}
+  #app{max-width:560px;margin:0 auto;padding:10px 12px 40px}
+  .top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .top h1{font-size:17px;margin:0;color:var(--navy);line-height:1.3}
+  .top h1 small{display:block;font-size:12px;font-weight:400;color:var(--mute)}
+  .lang{display:flex;flex:0 0 auto;margin-left:auto;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .lang button{padding:6px 11px;font-size:12px;background:#fff;border:none;border-radius:0}
+  .lang button.on{background:var(--navy);color:#fff}   /* 要排在 .lang button 後面，否則白底蓋掉深底 */
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:10px}
+  h2{font-size:14px;margin:0 0 4px;color:var(--teal-d)}
+  .note{font-size:12.5px;color:var(--mute);margin:2px 0 8px;line-height:1.5}
+  ol.chk{margin:4px 0 0;padding-left:20px;font-size:13.5px}
+  ol.chk li{margin:3px 0}
+  b.warn{color:var(--red)}
+  label{display:block;font-size:12.5px;color:var(--mute);margin:8px 0 3px}
+  select,input[type=text],textarea{width:100%;font:inherit;font-size:15px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  textarea{min-height:64px;resize:vertical}
+  button{font-family:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;cursor:pointer;line-height:1.25}
+  button.main{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+  button.main:disabled{opacity:.4;cursor:not-allowed}
+  button.alt{background:var(--card)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .btns button{flex:1 1 auto}
+  .run{background:var(--card);border-radius:8px;padding:10px 11px;margin-top:10px;font-size:13.5px}
+  .run .big{font-size:36px;font-weight:700;color:var(--navy);line-height:1.1;font-variant-numeric:tabular-nums}
+  .run .bar{height:6px;background:var(--line);border-radius:3px;margin:8px 0 6px;overflow:hidden}
+  .run .bar i{display:block;height:100%;background:var(--teal);width:0}
+  .run.bad{background:#FDECEA;color:#7A1F1A}
+  .res{margin-top:10px}
+  .res .head{font-size:12.5px;color:var(--ok);font-weight:700;margin-bottom:6px}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tile{background:var(--card);border-radius:8px;padding:7px 9px}
+  .tile b{display:block;font-size:20px;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.2}
+  .tile span{font-size:11.5px;color:var(--mute);line-height:1.35;display:block}
+  .tile.hi{background:#E6F6F4}
+  .meaning{font-size:12.5px;background:#FFF8E6;border-radius:8px;padding:8px 10px;margin-top:8px;color:#5A4300}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+  .chip{font-size:12px;padding:3px 9px;border-radius:12px;background:var(--card);color:var(--mute)}
+  .chip.ok{background:#E3F4EA;color:var(--ok);font-weight:700}
+  .yn{display:flex;gap:6px}
+  .yn button{flex:1}
+  .yn button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .foot{font-size:11.5px;color:var(--mute);margin-top:6px}
+  /* 作答單：截圖交 LINE 的那一頁 */
+  #sheet{display:none;background:#fff;border:2px solid var(--navy);border-radius:10px;padding:14px 15px}
+  #sheet h3{margin:0 0 2px;font-size:16px;color:var(--navy);line-height:1.35}
+  #sheet .who{font-size:15px;font-weight:700}
+  #sheet .when{font-size:11.5px;color:var(--mute);margin-bottom:8px}
+  #sheet .sec{font-size:12.5px;color:var(--teal-d);font-weight:700;margin:11px 0 4px}
+  #sheet .site{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+  #sheet .site .t{font-size:13px;font-weight:700}
+  #sheet .site .t small{font-weight:400;color:var(--mute)}
+  #sheet .ans{font-size:13px;line-height:1.55;white-space:pre-wrap}
+  #sheet .fine{font-size:11px;color:var(--mute);margin-top:10px}
+  .ctiles{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:12px;color:var(--mute);margin-top:4px}
+  .ctiles b{font-size:16px;color:var(--navy);font-variant-numeric:tabular-nums;margin-right:3px}
+  #sheet .site .n{font-size:11px;color:var(--mute);margin-top:2px}
+  body.sheet .top{display:none}
+  body.sheet #main{display:none}
+  body.sheet #sheet,body.sheet #sheetBar{display:block}
+  #sheetBar{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <h1><span data-zh="手機定位散布量測" data-vi="Đo độ phân tán vị trí của điện thoại"></span>
+      <small data-zh="第十二週作業 · 約 10 分鐘" data-vi="Bài tập tuần 12 · khoảng 10 phút"></small></h1>
+    <div class="lang"><button id="btnZh">中文</button><button id="btnVi" class="on">Tiếng Việt</button></div>
+  </div>
+
+  <div id="main">
+    <div class="panel">
+      <p style="margin:0 0 6px" data-zh="用你自己的手機，在戶外兩種環境各站定量兩分鐘，看手機回報的位置會「跳」多大。做完產生作答單，截圖傳 LINE 群組。"
+         data-vi="Dùng điện thoại của bạn, đứng yên ngoài trời ở hai kiểu nơi khác nhau, mỗi nơi 2 phút, xem vị trí điện thoại báo về «nhảy» bao nhiêu. Xong thì tạo phiếu trả lời, chụp màn hình gửi vào nhóm LINE."></p>
+      <h2 data-zh="開始前" data-vi="Trước khi bắt đầu"></h2>
+      <ol class="chk">
+        <li data-zh="用手機的 Safari 或 Chrome 開這一頁，不要在 LINE 裡直接開。" data-vi="Mở trang này bằng Safari hoặc Chrome, đừng mở trực tiếp trong LINE."></li>
+        <li data-zh="打開手機的「定位」，設成高精確度（iPhone：精確位置）。" data-vi="Bật «Vị trí» của điện thoại và chọn độ chính xác cao (iPhone: «Vị trí chính xác»)."></li>
+        <li data-zh="到戶外，站著不動。" data-vi="Ra ngoài trời và đứng yên."></li>
+        <li><b class="warn" data-zh="不要邊騎車、邊開車量，也不要在室內量。" data-vi="Không đo khi đang đi xe, và không đo trong nhà."></b></li>
+        <li data-zh="座標不會上傳，也不會出現在作答單上。" data-vi="Tọa độ không được tải lên và không xuất hiện trên phiếu trả lời."></li>
+      </ol>
+    </div>
+
+    <div class="panel" id="secA"></div>
+    <div class="panel" id="secB"></div>
+    <div class="panel" id="secC"></div>
+    <div class="panel" id="secD"></div>
+  </div>
+
+  <div id="sheet"></div>
+  <div id="sheetBar" class="panel" style="margin-top:10px">
+    <div class="note" style="margin:0 0 8px" data-zh="請把上面這一張截圖，傳到 LINE 群組。" data-vi="Hãy chụp màn hình phiếu ở trên và gửi vào nhóm LINE."></div>
+    <div class="btns" style="margin-top:0">
+      <button id="btnBack" data-zh="返回修改" data-vi="Quay lại sửa"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ── 設定 ──────────────────────────────────────────────
+   WARM：先站著等定位穩定的秒數（資料丟掉）；REC：正式記錄的秒數。
+   測試用：網址加 ?t=3,10 可以把兩個秒數縮短（課堂不會用到）。 */
+let WARM = 30, REC = 120;
+let CW = 15, CR = 20;                 // 回原點：每個點的預熱與記錄秒數
+const LANE_HALF = 1.75;               // 車道寬 3.5 m 的一半
+try { const t = new URLSearchParams(location.search).get("t"); if (t) { const [a, b] = t.split(",").map(Number); if (a >= 0 && b > 0) { WARM = a; REC = b; CW = Math.min(CW, a); CR = Math.min(CR, b); } } } catch (e) {}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let LANG = "vi";
+try { const l = localStorage.getItem("w12lang"); if (l === "zh" || l === "vi") LANG = l; } catch (e) {}
+const L = (zh, vi) => (LANG === "zh" ? zh : vi);
+const fmt = (x, d = 1) => { const s = Number(x).toFixed(d); return LANG === "vi" ? s.replace(".", ",") : s; };
+
+/* ── 狀態 ──────────────────────────────────────────── */
+const KEY = "w12gps";
+const S = { A: null, B: null, C: null, c1: null,
+  form: { sid: "", name: "", envA: "", envB: "", descA: "", descB: "", laneA: "", laneB: "", why: "" } };
+try { const o = JSON.parse(localStorage.getItem(KEY) || "null"); if (o) { Object.assign(S, o); S.form = Object.assign({ sid: "", name: "", envA: "", envB: "", descA: "", descB: "", laneA: "", laneB: "", why: "" }, o.form || {}); } } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+let run = null;       // 正在量的那一次
+
+/* ── 計算 ──────────────────────────────────────────── */
+const R_EARTH = 6371008.8, D2R = Math.PI / 180;
+function quantile(sorted, p) {
+  const k = (sorted.length - 1) * p, i = Math.floor(k), f = k - i;
+  return i + 1 < sorted.length ? sorted[i] * (1 - f) + sorted[i + 1] * f : sorted[i];
+}
+function mean(fixes) {
+  let a = 0, o = 0; fixes.forEach((f) => { a += f.lat; o += f.lon; });
+  return { lat: a / fixes.length, lon: o / fixes.length };
+}
+function stats(fixes) {
+  const n = fixes.length, m = mean(fixes);
+  const kx = R_EARTH * Math.cos(m.lat * D2R) * D2R, ky = R_EARTH * D2R;
+  const d = fixes.map((f) => Math.hypot((f.lon - m.lon) * kx, (f.lat - m.lat) * ky)).sort((a, b) => a - b);
+  const acc = fixes.map((f) => f.acc).sort((a, b) => a - b);
+  return {
+    n, span: (fixes[n - 1].t - fixes[0].t) / 1000,
+    cep50: quantile(d, 0.5), r95: quantile(d, 0.95),
+    acc: quantile(acc, 0.5), lane: d.filter((v) => v <= LANE_HALF).length / n,
+  };
+}
+function distance(p1, p2) {
+  const dx = (p2.lon - p1.lon) * R_EARTH * Math.cos(p1.lat * D2R) * D2R, dy = (p2.lat - p1.lat) * R_EARTH * D2R;
+  return Math.hypot(dx, dy);
+}
+
+/* ── 量測流程 ──────────────────────────────────────── */
+async function takeWake() {
+  try { if (navigator.wakeLock && run) run.wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+}
+function dropWake() { try { if (run && run.wake) run.wake.release(); } catch (e) {} }
+document.addEventListener("visibilitychange", () => {
+  if (!run) return;
+  if (document.hidden) { if (run.phase === "rec") run.hidden = true; }
+  else takeWake();
+});
+
+function startRun(key) {
+  if (run) return;
+  if (!navigator.geolocation) { alert(L("這個瀏覽器不支援定位。請改用 Safari 或 Chrome。", "Trình duyệt này không hỗ trợ định vị. Hãy dùng Safari hoặc Chrome.")); return; }
+  if (!window.isSecureContext) { alert(L("請用 https 網址開啟這一頁，手機才允許讀取位置。", "Hãy mở trang này bằng địa chỉ https để điện thoại cho phép đọc vị trí.")); return; }
+  const c = key.startsWith("C");
+  const cfg = c ? { warm: CW, rec: CR, minN: 8 } : { warm: WARM, rec: REC, minN: Math.max(8, Math.round(REC * 0.25)) };
+  run = { key, cfg, phase: "ask", fixes: [], lastAcc: null, nAll: 0, tPhase: Date.now(), hidden: false, err: null, wid: null, timer: null, wake: null, result: null };
+  run.wid = navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+  run.timer = setInterval(tick, 250);
+  takeWake();
+  render();
+}
+function onPos(p) {
+  if (!run || run.result) return;
+  const c = p.coords, f = { t: p.timestamp, lat: c.latitude, lon: c.longitude, acc: c.accuracy };
+  run.lastAcc = c.accuracy; run.nAll++; run.err = null;
+  if (run.phase === "ask") { run.phase = "warm"; run.tPhase = Date.now(); }
+  if (run.phase === "rec") {
+    const last = run.fixes[run.fixes.length - 1];
+    if (!last || f.t !== last.t) run.fixes.push(f);
+  }
+  renderRun();
+}
+function onErr(e) {
+  if (!run || run.result) return;
+  if (e.code === 1) { finish({ bad: "denied" }); return; }
+  run.err = e.code;          // 2 = 暫時沒有位置、3 = 逾時：繼續等
+  renderRun();
+}
+function tick() {
+  if (!run || run.result) return;
+  const el = (Date.now() - run.tPhase) / 1000;
+  if (run.phase === "warm" && el >= run.cfg.warm) { run.phase = "rec"; run.tPhase = Date.now(); }
+  else if (run.phase === "rec" && el >= run.cfg.rec) { finishRec(); return; }
+  renderRun();
+}
+function finish(result) {
+  clearInterval(run.timer);
+  try { navigator.geolocation.clearWatch(run.wid); } catch (e) {}
+  dropWake();
+  run.result = result; run.phase = "done";
+  render();
+}
+function finishRec() {
+  const f = run.fixes, minSpan = run.cfg.rec * 0.8;
+  if (run.hidden) return finish({ bad: "hidden" });
+  if (f.length < run.cfg.minN) return finish({ bad: "few", n: f.length });
+  const st = stats(f);
+  if (st.span < minSpan) return finish({ bad: "few", n: f.length });
+  if (!run.key.startsWith("C") && st.acc > 100) return finish({ bad: "indoor", acc: st.acc });
+  finish({ ok: true, st, mean: mean(f) });
+}
+function closeRun(commit) {
+  const r = run; run = null;
+  if (commit && r.result && r.result.ok) {
+    const key = r.key, rec = { ts: Date.now(), st: r.result.st };
+    if (key === "A" || key === "B") { S[key] = rec; }
+    else if (key === "C1") { S.c1 = { ts: Date.now(), st: r.result.st, mean: r.result.mean }; S.C = null; }
+    else if (key === "C2") {
+      if (S.c1) {
+        const d = distance(S.c1.mean, r.result.mean), mins = (Date.now() - S.c1.ts) / 60000;
+        S.C = { ts: Date.now(), err: d, mins, s1: S.c1.st, s2: r.result.st };
+        S.c1 = null;
+      }
+    }
+    save();
+  }
+  render();
+}
+
+/* ── 畫面 ──────────────────────────────────────────── */
+const ENV = {
+  A: [["球場／操場", "Sân bóng / sân vận động"], ["空地", "Bãi đất trống"], ["公園", "Công viên"], ["其他", "Khác"]],
+  B: [["高樓旁", "Cạnh nhà cao tầng"], ["窄巷", "Hẻm hẹp"], ["騎樓／屋簷下", "Dưới mái hiên"], ["樹下", "Dưới tán cây"], ["其他", "Khác"]],
+};
+const envName = (k, i) => (ENV[k][i] ? L(ENV[k][i][0], ENV[k][i][1]) : "—");
+
+function tilesHtml(st, withN = true) {
+  return `<div class="tiles">
+    <div class="tile hi"><b>${fmt(st.cep50)} m</b><span>${L("CEP50：一半的點落在這個圓內", "CEP50: một nửa số điểm nằm trong vòng tròn này")}</span></div>
+    <div class="tile"><b>${fmt(st.r95)} m</b><span>${L("95% 半徑：幾乎所有點都在內", "Bán kính 95%: gần như mọi điểm nằm trong")}</span></div>
+    <div class="tile"><b>${fmt(st.acc)} m</b><span>${L("手機自稱的準度（中位數）", "Độ chính xác điện thoại tự báo (trung vị)")}</span></div>
+    <div class="tile"><b>${Math.round(st.lane * 100)}%</b><span>${L("落在 ±1.75 m 內的比例（車道寬 3.5 m 的一半）", "Tỷ lệ điểm trong ±1,75 m (một nửa làn rộng 3,5 m)")}</span></div>
+  </div>${withN ? `<div class="foot">${L(`記錄 ${st.n} 點 / ${Math.round(st.span)} 秒`, `Đã ghi ${st.n} điểm / ${Math.round(st.span)} giây`)}</div>` : ""}`;
+}
+const MEANING = () => `<div class="meaning">${L("這是「點彼此散開多大」，不是「跟真正位置差多少」。真正的誤差通常比這個大。", "Đây là «các điểm tản ra bao nhiêu», không phải «lệch bao nhiêu so với vị trí thật». Sai số thật thường lớn hơn.")}</div>`;
+
+function runHtml() {
+  const r = run, el = (Date.now() - r.tPhase) / 1000;
+  if (r.result) {
+    const x = r.result;
+    if (x.ok) {
+      return `<div class="res"><div class="head">✓ ${L("量好了", "Đã đo xong")}</div>${tilesHtml(x.st)}${r.key.startsWith("C") ? "" : MEANING()}
+        <div class="btns"><button class="main" data-act="keep">${L("存下這次結果", "Lưu kết quả này")}</button><button data-act="drop">${L("丟掉重量", "Bỏ và đo lại")}</button></div></div>`;
+    }
+    const why = { denied: L("你按了「不允許」。請到手機設定，開啟這個瀏覽器的定位權限，再重新整理這一頁。", "Bạn đã bấm «Không cho phép». Hãy vào cài đặt điện thoại, bật quyền vị trí cho trình duyệt này, rồi tải lại trang."),
+      hidden: L("量測中你離開了這一頁（或螢幕關掉）。請保持螢幕亮著，重量一次。", "Trong lúc đo bạn đã rời khỏi trang (hoặc màn hình tắt). Hãy giữ màn hình sáng và đo lại."),
+      few: L(`收到的定位點太少（${x.n} 點）。請到戶外、保持螢幕亮著，重量一次。`, `Nhận được quá ít điểm định vị (${x.n} điểm). Hãy ra ngoài trời, giữ màn hình sáng và đo lại.`),
+      indoor: L(`手機自稱的準度是 ${fmt(x.acc, 0)} m，太差了，很可能在室內。請到戶外重量。`, `Độ chính xác điện thoại tự báo là ${fmt(x.acc, 0)} m, quá kém, có thể đang ở trong nhà. Hãy ra ngoài trời đo lại.`) }[x.bad];
+    return `<div class="run bad">${why}<div class="btns"><button class="main" data-act="drop">${L("重量", "Đo lại")}</button></div></div>`;
+  }
+  let body;
+  if (r.phase === "ask") {
+    body = `<div>${L("請按「允許」讓網頁使用位置。等待第一個定位點…", "Hãy bấm «Cho phép» để trang dùng vị trí. Đang chờ điểm định vị đầu tiên…")}</div>`;
+    if (r.err) body += `<div class="foot">${L("還收不到定位。請確認在戶外、定位已開。", "Chưa nhận được định vị. Hãy chắc chắn đang ở ngoài trời và đã bật vị trí.")}</div>`;
+  } else {
+    const warm = r.phase === "warm", tot = warm ? r.cfg.warm : r.cfg.rec, left = Math.max(0, Math.ceil(tot - el)), pct = Math.min(100, (el / tot) * 100);
+    const accTxt = r.lastAcc == null ? "—" : `${fmt(r.lastAcc)} m`;
+    body = `<div>${warm ? L("請站好，手機握在胸前，不要動。等定位穩定…", "Đứng yên, cầm điện thoại trước ngực, đừng cử động. Đang chờ định vị ổn định…")
+      : L("記錄中。請不要動，螢幕保持亮著。", "Đang ghi. Đừng cử động, giữ màn hình sáng.")}</div>
+      <div class="big">${left}<small style="font-size:14px;font-weight:400"> ${L("秒", "giây")}</small></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="foot">${L("手機現在自稱的準度", "Độ chính xác điện thoại đang tự báo")}：${accTxt}${warm ? "" : `　·　${L("已記錄", "Đã ghi")} ${r.fixes.length} ${L("點", "điểm")}`}</div>`;
+  }
+  return `<div class="run" id="runBox">${body}</div>`;
+}
+function renderRun() {      // 每秒更新倒數，不重畫整頁（輸入框才不會被洗掉）
+  if (!run || run.result) return;
+  const box = document.querySelector("#runHost");
+  if (box) box.innerHTML = runHtml();
+}
+function host(key) { return run && run.key === key ? `<div id="runHost">${runHtml()}</div>` : ""; }
+
+function siteSection(k) {
+  const isA = k === "A", rec = S[k], busy = !!run;
+  const title = isA ? L("一、開闊處", "1. Nơi thoáng") : L("二、遮蔽處", "2. Nơi bị che chắn");
+  const desc = isA ? L("天空沒被遮住的地方：球場、空地、公園。離建築物 20 公尺以上。", "Nơi trời không bị che: sân bóng, bãi đất trống, công viên. Cách nhà cao tầng từ 20 m trở lên.")
+    : L("兩側有牆或頭上有遮蔽的地方：高樓旁、窄巷、騎樓、大樹下。", "Nơi có tường hai bên hoặc bị che phía trên: cạnh nhà cao tầng, hẻm hẹp, dưới mái hiên, dưới tán cây lớn.");
+  const envKey = "env" + k, dKey = "desc" + k;
+  const opts = ENV[k].map((e, i) => `<option value="${i}"${String(S.form[envKey]) === String(i) ? " selected" : ""}>${esc(L(e[0], e[1]))}</option>`).join("");
+  let html = `<h2>${title}${rec ? " ✓" : ""}</h2><div class="note">${desc}</div>
+    <label>${L("環境類型", "Loại môi trường")}</label>
+    <select id="env${k}" data-f="${envKey}"><option value="">${L("── 請選 ──", "── Chọn ──")}</option>${opts}</select>
+    <label>${L("地點描述（選填，例如「某某公園」）", "Mô tả nơi đo (tùy chọn, ví dụ «công viên X»)")}</label>
+    <input type="text" id="desc${k}" data-f="${dKey}" maxlength="30" value="${esc(S.form[dKey] || "")}">`;
+  if (rec && !(run && run.key === k)) {
+    html += `<div class="res"><div class="head">✓ ${L("已存下", "Đã lưu")}</div>${tilesHtml(rec.st)}${MEANING()}</div>`;
+  }
+  html += host(k);
+  if (!(run && run.key === k)) {
+    html += `<div class="btns"><button class="main" data-act="start" data-k="${k}" ${busy || S.form[envKey] === "" ? "disabled" : ""}>${rec ? L("重量這一處", "Đo lại nơi này") : L("開始量測（約 2.5 分鐘）", "Bắt đầu đo (khoảng 2,5 phút)")}</button></div>`;
+    if (S.form[envKey] === "" && !busy) html += `<div class="foot">${L("先選環境類型，才能開始。", "Hãy chọn loại môi trường trước.")}</div>`;
+  }
+  return html;
+}
+function homeSection() {
+  const busy = !!run, c1 = S.c1, C = S.C;
+  let html = `<h2>${L("三、（選做）回到原點", "3. (Tùy chọn) Quay về điểm xuất phát")}${C ? " ✓" : ""}</h2>
+    <div class="note">${L("挑一個認得出來的點（路燈、電線桿、地磚縫），站在那裡記錄一次。走一圈（至少 3 分鐘）再回到「同一個點」，記錄第二次。真正的位移是 0，手機算出來的位移，就是這兩次的誤差。座標只暫存在你的手機，做完就清掉。",
+      "Chọn một điểm dễ nhận ra (cột đèn, cột điện, khe gạch), đứng đó ghi một lần. Đi một vòng (ít nhất 3 phút) rồi quay lại đúng điểm đó, ghi lần hai. Dịch chuyển thật là 0, nên dịch chuyển điện thoại tính ra chính là sai số của hai lần. Tọa độ chỉ lưu tạm trong điện thoại và được xóa khi xong.")}</div>`;
+  if (C) {
+    html += `<div class="res"><div class="head">✓ ${L("已存下", "Đã lưu")}</div><div class="tiles">
+      <div class="tile hi"><b>${fmt(C.err)} m</b><span>${L("回原點誤差：起點與終點讀數的距離", "Sai số quay về: khoảng cách giữa hai lần đọc")}</span></div>
+      <div class="tile"><b>${fmt(C.mins, 1)} ${L("分", "phút")}</b><span>${L("兩次記錄相隔", "Khoảng cách thời gian giữa hai lần ghi")}</span></div></div>
+      ${C.mins < 3 ? `<div class="meaning">${L("相隔不到 3 分鐘，走得太短，結果參考價值有限。", "Cách nhau chưa đến 3 phút, đi quá ngắn, giá trị tham khảo hạn chế.")}</div>` : ""}</div>`;
+  }
+  if (c1 && !(run && run.key === "C1")) html += `<div class="chips"><span class="chip ok">${L("起點已記錄", "Đã ghi điểm xuất phát")}</span></div>`;
+  html += host("C1") + host("C2");
+  if (!run) {
+    html += `<div class="btns">
+      <button class="alt" data-act="start" data-k="C1" ${busy ? "disabled" : ""}>${c1 || C ? L("重新記錄起點", "Ghi lại điểm xuất phát") : L("記錄起點", "Ghi điểm xuất phát")}</button>
+      <button class="main" data-act="start" data-k="C2" ${busy || !c1 ? "disabled" : ""}>${L("記錄終點（我回到原點了）", "Ghi điểm cuối (tôi đã quay lại)")}</button></div>`;
+  }
+  return html;
+}
+function formSection() {
+  const f = S.form, ready = S.A && S.B && f.sid.trim() && f.name.trim() && f.envA !== "" && f.envB !== "";
+  const yn = (k) => `<div class="yn" data-yn="${k}"><button class="${f[k] === "yes" ? "on" : ""}" data-v="yes">${L("可以", "Được")}</button><button class="${f[k] === "no" ? "on" : ""}" data-v="no">${L("不行", "Không")}</button></div>`;
+  return `<h2>${L("四、作答單", "4. Phiếu trả lời")}</h2>
+    <div class="chips"><span class="chip ${S.A ? "ok" : ""}">A ${S.A ? "✓" : "…"}</span><span class="chip ${S.B ? "ok" : ""}">B ${S.B ? "✓" : "…"}</span><span class="chip ${S.C ? "ok" : ""}">${L("回原點（選做）", "Quay về (tùy chọn)")} ${S.C ? "✓" : ""}</span></div>
+    <label>${L("學號", "MSSV")}</label><input type="text" id="sid" data-f="sid" value="${esc(f.sid)}" autocomplete="off">
+    <label>${L("姓名", "Họ tên")}</label><input type="text" id="nm" data-f="name" value="${esc(f.name)}" autocomplete="off">
+    <label>${L("A 處（開闊）：只靠手機，能判斷你在哪一條車道嗎？（車道寬 3.5 m）", "Nơi A (thoáng): chỉ dựa vào điện thoại, bạn có xác định được mình ở làn nào không? (làn rộng 3,5 m)")}</label>${yn("laneA")}
+    <label>${L("B 處（遮蔽）：同一題", "Nơi B (che chắn): cùng câu hỏi")}</label>${yn("laneB")}
+    <div class="foot">${L("參考：看你的「±1.75 m 內的比例」和 CEP50。", "Gợi ý: xem «tỷ lệ trong ±1,75 m» và CEP50 của bạn.")}</div>
+    <label>${L("用一句話說：A、B 兩處差在哪裡？為什麼？", "Một câu: A và B khác nhau ở đâu? Vì sao?")}</label>
+    <textarea id="why" data-f="why" maxlength="200">${esc(f.why)}</textarea>
+    <div class="btns"><button class="main" id="btnSheet" ${ready && f.laneA && f.laneB ? "" : "disabled"}>${L("產生作答單（交這一頁）", "Tạo phiếu trả lời (nộp trang này)")}</button></div>
+    ${ready && f.laneA && f.laneB ? "" : `<div class="foot">${L("要完成 A、B 兩處，並填好學號、姓名、環境類型和兩題判斷，才能產生。", "Cần đo xong A và B, điền MSSV, họ tên, loại môi trường và hai câu phán đoán thì mới tạo được phiếu.")}</div>`}`;
+}
+
+function compactHtml(st) {
+  return `<div class="ctiles"><span><b>${fmt(st.cep50)} m</b>CEP50</span><span><b>${fmt(st.r95)} m</b>${L("95% 半徑", "Bán kính 95%")}</span>
+    <span><b>${fmt(st.acc)} m</b>${L("手機自稱", "ĐT tự báo")}</span><span><b>${Math.round(st.lane * 100)}%</b>${L("在 ±1.75 m 內", "trong ±1,75 m")}</span></div>
+    <div class="n">${L(`${st.n} 點 / ${Math.round(st.span)} 秒`, `${st.n} điểm / ${Math.round(st.span)} giây`)}</div>`;
+}
+function deviceText() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad/.test(ua)) return "iPhone/iPad";
+  const m = ua.match(/Android [\d.]+; ([^)]+?)\)/);
+  if (/Android/.test(ua)) return "Android" + (m ? " · " + m[1].replace(/ Build.*/, "") : "");
+  return L("電腦或其他", "Máy tính hoặc khác");
+}
+function sheetHtml() {
+  const f = S.form, d = new Date(), pad = (n) => String(n).padStart(2, "0");
+  const when = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} · ${esc(deviceText())}`;
+  const site = (k) => {
+    const st = S[k].st, name = k === "A" ? L("A　開闊處", "A  Nơi thoáng") : L("B　遮蔽處", "B  Nơi che chắn");
+    const ds = f["desc" + k] ? "　" + esc(f["desc" + k]) : "";
+    return `<div class="site"><div class="t">${name} <small>· ${esc(envName(k, f["env" + k]))}${ds}</small></div>${compactHtml(st)}</div>`;
+  };
+  const yn = (v) => (v === "yes" ? L("可以", "Được") : L("不行", "Không"));
+  let h = `<h3>${L("手機定位散布量測　作答單", "Phiếu trả lời — Đo độ phân tán vị trí")}</h3>
+    <div class="who">${esc(f.sid)}　${esc(f.name)}</div><div class="when">${when}</div>${site("A")}${site("B")}`;
+  if (S.C) h += `<div class="site"><div class="t">${L("回原點（選做）", "Quay về điểm xuất phát (tùy chọn)")}</div>
+    <div class="ctiles"><span><b>${fmt(S.C.err)} m</b>${L("回原點誤差", "sai số quay về")}</span><span><b>${fmt(S.C.mins, 1)} ${L("分", "phút")}</b>${L("兩次相隔", "cách nhau")}</span></div></div>`;
+  h += `<div class="sec">${L("判斷與說明", "Phán đoán và giải thích")}</div>
+    <div class="ans">${L("只靠手機能判斷車道？", "Chỉ dựa vào điện thoại có xác định được làn?")}  A：${yn(f.laneA)}　B：${yn(f.laneB)}\n${esc(f.why || "—")}</div>
+    <div class="fine">${L("CEP50、95% 半徑量的是「點彼此散開多大」，不是跟真正位置的差距；真正的誤差通常更大。座標不在這張卡上。", "CEP50 và bán kính 95% đo mức các điểm tản ra, không phải độ lệch so với vị trí thật; sai số thật thường lớn hơn. Tọa độ không có trên phiếu này.")}</div>`;
+  return h;
+}
+
+function render() {
+  document.documentElement.lang = LANG === "zh" ? "zh-Hant" : "vi";
+  $("btnZh").classList.toggle("on", LANG === "zh"); $("btnVi").classList.toggle("on", LANG === "vi");
+  document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
+  const keep = document.activeElement && document.activeElement.id;
+  $("secA").innerHTML = siteSection("A");
+  $("secB").innerHTML = siteSection("B");
+  $("secC").innerHTML = homeSection();
+  $("secD").innerHTML = formSection();
+  if (document.body.classList.contains("sheet")) $("sheet").innerHTML = sheetHtml();
+  if (keep && $(keep) && ($(keep).tagName === "INPUT" || $(keep).tagName === "TEXTAREA")) { try { $(keep).focus(); } catch (e) {} }
+}
+
+/* ── 事件 ──────────────────────────────────────────── */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-act],.yn button,#btnSheet,#btnBack");
+  if (!b) return;
+  if (b.id === "btnSheet") { document.body.classList.add("sheet"); $("sheet").innerHTML = sheetHtml(); window.scrollTo(0, 0); return; }
+  if (b.id === "btnBack") { document.body.classList.remove("sheet"); render(); return; }
+  if (b.parentElement.classList.contains("yn")) { S.form[b.parentElement.dataset.yn] = b.dataset.v; save(); render(); return; }
+  const act = b.dataset.act;
+  if (act === "start") startRun(b.dataset.k);
+  else if (act === "keep") closeRun(true);
+  else if (act === "drop") closeRun(false);
+});
+document.addEventListener("input", (e) => {
+  const f = e.target.dataset && e.target.dataset.f;
+  if (!f) return;
+  S.form[f] = e.target.value; save();
+  if (f !== "envA" && f !== "envB") {            // 打字時只更新按鈕狀態，不重畫輸入框（否則游標會跳回開頭）
+    const ready = S.A && S.B && S.form.sid.trim() && S.form.name.trim() && S.form.envA !== "" && S.form.envB !== "" && S.form.laneA && S.form.laneB;
+    const bt = $("btnSheet"); if (bt) bt.disabled = !ready;
+  } else render();
+});
+$("btnZh").onclick = () => { LANG = "zh"; try { localStorage.setItem("w12lang", "zh"); } catch (e) {} render(); };
+$("btnVi").onclick = () => { LANG = "vi"; try { localStorage.setItem("w12lang", "vi"); } catch (e) {} render(); };
+window.addEventListener("pagehide", () => { if (run) { try { navigator.geolocation.clearWatch(run.wid); } catch (e) {} } });
+render();
+</script>
+</body>
+</html>
