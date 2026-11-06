@@ -191,35 +191,18 @@ const FORMULA = {
 <h4>兩個分數</h4><span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span><span class="n">＝模型框的，有幾成是對的（分母是</span><b>模型一共框了幾個</b>）。<span class="f">召回率 ＝ TP ÷ (TP ＋ FN)</span><span class="n">＝該找的，找到幾成（分母是</span><b>答案一共幾個</b>）。<span class="f">正確率 ＝ (TP ＋ TN) ÷ 全部</span><span class="n">→ 偵測不用。</span>
 <h4>門檻</h4>門檻拉高：多框變少、漏掉變多，精確度通常上升、召回率下降；門檻拉低則相反。
 <h4>IoU 與刪重複（NMS）</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span><span class="n">聯集 ＝ A ＋ B − 交集。IoU ≥ 0.5 才算框對。刪重複：留分數最高的，刪掉跟它 IoU </span><b>大於門檻</b>的框，從剩下的再挑最高分，重複到沒有框。
-<h4>混淆矩陣</h4>橫列＝模型說什麼，直欄＝實際是什麼，格子裡是個數。某一類的精確度＝對角線那格 ÷ 該類<b>橫列</b>的總和；召回率＝對角線那格 ÷ 該類<b>直欄</b>的總和。
 <h4>追蹤算速度</h4><span class="f">速度 ＝ 距離 ÷ 時間</span><span class="n">公尺／秒 × 3.6 ＝ 公里／小時。</span>
 <div class="tip">填百分比，四捨五入到整數（例：87）。每題的「提示」有步驟和另一組數字的算例。</div>`,
   vi: `<h4>Bốn kết quả (phát hiện)</h4><b>Khoanh đúng TP</b>: mô hình khoanh, đáp án có thật (IoU ≥ 0,5; mỗi đáp án chỉ ghép với một khung). <b>Khoanh thừa FP</b>: mô hình khoanh nhưng đáp án không có. <b>Sót FN</b>: đáp án có nhưng mô hình không khoanh được. TN (không khoanh và vốn dĩ cũng không có) đếm không xuể nên phát hiện không dùng.
 <h4>Hai điểm số</h4><span class="f">Độ chính xác = TP ÷ (TP + FP)</span><span class="n">= trong các khung mô hình đưa ra, đúng bao nhiêu phần (mẫu số = </span><b>mô hình khoanh tất cả bao nhiêu khung</b>). <span class="f">Độ bao phủ = TP ÷ (TP + FN)</span><span class="n">= trong những thứ cần tìm, tìm được bao nhiêu phần (mẫu số = </span><b>đáp án có tất cả bao nhiêu</b>). <span class="f">Accuracy = (TP + TN) ÷ tất cả</span><span class="n">→ phát hiện không dùng.</span>
 <h4>Ngưỡng</h4>Nâng ngưỡng: khung thừa giảm, sót tăng; độ chính xác thường tăng, độ bao phủ giảm. Hạ ngưỡng thì ngược lại.
 <h4>IoU và bỏ trùng (NMS)</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span><span class="n">Hợp = A + B − giao. IoU ≥ 0,5 mới tính khoanh đúng. Bỏ trùng: giữ khung điểm cao nhất, xóa các khung có IoU </span><b>lớn hơn ngưỡng</b> so với nó, rồi trong các khung còn lại lại chọn khung điểm cao nhất, lặp đến khi hết khung.
-<h4>Ma trận nhầm lẫn</h4>Hàng = mô hình nói gì, cột = thực tế là gì; trong ô là số lượng. Độ chính xác của một lớp = ô chéo ÷ tổng của <b>hàng</b> lớp đó; độ bao phủ = ô chéo ÷ tổng của <b>cột</b> lớp đó.
 <h4>Tính tốc độ từ theo dõi</h4><span class="f">Tốc độ = quãng đường ÷ thời gian</span><span class="n">m/s × 3,6 = km/h.</span>
 <div class="tip">Điền phần trăm, làm tròn thành số nguyên (ví dụ: 87). Phần «Gợi ý» của mỗi câu có các bước và ví dụ với số khác.</div>`
 };
 const OPT_PCT = { unit: "%", tol: 1 };
 const CALC = [
-  { id: "q1", tag: { zh: "必做", vi: "Bắt buộc" },
-    gen(r) { const G = ri(r, 70, 110), TP = Math.round(G * rf(r, 0.8, 0.92)), FP = ri(r, 20, 90); return { G, TP, FP, FN: G - TP, N: TP + FP }; },
-    title: () => T("第 1 題　三角錐：一個模型的成績", "Câu 1 — Cọc tiêu: điểm của một mô hình"),
-    body: (d) => T(`小明用自己訓練的模型，在 17 張測試照片裡找三角錐。標準答案一共有 <b>${d.G}</b> 個三角錐。模型一共框了 <b>${d.N}</b> 個框，其中 <b>${d.TP}</b> 個框對（IoU ≥ 0.5），其餘都是多框。請算出精確度和召回率。`,
-      `Minh dùng mô hình tự huấn luyện để tìm cọc tiêu trong 17 ảnh kiểm tra. Đáp án có tất cả <b>${d.G}</b> cọc tiêu. Mô hình khoanh <b>${d.N}</b> khung, trong đó <b>${d.TP}</b> khung đúng (IoU ≥ 0.5), còn lại là khoanh thừa. Hãy tính độ chính xác và độ bao phủ.`),
-    fields: (d) => [{ id: "p", zh: "精確度", vi: "Độ chính xác", exp: d.TP / d.N * 100, ...OPT_PCT }, { id: "r", zh: "召回率", vi: "Độ bao phủ", exp: d.TP / d.G * 100, ...OPT_PCT }],
-    hint: { zh: (d) => `<h4>這題在考什麼</h4>先把「框了幾個、答案幾個、框對幾個」整理成 TP、FP、FN，再套兩個公式。
-<h4>步驟</h4><ol><li>TP ＝ 題目說「框對」的個數。</li><li>FP（多框）＝ 模型框的總數 − TP。</li><li>FN（漏掉）＝ 答案的總數 − TP。</li><li><span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span><span class="n">分母其實就是</span><b>模型框的總數</b>。</li><li><span class="f">召回率 ＝ TP ÷ (TP ＋ FN)</span><span class="n">分母其實就是</span><b>答案的總數</b>。</li></ol>
-<div class="tip">常見錯誤：把兩個分母弄反。精確度問「框的」，召回率問「答案的」。</div>
-<div class="my"><b>代入你的題目的數字（只列算式，答案請自己算）</b><br>FP ＝ ${d.N} − ${d.TP}　　FN ＝ ${d.G} − ${d.TP}<br>精確度 ＝ ${d.TP} ÷ (${d.TP} ＋ FP)　　召回率 ＝ ${d.TP} ÷ (${d.TP} ＋ FN)</div>`, vi: (d) => `<h4>Câu này kiểm tra gì</h4>Trước hết sắp xếp «khoanh bao nhiêu, đáp án bao nhiêu, đúng bao nhiêu» thành TP, FP, FN, rồi áp dụng hai công thức.
-<h4>Các bước</h4><ol><li>TP = số khung đề bài nói là «đúng».</li><li>FP (khoanh thừa) = tổng số khung mô hình khoanh − TP.</li><li>FN (sót) = tổng số đáp án − TP.</li><li><span class="f">Độ chính xác = TP ÷ (TP + FP)</span><span class="n">Mẫu số chính là </span><b>tổng số khung mô hình khoanh</b>.</li><li><span class="f">Độ bao phủ = TP ÷ (TP + FN)</span><span class="n">Mẫu số chính là </span><b>tổng số đáp án</b>.</li></ol>
-<div class="tip">Lỗi hay gặp: đảo hai mẫu số. Độ chính xác hỏi về «khung», độ bao phủ hỏi về «đáp án».</div>
-<div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>FP = ${d.N} − ${d.TP}　　FN = ${d.G} − ${d.TP}<br>Độ chính xác = ${d.TP} ÷ (${d.TP} + FP)　　Độ bao phủ = ${d.TP} ÷ (${d.TP} + FN)</div>` },
-    sum: (d) => `${T("答案", "đáp án")} ${d.G}／${T("框", "khung")} ${d.N}／TP ${d.TP}` },
-
-  { id: "q2", tag: { zh: "必做", vi: "Bắt buộc" },
+  { id: "q2", seedI: 2, tag: { zh: "必做", vi: "Bắt buộc" },
     gen(r) {
       const G = ri(r, 40, 60);
       let a = { TP: Math.round(G * rf(r, 0.60, 0.72)), FP: ri(r, 2, 8) };
@@ -227,7 +210,7 @@ const CALC = [
       if (r() < 0.5) [a, b] = [b, a];                  // A、B 隨機對調，答案不固定
       return { G, a, b };
     },
-    title: () => T("第 2 題　夜間行人：兩個模型選哪一個？", "Câu 2 — Người đi bộ ban đêm: chọn mô hình nào?"),
+    title: () => T("夜間行人：兩個模型選哪一個？", "Người đi bộ ban đêm: chọn mô hình nào?"),
     body: (d) => T(`夜間的測試影片裡，一共有 <b>${d.G}</b> 個行人。模型 A 框了 <b>${d.a.TP + d.a.FP}</b> 個框，其中 ${d.a.TP} 個對；模型 B 框了 <b>${d.b.TP + d.b.FP}</b> 個框，其中 ${d.b.TP} 個對。請算出兩個模型的精確度和召回率，再選一個。`,
       `Trong video thử ban đêm có tất cả <b>${d.G}</b> người đi bộ. Mô hình A khoanh <b>${d.a.TP + d.a.FP}</b> khung, đúng ${d.a.TP}; mô hình B khoanh <b>${d.b.TP + d.b.FP}</b> khung, đúng ${d.b.TP}. Hãy tính độ chính xác và độ bao phủ của hai mô hình, rồi chọn một.`),
     fields: (d) => [
@@ -243,9 +226,9 @@ const CALC = [
 <div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>Mô hình A: độ chính xác = ${d.a.TP} ÷ ${d.a.TP + d.a.FP}　　độ bao phủ = ${d.a.TP} ÷ ${d.G}<br>Mô hình B: độ chính xác = ${d.b.TP} ÷ ${d.b.TP + d.b.FP}　　độ bao phủ = ${d.b.TP} ÷ ${d.G}</div>` },
     sum: (d) => `${T("行人", "người")} ${d.G}／A ${d.a.TP}+${d.a.FP}／B ${d.b.TP}+${d.b.FP}` },
 
-  { id: "q3", tag: { zh: "必做", vi: "Bắt buộc" },
+  { id: "q3", seedI: 3, tag: { zh: "必做", vi: "Bắt buộc" },
     gen(r) { return { N: ri(r, 10, 30), ALL: 1000 }; },
-    title: () => T("第 3 題　為什麼偵測不用正確率？", "Câu 3 — Vì sao phát hiện không dùng accuracy?"),
+    title: () => T("為什麼偵測不用正確率？", "Vì sao phát hiện không dùng accuracy?"),
     body: (d) => T(`路口攝影機一共拍了 <b>${d.ALL}</b> 個畫面，其中只有 <b>${d.N}</b> 個畫面有行人橫越。有一個偷懶的模型，不管看到什麼，一律回答「沒有行人」。請算出它的正確率（答對幾成畫面）和召回率。`,
       `Camera ở ngã tư chụp tất cả <b>${d.ALL}</b> khung hình, chỉ có <b>${d.N}</b> khung hình có người đi bộ băng qua. Một mô hình lười luôn trả lời «không có người đi bộ». Hãy tính accuracy (tỉ lệ khung hình trả lời đúng) và độ bao phủ của nó.`),
     fields: (d) => [
@@ -260,89 +243,9 @@ const CALC = [
 <div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>Khung hình đúng = ${d.ALL} − ${d.N}<br>Accuracy = (${d.ALL} − ${d.N}) ÷ ${d.ALL}<br>Độ bao phủ = số người tìm được ÷ ${d.N}</div>` },
     sum: (d) => `${d.ALL} ${T("畫面", "khung")}／${d.N} ${T("有行人", "có người")}` },
 
-  { id: "q4", tag: { zh: "必做", vi: "Bắt buộc" },
-    gen(r) {
-      const G = ri(r, 80, 100), ths = [0.3, 0.5, 0.8];
-      const sc = ri(r, 0, 2);                           // 0：答案 0.5；1：0.5 的召回率不夠，答案 0.3；2：0.8 還夠，答案 0.8
-      const rc = [[rf(r, 0.92, 0.96), rf(r, 0.86, 0.9), rf(r, 0.52, 0.66)], [rf(r, 0.92, 0.96), rf(r, 0.76, 0.83), rf(r, 0.5, 0.62)], [rf(r, 0.95, 0.98), rf(r, 0.91, 0.94), rf(r, 0.87, 0.9)]][sc];
-      const TP = rc.map((x) => Math.round(G * x));
-      const FP = [ri(r, 90, 125), ri(r, 38, 60), ri(r, 6, 14)];
-      return { G, ths, TP, FP };
-    },
-    title: () => T("第 4 題　三個門檻，選哪一個？", "Câu 4 — Ba ngưỡng, chọn ngưỡng nào?"),
-    body: (d) => T(`同一個模型、同一批照片，答案一共 <b>${d.G}</b> 個三角錐。門檻設不同的值，結果如下。請算出每個門檻的精確度和召回率。`,
-      `Cùng một mô hình, cùng một loạt ảnh, đáp án có tất cả <b>${d.G}</b> cọc tiêu. Đặt ngưỡng khác nhau thì kết quả như sau. Hãy tính độ chính xác và độ bao phủ ở mỗi ngưỡng.`)
-      + `<table class="tbl"><tr><th>${T("門檻", "Ngưỡng")}</th><th>${T("框對 TP", "Đúng TP")}</th><th>${T("多框 FP", "Thừa FP")}</th></tr>`
-      + d.ths.map((t, i) => `<tr><td>${t}</td><td>${d.TP[i]}</td><td>${d.FP[i]}</td></tr>`).join("") + "</table>",
-    fields: (d) => {
-      const out = [];
-      d.ths.forEach((t, i) => { out.push({ id: "p" + i, zh: `門檻 ${t}　精確度`, vi: `Ngưỡng ${t}: độ chính xác`, exp: d.TP[i] / (d.TP[i] + d.FP[i]) * 100, ...OPT_PCT }, { id: "r" + i, zh: `門檻 ${t}　召回率`, vi: `Ngưỡng ${t}: độ bao phủ`, exp: d.TP[i] / d.G * 100, ...OPT_PCT }); });
-      let best = "none"; let bp = -1;
-      d.ths.forEach((t, i) => { if (d.TP[i] / d.G >= 0.85) { const p = d.TP[i] / (d.TP[i] + d.FP[i]); if (p > bp) { bp = p; best = String(t); } } });
-      out.push({ id: "c", kind: "sel", wide: true, zh: "要求召回率至少 85%，三個門檻裡，精確度最高的是？", vi: "Yêu cầu độ bao phủ ≥ 85%. Trong ba ngưỡng, ngưỡng nào có độ chính xác cao nhất?", exp: best,
-        opts: [["", "— 請選 —", "— chọn —"], ...d.ths.map((t) => [String(t), "門檻 " + t, "Ngưỡng " + t]), ["none", "三個都不行", "Không ngưỡng nào đạt"]] });
-      return out;
-    },
-    hint: { zh: (d) => `<h4>這題在考什麼</h4>同一個模型，門檻不同，TP、FP 就不同；要會算每個門檻的兩個分數，再依需求挑門檻。
-<h4>步驟</h4><ol><li>每一列：<span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span></li><li><span class="f">召回率 ＝ TP ÷ 答案總數</span><span class="n">答案總數是題目最上面給的，不會隨門檻改變。</span></li><li>選擇題：先把<b>召回率不到 85%</b> 的門檻劃掉；剩下的門檻裡，比較<b>精確度</b>，選最高的。如果三個都被劃掉，選「三個都不行」。</li></ol>
-<div class="tip">觀察：門檻愈高，FP 和 TP 通常都愈少。看看精確度和召回率各往哪個方向走。</div>
-<div class="my"><b>代入你的題目的數字（只列算式，答案請自己算）</b><br>${d.ths.map((t, i) => `門檻 ${t}：精確度 ＝ ${d.TP[i]} ÷ (${d.TP[i]} ＋ ${d.FP[i]})　　召回率 ＝ ${d.TP[i]} ÷ ${d.G}`).join("<br>")}</div>`, vi: (d) => `<h4>Câu này kiểm tra gì</h4>Cùng một mô hình, ngưỡng khác thì TP, FP khác. Phải tính hai điểm số ở mỗi ngưỡng, rồi chọn ngưỡng theo yêu cầu.
-<h4>Các bước</h4><ol><li>Mỗi hàng: <span class="f">Độ chính xác = TP ÷ (TP + FP)</span></li><li><span class="f">Độ bao phủ = TP ÷ tổng số đáp án</span><span class="n">Tổng số đáp án ghi ở đầu đề, không đổi theo ngưỡng.</span></li><li>Câu chọn: trước hết gạch các ngưỡng có <b>độ bao phủ dưới 85%</b>; trong các ngưỡng còn lại, so <b>độ chính xác</b>, chọn cao nhất. Nếu cả ba đều bị gạch, chọn «Không ngưỡng nào đạt».</li></ol>
-<div class="tip">Quan sát: ngưỡng càng cao thì FP và TP thường đều giảm; xem độ chính xác và độ bao phủ đi về hướng nào.</div>
-<div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>${d.ths.map((t, i) => `Ngưỡng ${t}: độ chính xác = ${d.TP[i]} ÷ (${d.TP[i]} + ${d.FP[i]})　　độ bao phủ = ${d.TP[i]} ÷ ${d.G}`).join("<br>")}</div>` },
-    sum: (d) => `${T("答案", "đáp án")} ${d.G}／TP ${d.TP.join(",")}／FP ${d.FP.join(",")}` },
-
-  { id: "q5", tag: { zh: "必做", vi: "Bắt buộc" },
-    gen(r) {
-      // 列＝模型說（預測），欄＝實際。類別：0 汽車、1 行人、2 機車騎士
-      const M = [[ri(r, 60, 90), ri(r, 1, 5), ri(r, 1, 5)], [ri(r, 1, 5), ri(r, 36, 55), ri(r, 1, 5)], [ri(r, 1, 5), ri(r, 1, 5), ri(r, 20, 40)]];
-      const [a, b] = pick(r, [[0, 1], [0, 2], [1, 2]]);   // 最常被搞混的一對（兩個方向各 7–13，其他各 1–5）
-      M[a][b] = ri(r, 7, 13); M[b][a] = ri(r, 7, 13);
-      return { M };
-    },
-    title: () => T("第 5 題　三個類別的混淆矩陣", "Câu 5 — Ma trận nhầm lẫn của ba lớp"),
-    body: (d) => {
-      const nm = [T("汽車", "Ô tô"), T("行人", "Người đi bộ"), T("機車騎士", "Xe máy")];
-      return T("模型把偵測到的東西分成三類。下面的混淆矩陣，<b>橫列是模型說的</b>，<b>直欄是實際上的</b>，格子裡是個數。請算出<b>行人</b>這一類的精確度和召回率。", "Mô hình chia vật phát hiện được thành ba lớp. Trong ma trận dưới đây, <b>hàng là mô hình nói</b>, <b>cột là thực tế</b>, trong ô là số lượng. Hãy tính độ chính xác và độ bao phủ của lớp <b>người đi bộ</b>.")
-        + `<table class="tbl"><tr><th class="l">${T("模型說 ＼ 實際", "Mô hình nói ＼ Thực tế")}</th>${nm.map((n) => `<th>${n}</th>`).join("")}</tr>`
-        + d.M.map((row, i) => `<tr><td class="l"><b>${nm[i]}</b></td>${row.map((v, j) => `<td class="${i === j ? "diag" : ""}">${v}</td>`).join("")}</tr>`).join("") + "</table>";
-    },
-    fields: (d) => {
-      const M = d.M, rowSum = M[1][0] + M[1][1] + M[1][2], colSum = M[0][1] + M[1][1] + M[2][1];
-      // 最常被搞混的一對（兩個方向加起來最大的非對角）
-      const pairs = [[0, 1], [0, 2], [1, 2]].map(([a, b]) => ({ k: a + "" + b, v: M[a][b] + M[b][a] })); pairs.sort((x, y) => y.v - x.v);
-      return [{ id: "p", zh: "行人　精確度", vi: "Người đi bộ: độ chính xác", exp: M[1][1] / rowSum * 100, ...OPT_PCT },
-        { id: "r", zh: "行人　召回率", vi: "Người đi bộ: độ bao phủ", exp: M[1][1] / colSum * 100, ...OPT_PCT },
-        { id: "c", kind: "sel", wide: true, zh: "哪兩類最常被搞混（兩個方向的錯誤加起來最多）？", vi: "Hai lớp nào hay bị nhầm nhất (tổng hai chiều lớn nhất)?", exp: pairs[0].k,
-          opts: [["", "— 請選 —", "— chọn —"], ["01", "汽車 ↔ 行人", "Ô tô ↔ Người"], ["02", "汽車 ↔ 機車騎士", "Ô tô ↔ Xe máy"], ["12", "行人 ↔ 機車騎士", "Người ↔ Xe máy"]] }];
-    },
-    hint: { zh: (d) => `<h4>這題在考什麼</h4>三個類別的混淆矩陣：怎麼從一整張表，讀出<b>某一類</b>的精確度與召回率。
-<h4>怎麼讀</h4>橫列＝模型說的類別，直欄＝實際上的類別。對角線（綠色格子）是說對的。
-<ol><li>行人的 TP ＝「橫列行人、直欄行人」那一格。</li><li><span class="f">精確度 ＝ TP ÷ 行人那一整列的總和</span><span class="n">（模型說是行人的，有幾成真的是）</span></li><li><span class="f">召回率 ＝ TP ÷ 行人那一整欄的總和</span><span class="n">（真的行人，有幾成被找到）</span></li><li>選擇題：看<b>非對角線</b>的格子。兩個類別 A、B 搞混，有兩格：「說 A 其實是 B」和「說 B 其實是 A」，把這兩格<b>加起來</b>；三對都算，再比較。</li></ol>
-<div class="my"><b>代入你的題目的數字（只列算式，答案請自己算）</b><br>行人的 TP ＝ ${d.M[1][1]}<br>精確度 ＝ ${d.M[1][1]} ÷ (${d.M[1][0]} ＋ ${d.M[1][1]} ＋ ${d.M[1][2]})　（行人那一列）<br>召回率 ＝ ${d.M[1][1]} ÷ (${d.M[0][1]} ＋ ${d.M[1][1]} ＋ ${d.M[2][1]})　（行人那一欄）<br>三對搞混：汽車↔行人 ＝ ${d.M[0][1]} ＋ ${d.M[1][0]}；汽車↔機車騎士 ＝ ${d.M[0][2]} ＋ ${d.M[2][0]}；行人↔機車騎士 ＝ ${d.M[1][2]} ＋ ${d.M[2][1]}，再比大小</div>`, vi: (d) => `<h4>Câu này kiểm tra gì</h4>Ma trận nhầm lẫn ba lớp: đọc từ cả bảng ra độ chính xác và độ bao phủ của <b>một lớp</b>.
-<h4>Cách đọc</h4>Hàng = lớp mô hình nói, cột = lớp thực tế. Đường chéo (ô xanh) là các kết quả đúng.
-<ol><li>TP của người đi bộ = ô «hàng người đi bộ, cột người đi bộ».</li><li><span class="f">Độ chính xác = TP ÷ tổng của cả hàng người đi bộ</span><span class="n">(mô hình nói là người đi bộ, bao nhiêu phần đúng thật)</span></li><li><span class="f">Độ bao phủ = TP ÷ tổng của cả cột người đi bộ</span><span class="n">(người đi bộ thật, bao nhiêu phần được tìm thấy)</span></li><li>Câu chọn: nhìn các ô <b>ngoài đường chéo</b>. Hai lớp A, B bị nhầm có hai ô: «nói A thật ra là B» và «nói B thật ra là A»; <b>cộng hai ô này</b>, làm cho cả ba cặp rồi so sánh.</li></ol>
-<div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>TP của người đi bộ = ${d.M[1][1]}<br>Độ chính xác = ${d.M[1][1]} ÷ (${d.M[1][0]} + ${d.M[1][1]} + ${d.M[1][2]})　(hàng người đi bộ)<br>Độ bao phủ = ${d.M[1][1]} ÷ (${d.M[0][1]} + ${d.M[1][1]} + ${d.M[2][1]})　(cột người đi bộ)<br>Ba cặp bị nhầm: ô tô↔người = ${d.M[0][1]} + ${d.M[1][0]}; ô tô↔xe máy = ${d.M[0][2]} + ${d.M[2][0]}; người↔xe máy = ${d.M[1][2]} + ${d.M[2][1]}, rồi so sánh</div>` },
-    sum: (d) => d.M.map((r) => r.join("/")).join(" ; ") },
-
-  { id: "q6", tag: { zh: "必做", vi: "Bắt buộc" },
-    gen(r) { const TP = ri(r, 70, 86), FP = ri(r, 62, 88), M = Math.round(FP * rf(r, 0.58, 0.76)); return { TP, FP, M }; },
-    title: () => T("第 6 題　答案漏標了怎麼辦？", "Câu 6 — Đáp án bị sót nhãn thì sao?"),
-    body: (d) => T(`模型一共框了 <b>${d.TP + d.FP}</b> 個框，照標準答案算，<b>${d.TP}</b> 個框對，<b>${d.FP}</b> 個多框。老師把這 ${d.FP} 個多框一個一個裁出來看，發現其中 <b>${d.M}</b> 個框裡其實真的有三角錐，是標準答案漏標了。如果把這 ${d.M} 個改算框對，精確度是多少？`,
-      `Mô hình khoanh tất cả <b>${d.TP + d.FP}</b> khung; theo đáp án chuẩn có <b>${d.TP}</b> khung đúng và <b>${d.FP}</b> khung thừa. Giảng viên cắt từng khung thừa ra xem, thấy trong <b>${d.M}</b> khung thật ra có cọc tiêu — đáp án chuẩn đã sót nhãn. Nếu tính ${d.M} khung này là khoanh đúng thì độ chính xác là bao nhiêu?`),
-    fields: (d) => [{ id: "b", zh: "照標準答案算　精確度", vi: "Theo đáp án chuẩn: độ chính xác", exp: d.TP / (d.TP + d.FP) * 100, ...OPT_PCT }, { id: "a", zh: "改算之後　精確度", vi: "Sau khi sửa: độ chính xác", exp: (d.TP + d.M) / (d.TP + d.FP) * 100, ...OPT_PCT }],
-    hint: { zh: (d) => `<h4>這題在考什麼</h4>標準答案也會漏標：有些「多框」其實框到了真的三角錐。把它們改算框對，精確度會變高（第 2 節第 7 張）。
-<h4>步驟</h4><ol><li>模型框的總數不變（題目一開始就給了）。</li><li><span class="f">照標準答案算：精確度 ＝ TP ÷ 框的總數</span></li><li>改算之後：漏標的那些也算框對，所以 <span class="f">新 TP ＝ TP ＋ 漏標個數；精確度 ＝ 新 TP ÷ 框的總數</span><span class="n">分母不變。</span></li></ol>
-<div class="tip">注意：只有精確度的分子變了。（答案多了那些漏標的，召回率的分母也會跟著變，那要另外算，這題不問。）</div>
-<div class="my"><b>代入你的題目的數字（只列算式，答案請自己算）</b><br>照標準答案：精確度 ＝ ${d.TP} ÷ ${d.TP + d.FP}<br>改算之後：精確度 ＝ (${d.TP} ＋ ${d.M}) ÷ ${d.TP + d.FP}</div>`, vi: (d) => `<h4>Câu này kiểm tra gì</h4>Đáp án chuẩn cũng có thể sót nhãn: một số «khung thừa» thật ra đã khoanh trúng cọc tiêu thật. Tính chúng là khoanh đúng thì độ chính xác tăng (tiết 2, trang 7).
-<h4>Các bước</h4><ol><li>Tổng số khung mô hình khoanh không đổi (đề bài đã cho ngay từ đầu).</li><li><span class="f">Theo đáp án chuẩn: độ chính xác = TP ÷ tổng số khung</span></li><li>Sau khi sửa: các khung bị sót nhãn cũng tính là đúng, vậy <span class="f">TP mới = TP + số khung sót nhãn; độ chính xác = TP mới ÷ tổng số khung</span><span class="n">Mẫu số không đổi.</span></li></ol>
-<div class="tip">Chú ý: chỉ có tử số của độ chính xác thay đổi. (Đáp án nhiều thêm các nhãn bị sót thì mẫu số của độ bao phủ cũng đổi theo; phần đó phải tính riêng, câu này không hỏi.)</div>
-<div class="my"><b>Thay số của đề bạn vào (chỉ viết phép tính, kết quả bạn tự tính)</b><br>Theo đáp án chuẩn: độ chính xác = ${d.TP} ÷ ${d.TP + d.FP}<br>Sau khi sửa: độ chính xác = (${d.TP} + ${d.M}) ÷ ${d.TP + d.FP}</div>` },
-    sum: (d) => `TP ${d.TP}／FP ${d.FP}／${T("漏標", "sót nhãn")} ${d.M}` },
-
-  { id: "q7", tag: { zh: "必做", vi: "Bắt buộc" },
+  { id: "q7", seedI: 7, tag: { zh: "必做", vi: "Bắt buộc" },
     gen(r) { return { dp: Math.round(rf(r, 2.4, 4.6) * 10) / 10, dc: Math.round(rf(r, 12, 26) * 10) / 10 }; },
-    title: () => T("第 7 題　追蹤之後算速度", "Câu 7 — Có số theo dõi rồi mới tính được tốc độ"),
+    title: () => T("追蹤之後算速度", "Có số theo dõi rồi mới tính được tốc độ"),
     body: (d) => T(`追蹤給每個東西一個不變的號碼，就能算速度。號碼 #7 是行人，2 秒走了 <b>${d.dp} 公尺</b>；號碼 #12 是車，2 秒走了 <b>${d.dc} 公尺</b>。請算出時速（公里／小時），取到小數點後一位。（1 公尺／秒＝3.6 公里／小時）`,
       `Theo dõi cho mỗi vật một số không đổi thì tính được tốc độ. Số #7 là người đi bộ, 2 giây đi được <b>${d.dp} m</b>; số #12 là ô tô, 2 giây đi được <b>${d.dc} m</b>. Hãy tính tốc độ (km/h), lấy một chữ số thập phân. (1 m/s = 3,6 km/h)`),
     fields: (d) => [{ id: "p", zh: "#7 行人　時速", vi: "#7 người: tốc độ", exp: d.dp / 2 * 3.6, tol: 0.3, unit: "km/h" }, { id: "c", zh: "#12 車　時速", vi: "#12 ô tô: tốc độ", exp: d.dc / 2 * 3.6, tol: 0.3, unit: "km/h" }],
@@ -360,9 +263,9 @@ const T1_STEPS = () => { const out = []; for (let i = 1; i <= 19; i++) out.push(
 const TOOLS = [];
 
 /* T1 門檻拉桿（真資料） */
-TOOLS.push({ id: "t1", tag: { zh: "必做", vi: "Bắt buộc" },
+TOOLS.push({ id: "t1", seedI: 8, tag: { zh: "必做", vi: "Bắt buộc" },
   gen(r) { return { t1: pick(r, THR_POOL1), t2: pick(r, THR_POOL2) }; },
-  title: () => T("第 8 題　門檻拉桿：真的模型、真的照片", "Câu 8 — Thanh kéo ngưỡng: mô hình thật, ảnh thật"),
+  title: () => T("門檻拉桿：真的模型、真的照片", "Thanh kéo ngưỡng: mô hình thật, ảnh thật"),
   body: (d) => T(`下面是第 2 節那個三角錐模型，17 張測試照片（90 個三角錐）。<b>拖動門檻</b>，看框怎麼增減：<b style="color:#2E7D5B">綠框＝框對</b>、<b style="color:#D9463E">紅框＝多框</b>、<b style="color:#FF8C28">橘色虛線＝漏掉的答案</b>。畫面下方的數字是 17 張合計。<br>1. 把門檻設在 <b>${d.t1}</b>，抄下框對、多框、漏掉。<br>2. 把門檻設在 <b>${d.t2}</b>，算出精確度和召回率。<br>3. 找出「召回率至少 85%」時，門檻最高能放多少（每次移 0.05）。`,
     `Đây là mô hình cọc tiêu ở tiết 2, 17 ảnh kiểm tra (90 cọc tiêu). <b>Kéo ngưỡng</b> để xem khung tăng giảm thế nào: <b style="color:#2E7D5B">khung xanh = đúng</b>, <b style="color:#D9463E">khung đỏ = thừa</b>, <b style="color:#FF8C28">nét đứt cam = đáp án bị sót</b>. Số bên dưới là tổng của 17 ảnh.<br>1. Đặt ngưỡng ở <b>${d.t1}</b>, chép số khoanh đúng, thừa, sót.<br>2. Đặt ngưỡng ở <b>${d.t2}</b>, tính độ chính xác và độ bao phủ.<br>3. Tìm ngưỡng cao nhất mà độ bao phủ vẫn ≥ 85% (mỗi lần nhích 0,05).`),
   ui: `<div class="imgbox"><img id="t1img" alt=""><svg id="t1svg" viewBox="0 0 1600 900" preserveAspectRatio="none"></svg></div>
@@ -406,9 +309,9 @@ TOOLS.push({ id: "t1", tag: { zh: "必做", vi: "Bắt buộc" },
   } });
 
 /* T2 IoU */
-TOOLS.push({ id: "t2", tag: { zh: "必做", vi: "Bắt buộc" },
+TOOLS.push({ id: "t2", seedI: 9, tag: { zh: "必做", vi: "Bắt buộc" },
   gen() { return {}; },
-  title: () => T("第 9 題　IoU 小遊戲：拖拖看", "Câu 9 — Trò chơi IoU: kéo thử"),
+  title: () => T("IoU 小遊戲：拖拖看", "Trò chơi IoU: kéo thử"),
   body: () => T("白色虛線是標準答案，<b>橘色框是模型框的</b>。用手指或滑鼠<b>拖動橘框</b>，拉右下角的圓點可以改大小，看 IoU（重疊）怎麼變。IoU ≥ 0.5 才算框對。<br>1. 讓 IoU 落在 <b>0.50–0.60</b>，按「記錄」。<br>2. 讓 IoU 落在 <b>0.20–0.30</b>，按「記錄」。<br>3. 用算的：兩個框一樣大，重疊一半（交集＝一個框面積的一半），IoU 是多少？<br>4. 用算的：橘框<b>完全包住</b>答案框，面積是答案框的 2 倍，IoU 是多少？",
     "Khung nét đứt trắng là đáp án chuẩn, <b>khung cam là khung mô hình</b>. Dùng ngón tay hoặc chuột <b>kéo khung cam</b>, kéo chấm tròn góc dưới bên phải để đổi kích thước, xem IoU (độ chồng) thay đổi thế nào. IoU ≥ 0,5 mới tính khoanh đúng.<br>1. Làm IoU nằm trong <b>0,50–0,60</b>, bấm «Ghi lại».<br>2. Làm IoU nằm trong <b>0,20–0,30</b>, bấm «Ghi lại».<br>3. Tính: hai khung bằng nhau, chồng lên một nửa (phần giao = một nửa diện tích một khung). IoU bằng bao nhiêu?<br>4. Tính: khung cam <b>bao trọn</b> khung đáp án, diện tích gấp 2 lần khung đáp án. IoU bằng bao nhiêu?"),
   ui: `<svg id="t2svg" class="svgbox" viewBox="0 0 420 270"></svg>
@@ -462,9 +365,9 @@ TOOLS.push({ id: "t2", tag: { zh: "必做", vi: "Bắt buộc" },
 const NMS_BOXES = [
   { id: "A1", b: [60, 70, 170, 200], s: 0.92, pos: "tl" }, { id: "A2", b: [78, 84, 190, 214], s: 0.85, pos: "bl" }, { id: "A3", b: [105, 70, 215, 200], s: 0.61, pos: "tr" },
   { id: "B1", b: [300, 90, 400, 210], s: 0.88, pos: "tl" }, { id: "B2", b: [316, 104, 418, 224], s: 0.7, pos: "br" }, { id: "C1", b: [255, 90, 355, 210], s: 0.47, pos: "tl" }];
-TOOLS.push({ id: "t3", tag: { zh: "必做", vi: "Bắt buộc" },
+TOOLS.push({ id: "t3", seedI: 10, tag: { zh: "必做", vi: "Bắt buộc" },
   gen() { return {}; },
-  title: () => T("第 10 題　刪重複（NMS）：自己刪一次", "Câu 10 — Bỏ trùng (NMS): tự xóa một lần"),
+  title: () => T("刪重複（NMS）：自己刪一次", "Bỏ trùng (NMS): tự xóa một lần"),
   body: () => T("畫面上有 6 個框，框旁是分數。做法：留分數最高的，把跟它重疊太多（<b>IoU 大於門檻</b>）的刪掉；再從剩下的挑分數最高的，重複到沒有框為止。<br>1. IoU 門檻設 <b>0.5</b>：<b>點</b>你要<b>刪掉</b>的框（變灰），按「檢查」。不確定就按「逐步示範」。<br>2. 如果 IoU 門檻改成 <b>0.3</b>，最後留下幾個框？<br>3. 如果 IoU 門檻改成 <b>0.9</b>，最後留下幾個框？",
     "Trên hình có 6 khung, bên cạnh là điểm. Cách làm: giữ khung điểm cao nhất, xóa các khung chồng lên nó quá nhiều (<b>IoU lớn hơn ngưỡng</b>); rồi lại chọn khung điểm cao nhất trong số còn lại, lặp đến khi hết khung.<br>1. Ngưỡng IoU = <b>0,5</b>: <b>bấm</b> vào khung cần <b>xóa</b> (chuyển xám), rồi bấm «Kiểm tra». Không chắc thì bấm «Chạy từng bước».<br>2. Nếu ngưỡng IoU đổi thành <b>0,3</b>, cuối cùng còn lại mấy khung?<br>3. Nếu ngưỡng IoU đổi thành <b>0,9</b>, cuối cùng còn lại mấy khung?"),
   ui: `<svg id="t3svg" class="svgbox" viewBox="0 0 440 260"></svg>
@@ -523,9 +426,9 @@ const SIM = (() => {
   return { day: make(60, 940, 0.86, 0.07, 0.25, 0.15), night: make(60, 940, 0.66, 0.13, 0.2, 0.13) };
 })();
 function simAns(k) { const D = SIM[k]; const minpos = Math.min(...D.pos); const t = Math.floor(minpos * 100) / 100; return { t, fp: D.neg.filter((x) => x >= t).length }; }
-TOOLS.push({ id: "t4", tag: { zh: "選做", vi: "Tự chọn" }, opt: true,
+TOOLS.push({ id: "t4", seedI: 11, tag: { zh: "選做", vi: "Tự chọn" }, opt: true,
   gen() { return {}; },
-  title: () => T("第 11 題　（選做）自動緊急煞車：白天和夜晚", "Câu 11 — (Tự chọn) Phanh khẩn cấp tự động: ban ngày và ban đêm"),
+  title: () => T("（選做）自動緊急煞車：白天和夜晚", "(Tự chọn) Phanh khẩn cấp tự động: ban ngày và ban đêm"),
   body: () => T("模擬 1000 個行人候選：<b style=\"color:#00A896\">藍色是真的行人</b>（60 個），<b style=\"color:#8A97A6\">灰色是假的</b>（940 個，例如電線桿、影子）。分數 ≥ 門檻就煞車。<b>漏掉＝真行人沒煞車</b>（最危險）；<b>誤煞車＝假的卻煞車</b>（後車可能追撞）。這是模擬資料，不是真的測試。<br>1. 白天：找出「漏掉 0 個」時最高的門檻（每次 0.01），記下這時的誤煞車次數。<br>2. 夜晚：一樣的問題。",
     "Mô phỏng 1000 ứng viên người đi bộ: <b style=\"color:#00A896\">xanh là người thật</b> (60), <b style=\"color:#8A97A6\">xám là giả</b> (940, ví dụ cột điện, bóng). Điểm ≥ ngưỡng thì phanh. <b>Sót = người thật mà không phanh</b> (nguy hiểm nhất); <b>phanh nhầm = giả mà vẫn phanh</b> (xe sau có thể đâm). Đây là dữ liệu mô phỏng, không phải thử nghiệm thật.<br>1. Ban ngày: tìm ngưỡng cao nhất để «sót = 0» (mỗi lần 0,01), ghi số lần phanh nhầm lúc đó.<br>2. Ban đêm: câu hỏi tương tự."),
   ui: `<div class="row"><button class="sm on" id="t4day"></button><button class="sm" id="t4night"></button><span class="grow"></span></div>
@@ -567,7 +470,7 @@ TOOLS.push({ id: "t4", tag: { zh: "選做", vi: "Tự chọn" }, opt: true,
 const ALLQ = [...CALC, ...TOOLS];
 function instantiate() {
   const base = hash("hw10:" + (S.sid || "0"));
-  INST = ALLQ.map((q, i) => { const d = q.gen(mulberry(base + 97 * (i + 1))); return { q, d, fields: q.fields(d) }; });
+  INST = ALLQ.map((q, i) => { const d = q.gen(mulberry(base + 97 * q.seedI)); return { q, d, fields: q.fields(d) }; });
 }
 const fkey = (qid, fid) => qid + "." + fid;
 function fieldHTML(qid, f) {
@@ -583,7 +486,7 @@ function render() {
   html += `<h2>${T("第一部分　計算題", "Phần 1 — Bài tính")}<small>${T("數字依學號而不同", "Số liệu khác nhau theo mã số sinh viên")}</small></h2>`;
   INST.forEach((it, i) => {
     if (it.q.id === "t1") html += `<h2>${T("第二部分　網頁操作", "Phần 2 — Thao tác trên trang")}<small>${T("真資料與模擬", "Dữ liệu thật và mô phỏng")}</small></h2>`;
-    html += `<div class="panel" id="p_${it.q.id}"><div class="q">${esc(it.q.title())}<span class="tag ${it.q.opt ? "opt" : ""}">${esc(T(it.q.tag.zh, it.q.tag.vi))}</span></div>
+    html += `<div class="panel" id="p_${it.q.id}"><div class="q">${esc(T(`第 ${i + 1} 題　`, `Câu ${i + 1} — `) + it.q.title())}<span class="tag ${it.q.opt ? "opt" : ""}">${esc(T(it.q.tag.zh, it.q.tag.vi))}</span></div>
       <div class="sc">${it.q.body(it.d)}</div>${it.q.ui ? `<div class="ui" id="ui_${it.q.id}">${it.q.ui}</div>` : ""}
       <div class="fields">${it.fields.map((f) => fieldHTML(it.q.id, f)).join("")}</div>
       <details><summary>${T("提示", "Gợi ý")}</summary><div class="hb">${hintOf(it)}</div></details>
@@ -649,7 +552,7 @@ function sheet() {
       if (!x.ok) { if (x.f.kind === "sel") { const o = x.f.opts.find((o) => o[0] === x.f.exp); expShow = o ? T(o[1], o[2]) : ""; } else if (x.f.kind === "rec") expShow = ""; else expShow = (x.f.unit === "%" ? Math.round(x.f.exp) : (Math.abs(x.f.exp) < 1 && x.f.exp !== 0 ? x.f.exp.toFixed(2) : (Number.isInteger(x.f.exp) ? x.f.exp : f1(x.f.exp)))) + (x.f.unit ? " " + x.f.unit : ""); }
       return `<div>${esc(T(x.f.zh, x.f.vi))}：<b>${esc(shown) || "—"}</b> <span class="${x.ok ? "good" : "bad"}">${!x.has ? "—" : x.ok ? "✓" : "✗"}</span>${!x.ok && expShow ? ` <span class="bad">(${T("應為", "đáp án")} ${esc(expShow)})</span>` : ""}</div>`;
     }).join("");
-    rowsBy[part] += `<tr><td>${esc(it.q.title().replace(/^(第 \d+ 題|Câu \d+)\s*[　—-]*\s*/, ""))}<div class="hint">${esc(it.q.sum(it.d))}</div></td><td>${cells}</td><td class="r">${S.tries[it.q.id] || 0}</td><td class="r ${E.ok ? "good" : "bad"}">${E.ok ? "✓" : (E.done ? "✗" : "—")}</td></tr>`;
+    rowsBy[part] += `<tr><td>${INST.indexOf(it) + 1}. ${esc(it.q.title())}<div class="hint">${esc(it.q.sum(it.d))}</div></td><td>${cells}</td><td class="r">${S.tries[it.q.id] || 0}</td><td class="r ${E.ok ? "good" : "bad"}">${E.ok ? "✓" : (E.done ? "✗" : "—")}</td></tr>`;
   });
   const th = `<tr><th>${T("題目", "Câu")}</th><th>${T("你的答案", "Đáp án của bạn")}</th><th>${T("檢查次數", "Lần kiểm tra")}</th><th>${T("結果", "Kết quả")}</th></tr>`;
   $("#sheet").innerHTML = `<h3>${T("第十週作業　作答單", "Bài tuần 10 — Phiếu trả lời")}</h3><div class="who">${esc(nm)}　${esc(sid)}</div><div class="when">${new Date().toLocaleString(LANG === "zh" ? "zh-TW" : "vi-VN")}</div>
@@ -661,7 +564,7 @@ function sheet() {
 
 /* ───────── 啟動 ───────── */
 function ui() {
-  $("#ttl").innerHTML = `${T("第十週作業　精確度、召回率與門檻", "Bài tuần 10 — Độ chính xác, độ bao phủ và ngưỡng")}<small>${T("Bài tuần 10 · 計算題 7 題＋網頁操作 4 題（1 題選做）", "Tuần 10 · 7 bài tính + 4 bài thao tác (1 bài tự chọn)")}</small>`;
+    $("#ttl").innerHTML = `${T("第十週作業　精確度、召回率與門檻", "Bài tuần 10 — Độ chính xác, độ bao phủ và ngưỡng")}<small>${T(`Bài tuần 10 · 計算題 ${CALC.length} 題＋網頁操作 ${TOOLS.length} 題（1 題選做）`, `Tuần 10 · ${CALC.length} bài tính + ${TOOLS.length} bài thao tác (1 bài tự chọn)`)}</small>`;
   $("#hwName").placeholder = T("姓名", "Họ tên"); $("#hwSid").placeholder = T("學號（題目數字依學號而不同）", "Mã số sinh viên (số liệu khác nhau theo mã số)");
   $("#intro").textContent = T("先填姓名和學號。每題按「檢查這一題」，可以重複檢查、修改。全部做完按「產生作答單」，截圖傳 LINE。", "Điền họ tên và mã số trước. Mỗi câu bấm «Kiểm tra câu này», có thể kiểm tra và sửa nhiều lần. Làm xong bấm «Tạo phiếu trả lời», chụp màn hình gửi LINE.");
   $("#formula summary").textContent = T("公式備忘", "Công thức cần nhớ"); $("#formulaBody").innerHTML = LANG === "zh" ? FORMULA.zh : FORMULA.vi;
