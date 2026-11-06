@@ -53,6 +53,12 @@ input[readonly]{background:var(--card)}
 details{margin-top:6px;font-size:12.5px}
 details summary{cursor:pointer;color:var(--teal-d);font-weight:700}
 details .hb{background:var(--card);border-radius:7px;padding:7px 10px;margin-top:4px;line-height:1.6}
+.hb h4{margin:8px 0 2px;font-size:12.5px;color:var(--teal-d)}
+.hb h4:first-child{margin-top:0}
+.hb ol,.hb ul{margin:3px 0 3px 18px;padding:0}.hb li{margin:2px 0}
+.hb .f{display:block;background:#fff;border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin:3px 0;font-weight:700;color:var(--navy)}
+.hb .ex{background:#EEF6FF;border-left:3px solid #3B82C4;padding:5px 9px;margin:7px 0;border-radius:4px}
+.hb .tip{background:#FFF6E3;border-left:3px solid var(--amber);padding:5px 9px;margin:7px 0;border-radius:4px}
 .res{font-size:13px;line-height:1.55}
 .res b{color:var(--navy)}
 .mini{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#E5EAF0;margin:2px 0 6px}
@@ -179,8 +185,20 @@ function nms(boxes, th) {                // boxes: [{id,b:[x0,y0,x1,y1],s}] → 
 
 /* ───────── 題目：計算題（每個學號數字不同） ───────── */
 const FORMULA = {
-  zh: "<b>框對</b>＝TP，<b>多框</b>＝FP，<b>漏掉</b>＝FN。<br>精確度＝TP ÷ (TP＋FP)＝框出來的有幾成是對的（分母是<b>模型框了幾個</b>）。<br>召回率＝TP ÷ (TP＋FN)＝該找的找到幾成（分母是<b>答案一共幾個</b>）。<br>正確率＝(TP＋TN) ÷ 全部。偵測沒有 TN，所以不用。<br>填百分比，四捨五入到整數（例：87）。",
-  vi: "<b>Khoanh đúng</b> = TP, <b>khoanh thừa</b> = FP, <b>sót</b> = FN.<br>Độ chính xác = TP ÷ (TP + FP): trong các khung mô hình đưa ra, bao nhiêu phần đúng (mẫu số = <b>mô hình khoanh mấy khung</b>).<br>Độ bao phủ = TP ÷ (TP + FN): tìm được bao nhiêu phần (mẫu số = <b>đáp án có tất cả bao nhiêu</b>).<br>Accuracy = (TP + TN) ÷ tất cả. Phát hiện không có TN nên không dùng.<br>Điền phần trăm, làm tròn thành số nguyên (ví dụ: 87)."
+  zh: `<h4>四種結果（偵測）</h4><b>框對 TP</b>：模型框了，答案真的有（IoU ≥ 0.5，一個答案只配一個框）。<b>多框 FP</b>：模型框了，答案沒有。<b>漏掉 FN</b>：答案有，模型沒框到。TN（沒框、本來也沒有）在偵測裡數不完，所以不用。
+<h4>兩個分數</h4><span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span>＝模型框的，有幾成是對的（分母是<b>模型一共框了幾個</b>）。<span class="f">召回率 ＝ TP ÷ (TP ＋ FN)</span>＝該找的，找到幾成（分母是<b>答案一共幾個</b>）。<span class="f">正確率 ＝ (TP ＋ TN) ÷ 全部</span>→ 偵測不用。
+<h4>門檻</h4>門檻拉高：多框變少、漏掉變多，精確度通常上升、召回率下降；門檻拉低則相反。
+<h4>IoU 與刪重複（NMS）</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span>聯集 ＝ A ＋ B − 交集。IoU ≥ 0.5 才算框對。刪重複：留分數最高的，刪掉跟它 IoU <b>大於門檻</b>的框，從剩下的再挑最高分，重複到沒有框。
+<h4>混淆矩陣</h4>橫列＝模型說什麼，直欄＝實際是什麼，格子裡是個數。某一類的精確度＝對角線那格 ÷ 該類<b>橫列</b>的總和；召回率＝對角線那格 ÷ 該類<b>直欄</b>的總和。
+<h4>追蹤算速度</h4><span class="f">速度 ＝ 距離 ÷ 時間</span>公尺／秒 × 3.6 ＝ 公里／小時。
+<div class="tip">填百分比，四捨五入到整數（例：87）。每題的「提示」有步驟和另一組數字的算例。</div>`,
+  vi: `<h4>Bốn kết quả (phát hiện)</h4><b>Khoanh đúng TP</b>: mô hình khoanh, đáp án có thật (IoU ≥ 0,5; mỗi đáp án chỉ ghép với một khung). <b>Khoanh thừa FP</b>: mô hình khoanh nhưng đáp án không có. <b>Sót FN</b>: đáp án có nhưng mô hình không khoanh được. TN (không khoanh và vốn dĩ cũng không có) đếm không xuể nên phát hiện không dùng.
+<h4>Hai điểm số</h4><span class="f">Độ chính xác = TP ÷ (TP + FP)</span>= trong các khung mô hình đưa ra, đúng bao nhiêu phần (mẫu số = <b>mô hình khoanh tất cả bao nhiêu khung</b>). <span class="f">Độ bao phủ = TP ÷ (TP + FN)</span>= trong những thứ cần tìm, tìm được bao nhiêu phần (mẫu số = <b>đáp án có tất cả bao nhiêu</b>). <span class="f">Accuracy = (TP + TN) ÷ tất cả</span>→ phát hiện không dùng.
+<h4>Ngưỡng</h4>Nâng ngưỡng: khung thừa giảm, sót tăng; độ chính xác thường tăng, độ bao phủ giảm. Hạ ngưỡng thì ngược lại.
+<h4>IoU và bỏ trùng (NMS)</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span>Hợp = A + B − giao. IoU ≥ 0,5 mới tính khoanh đúng. Bỏ trùng: giữ khung điểm cao nhất, xóa các khung có IoU <b>lớn hơn ngưỡng</b> so với nó, rồi trong các khung còn lại lại chọn khung điểm cao nhất, lặp đến khi hết khung.
+<h4>Ma trận nhầm lẫn</h4>Hàng = mô hình nói gì, cột = thực tế là gì; trong ô là số lượng. Độ chính xác của một lớp = ô chéo ÷ tổng của <b>hàng</b> lớp đó; độ bao phủ = ô chéo ÷ tổng của <b>cột</b> lớp đó.
+<h4>Tính tốc độ từ theo dõi</h4><span class="f">Tốc độ = quãng đường ÷ thời gian</span>m/s × 3,6 = km/h.
+<div class="tip">Điền phần trăm, làm tròn thành số nguyên (ví dụ: 87). Phần «Gợi ý» của mỗi câu có các bước và ví dụ với số khác.</div>`
 };
 const OPT_PCT = { unit: "%", tol: 1 };
 const CALC = [
@@ -190,7 +208,13 @@ const CALC = [
     body: (d) => T(`小明用自己訓練的模型，在 17 張測試照片裡找三角錐。標準答案一共有 <b>${d.G}</b> 個三角錐。模型一共框了 <b>${d.N}</b> 個框，其中 <b>${d.TP}</b> 個框對（IoU ≥ 0.5），其餘都是多框。請算出精確度和召回率。`,
       `Minh dùng mô hình tự huấn luyện để tìm cọc tiêu trong 17 ảnh kiểm tra. Đáp án có tất cả <b>${d.G}</b> cọc tiêu. Mô hình khoanh <b>${d.N}</b> khung, trong đó <b>${d.TP}</b> khung đúng (IoU ≥ 0.5), còn lại là khoanh thừa. Hãy tính độ chính xác và độ bao phủ.`),
     fields: (d) => [{ id: "p", zh: "精確度", vi: "Độ chính xác", exp: d.TP / d.N * 100, ...OPT_PCT }, { id: "r", zh: "召回率", vi: "Độ bao phủ", exp: d.TP / d.G * 100, ...OPT_PCT }],
-    hint: { zh: "先找出 TP、FP、FN。FP＝框的總數－TP；FN＝答案總數－TP。", vi: "Trước hết tìm TP, FP, FN. FP = tổng số khung − TP; FN = tổng đáp án − TP." },
+    hint: { zh: `<h4>這題在考什麼</h4>先把「框了幾個、答案幾個、框對幾個」整理成 TP、FP、FN，再套兩個公式。
+<h4>步驟</h4><ol><li>TP ＝ 題目說「框對」的個數。</li><li>FP（多框）＝ 模型框的總數 − TP。</li><li>FN（漏掉）＝ 答案的總數 − TP。</li><li><span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span>分母其實就是<b>模型框的總數</b>。</li><li><span class="f">召回率 ＝ TP ÷ (TP ＋ FN)</span>分母其實就是<b>答案的總數</b>。</li></ol>
+<div class="tip">常見錯誤：把兩個分母弄反。精確度問「框的」，召回率問「答案的」。</div>
+<div class="ex">換一組數字練習（不是你的題目）：答案 50 個，模型框 40 個，其中 30 個框對。FP ＝ 40 − 30 ＝ 10，FN ＝ 50 − 30 ＝ 20。精確度 ＝ 30 ÷ 40 ＝ 75%，召回率 ＝ 30 ÷ 50 ＝ 60%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Trước hết sắp xếp «khoanh bao nhiêu, đáp án bao nhiêu, đúng bao nhiêu» thành TP, FP, FN, rồi áp dụng hai công thức.
+<h4>Các bước</h4><ol><li>TP = số khung đề bài nói là «đúng».</li><li>FP (khoanh thừa) = tổng số khung mô hình khoanh − TP.</li><li>FN (sót) = tổng số đáp án − TP.</li><li><span class="f">Độ chính xác = TP ÷ (TP + FP)</span>Mẫu số chính là <b>tổng số khung mô hình khoanh</b>.</li><li><span class="f">Độ bao phủ = TP ÷ (TP + FN)</span>Mẫu số chính là <b>tổng số đáp án</b>.</li></ol>
+<div class="tip">Lỗi hay gặp: đảo hai mẫu số. Độ chính xác hỏi về «khung», độ bao phủ hỏi về «đáp án».</div>
+<div class="ex">Thử với số khác (không phải đề của bạn): đáp án 50, mô hình khoanh 40 khung, đúng 30. FP = 40 − 30 = 10, FN = 50 − 30 = 20. Độ chính xác = 30 ÷ 40 = 75%, độ bao phủ = 30 ÷ 50 = 60%.</div>` },
     sum: (d) => `${T("答案", "đáp án")} ${d.G}／${T("框", "khung")} ${d.N}／TP ${d.TP}` },
 
   { id: "q2", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -210,7 +234,11 @@ const CALC = [
       { id: "bp", zh: "B 精確度", vi: "B: độ chính xác", exp: d.b.TP / (d.b.TP + d.b.FP) * 100, ...OPT_PCT },
       { id: "br", zh: "B 召回率", vi: "B: độ bao phủ", exp: d.b.TP / d.G * 100, ...OPT_PCT },
       { id: "c", kind: "sel", wide: true, zh: "偵測這一關最怕漏掉行人，應該選哪一個？", vi: "Khâu phát hiện sợ nhất là bỏ sót người đi bộ. Nên chọn mô hình nào?", exp: d.a.TP > d.b.TP ? "A" : "B", opts: [["", "— 請選 —", "— chọn —"], ["A", "模型 A", "Mô hình A"], ["B", "模型 B", "Mô hình B"]] }],
-    hint: { zh: "召回率的分母是答案總數；精確度的分母是模型框的總數。", vi: "Mẫu số của độ bao phủ là tổng đáp án; mẫu số của độ chính xác là tổng số khung." },
+    hint: { zh: `<h4>這題在考什麼</h4>同一批行人，兩個模型各算精確度和召回率，再依「這一關最怕什麼」來選。
+<h4>步驟</h4><ol><li>每個模型：TP ＝ 題目說的「其中 N 個對」；框的總數 ＝ 題目說的「框了 M 個」。</li><li><span class="f">精確度 ＝ TP ÷ 框的總數</span></li><li><span class="f">召回率 ＝ TP ÷ 行人總數</span>兩個模型的分母一樣，都是答案的行人數。</li><li>選擇題：偵測這一關，漏掉行人會直接造成危險，所以要比較<b>哪一個漏掉得比較少</b>，也就是看哪一個分數，再選那個模型。（複習第 2 節第 6 張：偵測這一關寧可多框；多框太多的問題，後面用追蹤、感測器融合再處理。）</li></ol>
+<div class="ex">換一組數字（不是你的題目）：行人共 36 個；模型 X 框 20 個、對 18 個；模型 Y 框 48 個、對 33 個。X：精確度 18 ÷ 20 ＝ 90%，召回率 18 ÷ 36 ＝ 50%。Y：精確度 33 ÷ 48 ≈ 69%，召回率 33 ÷ 36 ≈ 92%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Cùng một nhóm người đi bộ, tính độ chính xác và độ bao phủ cho từng mô hình, rồi chọn theo «khâu này sợ nhất điều gì».
+<h4>Các bước</h4><ol><li>Với mỗi mô hình: TP = «trong đó N khung đúng»; tổng số khung = «khoanh M khung».</li><li><span class="f">Độ chính xác = TP ÷ tổng số khung</span></li><li><span class="f">Độ bao phủ = TP ÷ tổng số người đi bộ</span>Hai mô hình dùng chung mẫu số này.</li><li>Câu chọn: ở khâu phát hiện, sót người đi bộ gây nguy hiểm trực tiếp, vậy hãy so xem mô hình nào <b>sót ít hơn</b> — tức là nhìn điểm số nào — rồi chọn mô hình đó. (Ôn tiết 2, trang 6: khâu phát hiện thà khoanh thừa còn hơn sót; khoanh thừa quá nhiều sẽ xử lý ở các bước sau như theo dõi và hợp nhất cảm biến.)</li></ol>
+<div class="ex">Thử với số khác (không phải đề của bạn): có 36 người; mô hình X khoanh 20 khung, đúng 18; mô hình Y khoanh 48 khung, đúng 33. X: độ chính xác 18 ÷ 20 = 90%, độ bao phủ 18 ÷ 36 = 50%. Y: độ chính xác 33 ÷ 48 ≈ 69%, độ bao phủ 33 ÷ 36 ≈ 92%.</div>` },
     sum: (d) => `${T("行人", "người")} ${d.G}／A ${d.a.TP}+${d.a.FP}／B ${d.b.TP}+${d.b.FP}` },
 
   { id: "q3", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -223,7 +251,11 @@ const CALC = [
       { id: "rec", zh: "召回率", vi: "Độ bao phủ", exp: 0, ...OPT_PCT },
       { id: "why", kind: "sel", wide: true, zh: "為什麼偵測不看正確率？", vi: "Vì sao phát hiện không xem accuracy?", exp: "bg",
         opts: [["", "— 請選 —", "— chọn —"], ["bg", "沒有東西的背景太多，什麼都不框，正確率也很高", "Nền không có gì quá nhiều, không khoanh gì accuracy vẫn rất cao"], ["calc", "正確率太難算", "Accuracy quá khó tính"], ["same", "正確率和召回率是同一個東西", "Accuracy và độ bao phủ là một"]] }],
-    hint: { zh: "答對的畫面＝沒有行人的畫面（它都答「沒有」，全對）。", vi: "Khung hình trả lời đúng = các khung hình không có người (nó đều đáp «không có»)." },
+    hint: { zh: `<h4>這題在考什麼</h4>「一律回答沒有」的模型，正確率會很漂亮，召回率卻是 0，這就是偵測不看正確率的原因。
+<h4>步驟</h4><ol><li><span class="f">正確率 ＝ 答對的畫面 ÷ 全部畫面</span>模型一律說「沒有行人」：沒有行人的畫面它全答對；有行人的畫面它全答錯。所以答對的畫面數 ＝ 全部畫面 − 有行人的畫面。</li><li><span class="f">召回率 ＝ 找到的行人 ÷ 該找的行人</span>它一個行人都不會說有，找到的是幾個？</li><li>選擇題：想想看，當背景（沒有東西的地方）佔了絕大多數，只看正確率會怎麼樣？</li></ol>
+<div class="ex">換一組數字（不是你的題目）：500 個畫面，其中 20 個有行人。一律回答「沒有」：答對 500 − 20 ＝ 480 個畫面，正確率 ＝ 480 ÷ 500 ＝ 96%；找到的行人 0 個，召回率 ＝ 0 ÷ 20 ＝ 0%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Mô hình «luôn trả lời không có» sẽ có accuracy rất đẹp nhưng độ bao phủ bằng 0 — đó là lý do phát hiện không xem accuracy.
+<h4>Các bước</h4><ol><li><span class="f">Accuracy = số khung hình trả lời đúng ÷ tất cả khung hình</span>Mô hình luôn nói «không có người»: khung hình không có người nó đều đúng, khung hình có người nó đều sai. Vậy số khung hình đúng = tất cả − số khung hình có người.</li><li><span class="f">Độ bao phủ = số người tìm được ÷ số người cần tìm</span>Nó không bao giờ nói «có người», vậy tìm được bao nhiêu người?</li><li>Câu chọn: hãy nghĩ xem, khi phần nền (không có gì) chiếm đại đa số, chỉ nhìn accuracy sẽ ra sao?</li></ol>
+<div class="ex">Thử với số khác (không phải đề của bạn): 500 khung hình, 20 khung có người. Luôn trả lời «không có»: đúng 500 − 20 = 480 khung, accuracy = 480 ÷ 500 = 96%; tìm được 0 người, độ bao phủ = 0 ÷ 20 = 0%.</div>` },
     sum: (d) => `${d.ALL} ${T("畫面", "khung")}／${d.N} ${T("有行人", "có người")}` },
 
   { id: "q4", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -249,7 +281,13 @@ const CALC = [
         opts: [["", "— 請選 —", "— chọn —"], ...d.ths.map((t) => [String(t), "門檻 " + t, "Ngưỡng " + t]), ["none", "三個都不行", "Không ngưỡng nào đạt"]] });
       return out;
     },
-    hint: { zh: "先把召回率不到 85% 的門檻排除，剩下的比精確度。", vi: "Loại các ngưỡng có độ bao phủ < 85% trước, rồi so độ chính xác." },
+    hint: { zh: `<h4>這題在考什麼</h4>同一個模型，門檻不同，TP、FP 就不同；要會算每個門檻的兩個分數，再依需求挑門檻。
+<h4>步驟</h4><ol><li>每一列：<span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span></li><li><span class="f">召回率 ＝ TP ÷ 答案總數</span>答案總數是題目最上面給的，不會隨門檻改變。</li><li>選擇題：先把<b>召回率不到 85%</b> 的門檻劃掉；剩下的門檻裡，比較<b>精確度</b>，選最高的。如果三個都被劃掉，選「三個都不行」。</li></ol>
+<div class="tip">觀察：門檻愈高，FP 和 TP 通常都愈少。看看精確度和召回率各往哪個方向走。</div>
+<div class="ex">換一組數字（不是你的題目）：答案共 60 個。門檻 0.2：TP 55、FP 100。門檻 0.6：TP 48、FP 20。門檻 0.9：TP 30、FP 3。門檻 0.2：精確度 55 ÷ 155 ≈ 35%，召回率 55 ÷ 60 ≈ 92%。門檻 0.6：精確度 48 ÷ 68 ≈ 71%，召回率 48 ÷ 60 ＝ 80%。門檻 0.9：精確度 30 ÷ 33 ≈ 91%，召回率 30 ÷ 60 ＝ 50%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Cùng một mô hình, ngưỡng khác thì TP, FP khác. Phải tính hai điểm số ở mỗi ngưỡng, rồi chọn ngưỡng theo yêu cầu.
+<h4>Các bước</h4><ol><li>Mỗi hàng: <span class="f">Độ chính xác = TP ÷ (TP + FP)</span></li><li><span class="f">Độ bao phủ = TP ÷ tổng số đáp án</span>Tổng số đáp án ghi ở đầu đề, không đổi theo ngưỡng.</li><li>Câu chọn: trước hết gạch các ngưỡng có <b>độ bao phủ dưới 85%</b>; trong các ngưỡng còn lại, so <b>độ chính xác</b>, chọn cao nhất. Nếu cả ba đều bị gạch, chọn «Không ngưỡng nào đạt».</li></ol>
+<div class="tip">Quan sát: ngưỡng càng cao thì FP và TP thường đều giảm; xem độ chính xác và độ bao phủ đi về hướng nào.</div>
+<div class="ex">Thử với số khác (không phải đề của bạn): đáp án 60. Ngưỡng 0,2: TP 55, FP 100. Ngưỡng 0,6: TP 48, FP 20. Ngưỡng 0,9: TP 30, FP 3. Ngưỡng 0,2: độ chính xác 55 ÷ 155 ≈ 35%, độ bao phủ 55 ÷ 60 ≈ 92%. Ngưỡng 0,6: 48 ÷ 68 ≈ 71%, 48 ÷ 60 = 80%. Ngưỡng 0,9: 30 ÷ 33 ≈ 91%, 30 ÷ 60 = 50%.</div>` },
     sum: (d) => `${T("答案", "đáp án")} ${d.G}／TP ${d.TP.join(",")}／FP ${d.FP.join(",")}` },
 
   { id: "q5", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -276,7 +314,13 @@ const CALC = [
         { id: "c", kind: "sel", wide: true, zh: "哪兩類最常被搞混（兩個方向的錯誤加起來最多）？", vi: "Hai lớp nào hay bị nhầm nhất (tổng hai chiều lớn nhất)?", exp: pairs[0].k,
           opts: [["", "— 請選 —", "— chọn —"], ["01", "汽車 ↔ 行人", "Ô tô ↔ Người"], ["02", "汽車 ↔ 機車騎士", "Ô tô ↔ Xe máy"], ["12", "行人 ↔ 機車騎士", "Người ↔ Xe máy"]] }];
     },
-    hint: { zh: "行人的精確度看<b>橫列</b>（模型說行人的那一列）；召回率看<b>直欄</b>（實際是行人的那一欄）。", vi: "Độ chính xác của người đi bộ xem <b>hàng</b> (hàng mô hình nói người đi bộ); độ bao phủ xem <b>cột</b> (cột thực tế là người đi bộ)." },
+    hint: { zh: `<h4>這題在考什麼</h4>三個類別的混淆矩陣：怎麼從一整張表，讀出<b>某一類</b>的精確度與召回率。
+<h4>怎麼讀</h4>橫列＝模型說的類別，直欄＝實際上的類別。對角線（綠色格子）是說對的。
+<ol><li>行人的 TP ＝「橫列行人、直欄行人」那一格。</li><li><span class="f">精確度 ＝ TP ÷ 行人那一整列的總和</span>（模型說是行人的，有幾成真的是）</li><li><span class="f">召回率 ＝ TP ÷ 行人那一整欄的總和</span>（真的行人，有幾成被找到）</li><li>選擇題：看<b>非對角線</b>的格子。兩個類別 A、B 搞混，有兩格：「說 A 其實是 B」和「說 B 其實是 A」，把這兩格<b>加起來</b>；三對都算，再比較。</li></ol>
+<div class="ex">換一組數字（不是你的題目）：兩個類別，橫列＝模型說，直欄＝實際。「貓」那一列：實際貓 40、實際狗 10。「狗」那一列：實際貓 5、實際狗 45。貓的精確度 ＝ 40 ÷ (40 ＋ 10) ＝ 80%；貓的召回率 ＝ 40 ÷ (40 ＋ 5) ≈ 89%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Ma trận nhầm lẫn ba lớp: đọc từ cả bảng ra độ chính xác và độ bao phủ của <b>một lớp</b>.
+<h4>Cách đọc</h4>Hàng = lớp mô hình nói, cột = lớp thực tế. Đường chéo (ô xanh) là các kết quả đúng.
+<ol><li>TP của người đi bộ = ô «hàng người đi bộ, cột người đi bộ».</li><li><span class="f">Độ chính xác = TP ÷ tổng của cả hàng người đi bộ</span>(mô hình nói là người đi bộ, bao nhiêu phần đúng thật)</li><li><span class="f">Độ bao phủ = TP ÷ tổng của cả cột người đi bộ</span>(người đi bộ thật, bao nhiêu phần được tìm thấy)</li><li>Câu chọn: nhìn các ô <b>ngoài đường chéo</b>. Hai lớp A, B bị nhầm có hai ô: «nói A thật ra là B» và «nói B thật ra là A»; <b>cộng hai ô này</b>, làm cho cả ba cặp rồi so sánh.</li></ol>
+<div class="ex">Thử với số khác (không phải đề của bạn): ma trận hai lớp, hàng = mô hình nói, cột = thực tế. Hàng «mèo»: thực tế mèo 40, thực tế chó 10. Hàng «chó»: thực tế mèo 5, thực tế chó 45. Độ chính xác của mèo = 40 ÷ (40 + 10) = 80%; độ bao phủ của mèo = 40 ÷ (40 + 5) ≈ 89%.</div>` },
     sum: (d) => d.M.map((r) => r.join("/")).join(" ; ") },
 
   { id: "q6", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -285,7 +329,13 @@ const CALC = [
     body: (d) => T(`模型一共框了 <b>${d.TP + d.FP}</b> 個框，照標準答案算，<b>${d.TP}</b> 個框對，<b>${d.FP}</b> 個多框。老師把這 ${d.FP} 個多框一個一個裁出來看，發現其中 <b>${d.M}</b> 個框裡其實真的有三角錐，是標準答案漏標了。如果把這 ${d.M} 個改算框對，精確度是多少？`,
       `Mô hình khoanh tất cả <b>${d.TP + d.FP}</b> khung; theo đáp án chuẩn có <b>${d.TP}</b> khung đúng và <b>${d.FP}</b> khung thừa. Giảng viên cắt từng khung thừa ra xem, thấy trong <b>${d.M}</b> khung thật ra có cọc tiêu — đáp án chuẩn đã sót nhãn. Nếu tính ${d.M} khung này là khoanh đúng thì độ chính xác là bao nhiêu?`),
     fields: (d) => [{ id: "b", zh: "照標準答案算　精確度", vi: "Theo đáp án chuẩn: độ chính xác", exp: d.TP / (d.TP + d.FP) * 100, ...OPT_PCT }, { id: "a", zh: "改算之後　精確度", vi: "Sau khi sửa: độ chính xác", exp: (d.TP + d.M) / (d.TP + d.FP) * 100, ...OPT_PCT }],
-    hint: { zh: "框的總數不變；框對變成 TP＋漏標的那些。", vi: "Tổng số khung không đổi; khoanh đúng = TP + các khung bị sót nhãn." },
+    hint: { zh: `<h4>這題在考什麼</h4>標準答案也會漏標：有些「多框」其實框到了真的三角錐。把它們改算框對，精確度會變高（第 2 節第 7 張）。
+<h4>步驟</h4><ol><li>模型框的總數不變（題目一開始就給了）。</li><li><span class="f">照標準答案算：精確度 ＝ TP ÷ 框的總數</span></li><li>改算之後：漏標的那些也算框對，所以 <span class="f">新 TP ＝ TP ＋ 漏標個數；精確度 ＝ 新 TP ÷ 框的總數</span>分母不變。</li></ol>
+<div class="tip">注意：只有精確度的分子變了。（答案多了那些漏標的，召回率的分母也會跟著變，那要另外算，這題不問。）</div>
+<div class="ex">換一組數字（不是你的題目）：框 100 個，照答案算 60 個對、40 個多框；其中 25 個其實有三角錐。照答案：60 ÷ 100 ＝ 60%。改算之後：(60 ＋ 25) ÷ 100 ＝ 85%。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Đáp án chuẩn cũng có thể sót nhãn: một số «khung thừa» thật ra đã khoanh trúng cọc tiêu thật. Tính chúng là khoanh đúng thì độ chính xác tăng (tiết 2, trang 7).
+<h4>Các bước</h4><ol><li>Tổng số khung mô hình khoanh không đổi (đề bài đã cho ngay từ đầu).</li><li><span class="f">Theo đáp án chuẩn: độ chính xác = TP ÷ tổng số khung</span></li><li>Sau khi sửa: các khung bị sót nhãn cũng tính là đúng, vậy <span class="f">TP mới = TP + số khung sót nhãn; độ chính xác = TP mới ÷ tổng số khung</span>Mẫu số không đổi.</li></ol>
+<div class="tip">Chú ý: chỉ có tử số của độ chính xác thay đổi. (Đáp án nhiều thêm các nhãn bị sót thì mẫu số của độ bao phủ cũng đổi theo; phần đó phải tính riêng, câu này không hỏi.)</div>
+<div class="ex">Thử với số khác (không phải đề của bạn): 100 khung, theo đáp án 60 khung đúng, 40 khung thừa; trong đó 25 khung thật ra có cọc tiêu. Theo đáp án: 60 ÷ 100 = 60%. Sau khi sửa: (60 + 25) ÷ 100 = 85%.</div>` },
     sum: (d) => `TP ${d.TP}／FP ${d.FP}／${T("漏標", "sót nhãn")} ${d.M}` },
 
   { id: "q7", tag: { zh: "必做", vi: "Bắt buộc" },
@@ -294,7 +344,11 @@ const CALC = [
     body: (d) => T(`追蹤給每個東西一個不變的號碼，就能算速度。號碼 #7 是行人，2 秒走了 <b>${d.dp} 公尺</b>；號碼 #12 是車，2 秒走了 <b>${d.dc} 公尺</b>。請算出時速（公里／小時），取到小數點後一位。（1 公尺／秒＝3.6 公里／小時）`,
       `Theo dõi cho mỗi vật một số không đổi thì tính được tốc độ. Số #7 là người đi bộ, 2 giây đi được <b>${d.dp} m</b>; số #12 là ô tô, 2 giây đi được <b>${d.dc} m</b>. Hãy tính tốc độ (km/h), lấy một chữ số thập phân. (1 m/s = 3,6 km/h)`),
     fields: (d) => [{ id: "p", zh: "#7 行人　時速", vi: "#7 người: tốc độ", exp: d.dp / 2 * 3.6, tol: 0.3, unit: "km/h" }, { id: "c", zh: "#12 車　時速", vi: "#12 ô tô: tốc độ", exp: d.dc / 2 * 3.6, tol: 0.3, unit: "km/h" }],
-    hint: { zh: "先除以 2 得到每秒幾公尺，再乘 3.6。", vi: "Chia 2 để ra số mét mỗi giây, rồi nhân 3,6." },
+    hint: { zh: `<h4>這題在考什麼</h4>追蹤給每個東西一個不變的號碼，才能把兩個時間的位置接起來，算出速度（第 3 節第 5 張）。
+<h4>步驟</h4><ol><li><span class="f">速度 ＝ 距離 ÷ 時間</span>單位是公尺／秒（時間是 2 秒）。</li><li><span class="f">公里／小時 ＝ 公尺／秒 × 3.6</span>因為 1 公尺／秒 ＝ 3600 秒 ÷ 1000 公尺 ＝ 3.6 公里／小時。</li><li>行人和車各算一次，取到小數點後一位。</li></ol>
+<div class="ex">換一組數字（不是你的題目）：號碼 #3 的行人 2 秒走 2 公尺：2 ÷ 2 ＝ 1 公尺／秒；1 × 3.6 ＝ 3.6 公里／小時。</div>`, vi: `<h4>Câu này kiểm tra gì</h4>Theo dõi cho mỗi vật một số không đổi, nhờ vậy mới nối được vị trí ở hai thời điểm và tính ra tốc độ (tiết 3, trang 5).
+<h4>Các bước</h4><ol><li><span class="f">Tốc độ = quãng đường ÷ thời gian</span>Đơn vị mét/giây (thời gian là 2 giây).</li><li><span class="f">km/h = m/s × 3,6</span>Vì 1 m/s = 3600 giây ÷ 1000 m = 3,6 km/h.</li><li>Tính riêng cho người đi bộ và ô tô, lấy một chữ số thập phân.</li></ol>
+<div class="ex">Thử với số khác (không phải đề của bạn): người đi bộ số #3 đi 2 m trong 2 giây: 2 ÷ 2 = 1 m/s; 1 × 3,6 = 3,6 km/h.</div>` },
     sum: (d) => `${d.dp} m／${d.dc} m` },
 ];
 
@@ -322,7 +376,9 @@ TOOLS.push({ id: "t1", tag: { zh: "必做", vi: "Bắt buộc" },
       { id: "o", kind: "sel", wide: true, zh: "門檻拉高的時候，多框和漏掉各怎麼變？", vi: "Khi kéo ngưỡng lên, khung thừa và sót thay đổi thế nào?", exp: "a",
         opts: [["", "— 請選 —", "— chọn —"], ["a", "多框變少，漏掉變多", "Khung thừa giảm, sót tăng"], ["b", "多框變多，漏掉變少", "Khung thừa tăng, sót giảm"], ["c", "兩個都變少", "Cả hai đều giảm"], ["d", "兩個都變多", "Cả hai đều tăng"]] }];
   },
-  hint: { zh: "精確度＝框對÷(框對＋多框)；召回率＝框對÷90（答案一共 90 個）。", vi: "Độ chính xác = đúng ÷ (đúng + thừa); độ bao phủ = đúng ÷ 90 (đáp án có 90)." },
+  hint: { zh: `<h4>怎麼操作</h4><ol><li>拖動「門檻」，每次移 0.05。照片上：綠框＝框對、紅框＝多框、橘色虛線＝漏掉的答案；下方是 17 張合計。</li><li>第 1 小題：門檻設成題目指定的值，直接抄下面的框對、多框、漏掉。</li><li>第 2 小題：門檻設成指定的值，抄框對與多框，自己算：<span class="f">精確度 ＝ 框對 ÷ (框對 ＋ 多框)；召回率 ＝ 框對 ÷ 90</span></li><li>第 3 小題：「召回率 ≥ 85%」就是 <span class="f">框對 ÷ 90 ≥ 0.85</span>從低門檻往高拉，看召回率什麼時候剛好還能 ≥ 85%，再拉高一格就不行；選那個最高的門檻。</li><li>觀察題：拉高門檻時，看紅框（多框）和橘色虛線（漏掉）各是變多還是變少。</li></ol>
+<div class="tip">召回率的分母是 90（17 張照片的答案一共 90 個三角錐），不會因為門檻改變。</div>`, vi: `<h4>Cách thao tác</h4><ol><li>Kéo «Ngưỡng», mỗi lần nhích 0,05. Trên ảnh: khung xanh = đúng, khung đỏ = thừa, nét đứt cam = đáp án bị sót; bên dưới là tổng của 17 ảnh.</li><li>Ý 1: đặt ngưỡng theo đề, chép trực tiếp số khoanh đúng, thừa, sót ở bên dưới.</li><li>Ý 2: đặt ngưỡng theo đề, chép số đúng và thừa, rồi tự tính: <span class="f">độ chính xác = đúng ÷ (đúng + thừa); độ bao phủ = đúng ÷ 90</span></li><li>Ý 3: «độ bao phủ ≥ 85%» nghĩa là <span class="f">đúng ÷ 90 ≥ 0,85</span>Kéo từ ngưỡng thấp lên cao, xem khi nào độ bao phủ còn vừa đủ ≥ 85%, nhích thêm một nấc thì không đạt; chọn ngưỡng cao nhất như vậy.</li><li>Câu quan sát: khi nâng ngưỡng, nhìn khung đỏ (thừa) và nét đứt cam (sót) nhiều lên hay ít đi.</li></ol>
+<div class="tip">Mẫu số của độ bao phủ là 90 (17 ảnh có tất cả 90 cọc tiêu), không đổi theo ngưỡng.</div>` },
   sum: (d) => `t1=${d.t1} t2=${d.t2}`,
   wire(root, d) {
     let idx = 0, thr = 0.25;
@@ -359,7 +415,13 @@ TOOLS.push({ id: "t2", tag: { zh: "必做", vi: "Bắt buộc" },
     { id: "r2", kind: "rec", zh: "記錄 2：IoU 0.20–0.30", vi: "Ghi 2: IoU 0,20–0,30", ok: (v) => v >= 0.2 && v <= 0.3 },
     { id: "h", zh: "一樣大、重疊一半　IoU", vi: "Bằng nhau, chồng một nửa: IoU", exp: 1 / 3, tol: 0.02 },
     { id: "c", zh: "完全包住、2 倍面積　IoU", vi: "Bao trọn, diện tích gấp 2: IoU", exp: 0.5, tol: 0.02 }],
-  hint: { zh: "IoU＝交集面積 ÷ 聯集面積。聯集＝兩個面積相加，再減掉交集。", vi: "IoU = diện tích giao ÷ diện tích hợp. Hợp = tổng hai diện tích − giao." },
+  hint: { zh: `<h4>IoU 是什麼</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span>聯集面積 ＝ 面積 A ＋ 面積 B − 交集面積（重疊的那一塊不要算兩次）。兩個框完全不重疊：IoU ＝ 0；完全重疊：IoU ＝ 1；IoU ≥ 0.5 才算框對。
+<h4>操作</h4><ol><li>拖橘框移動，拉右下角圓點改大小，看 IoU 的數字。想要 0.50–0.60：從兩個框幾乎重疊開始，慢慢往旁邊移，數字落在範圍內就按記錄。</li><li>想要 0.20–0.30：再移開一點。</li></ol>
+<h4>兩個用算的題</h4><ol><li>「一樣大、重疊一半」：設一個框的面積 ＝ A。交集 ＝ A 的一半；聯集 ＝ A ＋ A − 交集。再算 交集 ÷ 聯集。</li><li>「完全包住、2 倍面積」：大框面積 ＝ 2A，小框面積 ＝ A，小框完全在大框裡。交集 ＝ 小框的面積；聯集 ＝ 大框的面積。再算 交集 ÷ 聯集。</li></ol>
+<div class="ex">換一組數字（不是你的題目）：兩個框面積各 100，重疊 25：聯集 ＝ 100 ＋ 100 − 25 ＝ 175，IoU ＝ 25 ÷ 175 ≈ 0.14。</div>`, vi: `<h4>IoU là gì</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span>Diện tích hợp = diện tích A + diện tích B − diện tích giao (phần chồng nhau không tính hai lần). Hai khung không chồng nhau: IoU = 0; trùng khít: IoU = 1; IoU ≥ 0,5 mới tính khoanh đúng.
+<h4>Thao tác</h4><ol><li>Kéo khung cam để di chuyển, kéo chấm tròn góc dưới bên phải để đổi kích thước, xem số IoU. Muốn 0,50–0,60: bắt đầu từ lúc hai khung gần trùng nhau, từ từ dời sang bên, khi số nằm trong khoảng thì bấm «Ghi lại».</li><li>Muốn 0,20–0,30: dời ra xa thêm một chút.</li></ol>
+<h4>Hai câu phải tính</h4><ol><li>«Bằng nhau, chồng một nửa»: gọi diện tích một khung là A. Giao = một nửa A; hợp = A + A − giao. Rồi tính giao ÷ hợp.</li><li>«Bao trọn, diện tích gấp 2»: khung lớn = 2A, khung nhỏ = A, khung nhỏ nằm hoàn toàn trong khung lớn. Giao = diện tích khung nhỏ; hợp = diện tích khung lớn. Rồi tính giao ÷ hợp.</li></ol>
+<div class="ex">Thử với số khác (không phải đề của bạn): hai khung diện tích 100 mỗi khung, chồng nhau 25: hợp = 100 + 100 − 25 = 175, IoU = 25 ÷ 175 ≈ 0,14.</div>` },
   sum: () => "",
   wire(root) {
     const svg = $("#t2svg", root), NS = "http://www.w3.org/2000/svg";
@@ -408,7 +470,11 @@ TOOLS.push({ id: "t3", tag: { zh: "必做", vi: "Bắt buộc" },
     { id: "ok", kind: "rec", zh: "IoU 0.5：刪對了", vi: "IoU 0,5: xóa đúng", ok: (v) => v === 1, text: (v) => v === 1 ? "✓" : "" },
     { id: "n3", zh: "門檻 0.3　留下幾個", vi: "Ngưỡng 0,3: còn mấy khung", exp: nms(NMS_BOXES, 0.3).length, tol: 0 },
     { id: "n9", zh: "門檻 0.9　留下幾個", vi: "Ngưỡng 0,9: còn mấy khung", exp: nms(NMS_BOXES, 0.9).length, tol: 0 }],
-  hint: { zh: "IoU 要大於門檻才刪。門檻愈小，刪得愈多；門檻愈大，刪得愈少。", vi: "IoU lớn hơn ngưỡng mới xóa. Ngưỡng càng nhỏ xóa càng nhiều; ngưỡng càng lớn xóa càng ít." },
+  hint: { zh: `<h4>刪重複（NMS）的步驟</h4><ol><li>把所有框照分數從高排到低。</li><li>留下分數最高的那一個。</li><li>算它和其他框的 IoU，<b>IoU 大於門檻</b>的都刪掉（它們框的是同一個東西）。</li><li>從剩下的框裡，再挑分數最高的，重複第 2、3 步，直到沒有框為止。</li></ol>
+<div class="tip">刪的條件是「IoU 大於門檻」。門檻愈小，愈容易被刪，留下愈少；門檻很大（接近 1），幾乎不會刪，留下愈多。IoU 很小的兩個框，代表框的是不同的東西，不會互相刪。</div>
+<h4>怎麼做這題</h4>按「逐步示範」，每一步會印出每個剩下的框和最高分框的 IoU（示範的門檻是 0.5）。題目問門檻 0.3 和 0.9 的時候，就拿示範印出來的 IoU 數字自己比：IoU <b>大於</b>門檻才刪。`, vi: `<h4>Các bước bỏ trùng (NMS)</h4><ol><li>Sắp xếp các khung theo điểm từ cao xuống thấp.</li><li>Giữ lại khung điểm cao nhất.</li><li>Tính IoU của nó với các khung còn lại; khung nào có <b>IoU lớn hơn ngưỡng</b> thì xóa (chúng khoanh cùng một vật).</li><li>Trong các khung còn lại, lại chọn khung điểm cao nhất, lặp lại bước 2, 3 cho đến khi hết khung.</li></ol>
+<div class="tip">Điều kiện xóa là «IoU lớn hơn ngưỡng». Ngưỡng càng nhỏ càng dễ bị xóa, còn lại càng ít; ngưỡng rất lớn (gần 1) hầu như không xóa, còn lại nhiều. Hai khung IoU rất nhỏ nghĩa là khoanh hai vật khác nhau, không xóa nhau.</div>
+<h4>Cách làm câu này</h4>Bấm «Chạy từng bước»: mỗi bước sẽ in IoU của từng khung còn lại với khung điểm cao nhất (ngưỡng mô phỏng là 0,5). Với câu hỏi ngưỡng 0,3 và 0,9, dùng các số IoU đó tự so: IoU <b>lớn hơn</b> ngưỡng thì mới xóa.` },
   sum: () => "",
   wire(root) {
     const svg = $("#t3svg", root); let del = new Set(), steps = null, si = 0;
@@ -433,13 +499,15 @@ TOOLS.push({ id: "t3", tag: { zh: "必做", vi: "Bắt buộc" },
     $("#t3reset", root).onclick = () => { del = new Set(); steps = null; si = 0; $("#t3demo", root).innerHTML = ""; $("#t3msg", root).textContent = ""; draw(); };
     $("#t3step", root).onclick = () => {
       if (!steps) { steps = []; const rest = NMS_BOXES.slice().sort((a, b) => b.s - a.s); const dl = new Set();
-        while (rest.length) { const top = rest.shift(); const gone = []; for (let i = rest.length - 1; i >= 0; i--) { const v = iou(top.b, rest[i].b); if (v > 0.5) { gone.push([rest[i].id, v]); dl.add(rest[i].id); rest.splice(i, 1); } }
-          steps.push({ top, gone, del: new Set(dl) }); }
+        while (rest.length) { const top = rest.shift(); const gone = [], stay = []; for (let i = rest.length - 1; i >= 0; i--) { const v = iou(top.b, rest[i].b); if (v > 0.5) { gone.push([rest[i].id, v]); dl.add(rest[i].id); rest.splice(i, 1); } else stay.push([rest[i].id, v]); }
+          steps.push({ top, gone, stay: stay.reverse(), del: new Set(dl) }); }
         si = 0; }
       if (si >= steps.length) { $("#t3demo", root).innerHTML = T("示範結束，按「重來」可以自己做。", "Hết phần mô phỏng, bấm «Làm lại» để tự làm."); return; }
       const st = steps[si++]; del = new Set(st.del); draw(st.top.id);
-      $("#t3demo", root).innerHTML = T(`第 ${si} 步：留下分數最高的 <b>${st.top.s.toFixed(2)}</b>。`, `Bước ${si}: giữ khung điểm cao nhất <b>${st.top.s.toFixed(2)}</b>.`) + " "
-        + (st.gone.length ? st.gone.map(([id, v]) => T(`${NMS_BOXES.find((o) => o.id === id).s.toFixed(2)} 的框和它 IoU＝${v.toFixed(2)} > 0.5，刪掉。`, `Khung ${NMS_BOXES.find((o) => o.id === id).s.toFixed(2)} có IoU = ${v.toFixed(2).replace(".", ",")} > 0,5, xóa.`)).join(" ") : T("沒有框和它重疊超過 0.5。", "Không khung nào chồng quá 0,5."));
+      const sc = (id) => NMS_BOXES.find((o) => o.id === id).s.toFixed(2), fv = (v) => (LANG === "zh" ? v.toFixed(2) : v.toFixed(2).replace(".", ","));
+      const lines = st.gone.map(([id, v]) => T(`分數 ${sc(id)} 的框：IoU ＝ ${fv(v)} &gt; 0.5，<b>刪掉</b>。`, `Khung điểm ${sc(id)}: IoU = ${fv(v)} &gt; 0,5, <b>xóa</b>.`))
+        .concat(st.stay.map(([id, v]) => T(`分數 ${sc(id)} 的框：IoU ＝ ${fv(v)}，沒有超過 0.5，先留著。`, `Khung điểm ${sc(id)}: IoU = ${fv(v)}, không quá 0,5, tạm giữ.`)));
+      $("#t3demo", root).innerHTML = T(`第 ${si} 步：留下分數最高的 <b>${st.top.s.toFixed(2)}</b>。`, `Bước ${si}: giữ khung điểm cao nhất <b>${st.top.s.toFixed(2)}</b>.`) + "<br>" + (lines.length ? lines.join("<br>") : T("沒有其他的框了。", "Không còn khung nào khác."));
     };
     root._redraw = () => draw(); root._del = (ids) => { del = new Set(ids); draw(); }; draw();
   } });
@@ -464,7 +532,11 @@ TOOLS.push({ id: "t4", tag: { zh: "選做", vi: "Tự chọn" }, opt: true,
     return [{ id: "dt", zh: "白天　漏掉 0 的最高門檻", vi: "Ban ngày: ngưỡng cao nhất để sót = 0", exp: a.t, tol: 0.011 }, { id: "df", zh: "白天　這時誤煞車", vi: "Ban ngày: phanh nhầm lúc đó", exp: a.fp, tol: 0 },
       { id: "nt", zh: "夜晚　漏掉 0 的最高門檻", vi: "Ban đêm: ngưỡng cao nhất để sót = 0", exp: b.t, tol: 0.011 }, { id: "nf", zh: "夜晚　這時誤煞車", vi: "Ban đêm: phanh nhầm lúc đó", exp: b.fp, tol: 0 },
       { id: "o", kind: "sel", wide: true, zh: "夜晚想做到「漏掉 0」，誤煞車會怎樣？", vi: "Ban đêm muốn «sót = 0» thì phanh nhầm sẽ thế nào?", exp: "more", opts: [["", "— 請選 —", "— chọn —"], ["more", "比白天多很多", "Nhiều hơn ban ngày rất nhiều"], ["same", "差不多", "Gần như nhau"], ["less", "比白天少", "Ít hơn ban ngày"]] }]; },
-  hint: { zh: "門檻要低到連分數最低的真行人也 ≥ 門檻。", vi: "Ngưỡng phải thấp đến mức người thật có điểm thấp nhất cũng ≥ ngưỡng." },
+  hint: { zh: `<h4>怎麼讀這張圖</h4>青綠色是<b>真的行人</b>的分數，灰色是<b>假的</b>（電線桿、影子等）的分數。紅線是門檻：<b>分數 ≥ 門檻就煞車</b>。
+<ul><li>漏掉 ＝ 真行人，但分數 &lt; 門檻，沒煞車。</li><li>誤煞車 ＝ 假的，但分數 ≥ 門檻，卻煞車。</li></ul>
+<h4>步驟</h4><ol><li>想要「漏掉 0」：每一個真行人的分數都要 ≥ 門檻，所以門檻不能超過<b>分數最低的那個真行人</b>。</li><li>從高往低慢慢拉（每次 0.01），拉到「漏掉」剛好變成 0，那個值就是最高門檻；這時看「誤煞車」是幾次，抄下來。</li><li>白天、夜晚各做一次。比較看看：夜晚真行人的分數比較低、比較分散，門檻要壓得更低才不會漏掉，會發生什麼事？</li></ol>`, vi: `<h4>Cách đọc biểu đồ</h4>Màu xanh là điểm của <b>người đi bộ thật</b>, màu xám là điểm của <b>«giả»</b> (cột điện, bóng…). Vạch đỏ là ngưỡng: <b>điểm ≥ ngưỡng thì phanh</b>.
+<ul><li>Sót = người thật nhưng điểm &lt; ngưỡng, không phanh.</li><li>Phanh nhầm = giả nhưng điểm ≥ ngưỡng, vẫn phanh.</li></ul>
+<h4>Các bước</h4><ol><li>Muốn «sót = 0»: điểm của mọi người thật đều phải ≥ ngưỡng, nên ngưỡng không được vượt quá <b>điểm thấp nhất của một người thật</b>.</li><li>Kéo từ cao xuống thấp từng nấc 0,01, đến khi «sót» vừa thành 0, giá trị đó là ngưỡng cao nhất; lúc ấy xem «phanh nhầm» là bao nhiêu lần và chép lại.</li><li>Làm một lần cho ban ngày, một lần cho ban đêm. So sánh: ban đêm điểm của người thật thấp và phân tán hơn, phải hạ ngưỡng thấp hơn mới không sót, điều gì sẽ xảy ra?</li></ol>` },
   sum: () => "",
   wire(root) {
     let k = "day", thr = 0.5; const svg = $("#t4svg", root), range = $("#t4range", root);
