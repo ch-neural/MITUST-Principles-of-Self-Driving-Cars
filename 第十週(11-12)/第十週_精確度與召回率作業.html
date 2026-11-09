@@ -417,8 +417,8 @@ function simAns(k) { const D = SIM[k]; const minpos = Math.min(...D.pos); const 
 TOOLS.push({ id: "t4", seedI: 11, tag: { zh: "選做", vi: "Tự chọn" }, opt: true,
   gen() { return {}; },
   title: () => T("（選做）自動緊急煞車：白天和夜晚", "(Tự chọn) Phanh khẩn cấp tự động: ban ngày và ban đêm"),
-  body: () => T("模擬 1000 個行人候選：<b style=\"color:#00A896\">藍色是真的行人</b>（60 個），<b style=\"color:#8A97A6\">灰色是假的</b>（940 個，例如電線桿、影子）。分數 ≥ 門檻就煞車。<b>漏掉＝真行人沒煞車</b>（最危險）；<b>誤煞車＝假的卻煞車</b>（後車可能追撞）。這是模擬資料，不是真的測試。<br>1. 白天：找出「漏掉 0 個」時最高的門檻（每次 0.01），記下這時的誤煞車次數。<br>2. 夜晚：一樣的問題。",
-    "Mô phỏng 1000 ứng viên người đi bộ: <b style=\"color:#00A896\">xanh là người thật</b> (60), <b style=\"color:#8A97A6\">xám là giả</b> (940, ví dụ cột điện, bóng). Điểm ≥ ngưỡng thì phanh. <b>Sót = người thật mà không phanh</b> (nguy hiểm nhất); <b>phanh nhầm = giả mà vẫn phanh</b> (xe sau có thể đâm). Đây là dữ liệu mô phỏng, không phải thử nghiệm thật.<br>1. Ban ngày: tìm ngưỡng cao nhất để «sót = 0» (mỗi lần 0,01), ghi số lần phanh nhầm lúc đó.<br>2. Ban đêm: câu hỏi tương tự."),
+  body: () => T("模擬 1000 個行人候選：<b style=\"color:#1F6FBF\">藍色是真的行人</b>（60 個），<b style=\"color:#8A97A6\">灰色是假的</b>（940 個，例如電線桿、影子）。分數 ≥ 門檻就煞車。<b>漏掉＝真行人沒煞車</b>（最危險）；<b>誤煞車＝假的卻煞車</b>（後車可能追撞）。這是模擬資料，不是真的測試。<br>1. 白天：找出「漏掉 0 個」時最高的門檻（每次 0.01），記下這時的誤煞車次數。<br>2. 夜晚：一樣的問題。",
+    "Mô phỏng 1000 ứng viên người đi bộ: <b style=\"color:#1F6FBF\">xanh dương là người thật</b> (60), <b style=\"color:#8A97A6\">xám là giả</b> (940, ví dụ cột điện, bóng). Điểm ≥ ngưỡng thì phanh. <b>Sót = người thật mà không phanh</b> (nguy hiểm nhất); <b>phanh nhầm = giả mà vẫn phanh</b> (xe sau có thể đâm). Đây là dữ liệu mô phỏng, không phải thử nghiệm thật.<br>1. Ban ngày: tìm ngưỡng cao nhất để «sót = 0» (mỗi lần 0,01), ghi số lần phanh nhầm lúc đó.<br>2. Ban đêm: câu hỏi tương tự."),
   ui: `<div class="row"><button class="sm on" id="t4day"></button><button class="sm" id="t4night"></button><span class="grow"></span></div>
        <svg id="t4svg" class="svgbox" viewBox="0 0 420 170"></svg>
        <div class="row"><b style="white-space:nowrap" id="t4lbl"></b><input type="range" id="t4range" min="0.01" max="0.99" step="0.01" value="0.5"><b class="big" id="t4val" style="min-width:52px;text-align:right">0.50</b></div>
@@ -427,9 +427,9 @@ TOOLS.push({ id: "t4", seedI: 11, tag: { zh: "選做", vi: "Tự chọn" }, opt:
     return [{ id: "dt", zh: "白天　漏掉 0 的最高門檻", vi: "Ban ngày: ngưỡng cao nhất để sót = 0", exp: a.t, tol: 0.011 }, { id: "df", zh: "白天　這時誤煞車", vi: "Ban ngày: phanh nhầm lúc đó", exp: a.fp, tol: 0 },
       { id: "nt", nl: true, zh: "夜晚　漏掉 0 的最高門檻", vi: "Ban đêm: ngưỡng cao nhất để sót = 0", exp: b.t, tol: 0.011 }, { id: "nf", zh: "夜晚　這時誤煞車", vi: "Ban đêm: phanh nhầm lúc đó", exp: b.fp, tol: 0 },
       { id: "o", kind: "sel", wide: true, zh: "夜晚想做到「漏掉 0」，誤煞車會怎樣？", vi: "Ban đêm muốn «sót = 0» thì phanh nhầm sẽ thế nào?", exp: "more", opts: [["", "— 請選 —", "— chọn —"], ["more", "比白天多很多", "Nhiều hơn ban ngày rất nhiều"], ["same", "差不多", "Gần như nhau"], ["less", "比白天少", "Ít hơn ban ngày"]] }]; },
-  hint: { zh: `<h4>怎麼讀這張圖</h4>青綠色是<b>真的行人</b>的分數，灰色是<b>假的</b>（電線桿、影子等）的分數。紅線是門檻：<b>分數 ≥ 門檻就煞車</b>。
+  hint: { zh: `<h4>怎麼讀這張圖</h4>藍色是<b>真的行人</b>的分數，灰色是<b>假的</b>（電線桿、影子等）的分數。紅線是門檻：<b>分數 ≥ 門檻就煞車</b>。
 <ul><li>漏掉 ＝ 真行人，但分數 &lt; 門檻，沒煞車。</li><li>誤煞車 ＝ 假的，但分數 ≥ 門檻，卻煞車。</li></ul>
-<h4>步驟</h4><ol><li>想要「漏掉 0」：每一個真行人的分數都要 ≥ 門檻，所以門檻不能超過<b>分數最低的那個真行人</b>。</li><li>從高往低慢慢拉（每次 0.01），拉到「漏掉」剛好變成 0，那個值就是最高門檻；這時看「誤煞車」是幾次，抄下來。</li><li>白天、夜晚各做一次。比較看看：夜晚真行人的分數比較低、比較分散，門檻要壓得更低才不會漏掉，會發生什麼事？</li></ol>`, vi: `<h4>Cách đọc biểu đồ</h4>Màu xanh là điểm của <b>người đi bộ thật</b>, màu xám là điểm của <b>«giả»</b> (cột điện, bóng…). Vạch đỏ là ngưỡng: <b>điểm ≥ ngưỡng thì phanh</b>.
+<h4>步驟</h4><ol><li>想要「漏掉 0」：每一個真行人的分數都要 ≥ 門檻，所以門檻不能超過<b>分數最低的那個真行人</b>。</li><li>從高往低慢慢拉（每次 0.01），拉到「漏掉」剛好變成 0，那個值就是最高門檻；這時看「誤煞車」是幾次，抄下來。</li><li>白天、夜晚各做一次。比較看看：夜晚真行人的分數比較低、比較分散，門檻要壓得更低才不會漏掉，會發生什麼事？</li></ol>`, vi: `<h4>Cách đọc biểu đồ</h4>Màu xanh dương là điểm của <b>người đi bộ thật</b>, màu xám là điểm của <b>«giả»</b> (cột điện, bóng…). Vạch đỏ là ngưỡng: <b>điểm ≥ ngưỡng thì phanh</b>.
 <ul><li>Sót = người thật nhưng điểm &lt; ngưỡng, không phanh.</li><li>Phanh nhầm = giả nhưng điểm ≥ ngưỡng, vẫn phanh.</li></ul>
 <h4>Các bước</h4><ol><li>Muốn «sót = 0»: điểm của mọi người thật đều phải ≥ ngưỡng, nên ngưỡng không được vượt quá <b>điểm thấp nhất của một người thật</b>.</li><li>Kéo từ cao xuống thấp từng nấc 0,01, đến khi «sót» vừa thành 0, giá trị đó là ngưỡng cao nhất; lúc ấy xem «phanh nhầm» là bao nhiêu lần và chép lại.</li><li>Làm một lần cho ban ngày, một lần cho ban đêm. So sánh: ban đêm điểm của người thật thấp và phân tán hơn, phải hạ ngưỡng thấp hơn mới không sót, điều gì sẽ xảy ra?</li></ol>` },
   sum: () => "",
@@ -440,7 +440,7 @@ TOOLS.push({ id: "t4", seedI: 11, tag: { zh: "選做", vi: "Tự chọn" }, opt:
       D.pos.forEach((x) => hp[Math.min(B - 1, Math.floor(x * B))]++); D.neg.forEach((x) => hn[Math.min(B - 1, Math.floor(x * B))]++);
       const mx = 260; let h = `<rect width="420" height="170" fill="#F7F9FB"/>`;
       for (let i = 0; i < B; i++) { const a = Math.min(150, hn[i] / mx * 150 * 2.2), b = Math.min(150, hp[i] / 12 * 150);
-        h += `<rect x="${i * W + 1}" y="${160 - a}" width="${W - 2}" height="${a}" fill="#B8C2CE"/><rect x="${i * W + 1}" y="${160 - a - b}" width="${W - 2}" height="${b}" fill="#00A896"/>`; }
+        h += `<rect x="${i * W + 1}" y="${160 - a}" width="${W - 2}" height="${a}" fill="#B8C2CE"/><rect x="${i * W + 1}" y="${160 - a - b}" width="${W - 2}" height="${b}" fill="#1F6FBF"/>`; }
       h += `<line x1="${thr * 420}" y1="4" x2="${thr * 420}" y2="162" stroke="#D9463E" stroke-width="2.5"/><text x="${Math.min(380, thr * 420 + 4)}" y="14" font-size="11" fill="#D9463E">${T("門檻", "ngưỡng")}</text>`;
       svg.innerHTML = h;
       const fn = D.pos.filter((x) => x < thr).length, fp = D.neg.filter((x) => x >= thr).length, tp = D.pos.length - fn;
