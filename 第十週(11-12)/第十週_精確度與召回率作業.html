@@ -229,8 +229,8 @@ const CALC = [
   { id: "q3", seedI: 3, tag: { zh: "必做", vi: "Bắt buộc" },
     gen(r) { return { N: ri(r, 10, 30), ALL: 1000 }; },
     title: () => T("為什麼偵測不用正確率？", "Vì sao phát hiện không dùng accuracy?"),
-    body: (d) => T(`路口攝影機一共拍了 <b>${d.ALL}</b> 個畫面，其中只有 <b>${d.N}</b> 個畫面有行人橫越。有一個偷懶的模型，不管看到什麼，一律回答「沒有行人」。請算出它的正確率（答對幾成畫面）和召回率。`,
-      `Camera ở ngã tư chụp tất cả <b>${d.ALL}</b> khung hình, chỉ có <b>${d.N}</b> khung hình có người đi bộ băng qua. Một mô hình lười luôn trả lời «không có người đi bộ». Hãy tính accuracy (tỉ lệ khung hình trả lời đúng) và độ bao phủ của nó.`),
+    body: (d) => T(`路口攝影機一共拍了 <b>${d.ALL}</b> 個畫面，其中只有 <b>${d.N}</b> 個畫面有行人橫越。有一個偷懶的模型，不管看到什麼，一律回答「沒有行人」。請算出兩個數字：<br>① <b>正確率</b>：全部 <b>${d.ALL}</b> 個畫面裡，它答對幾成。沒有行人的畫面，它說「沒有行人」，也算答對。<br>② <b>召回率</b>：<b>${d.N}</b> 個有行人的畫面裡，它找到幾成。`,
+      `Camera ở ngã tư chụp tất cả <b>${d.ALL}</b> khung hình, chỉ có <b>${d.N}</b> khung hình có người đi bộ băng qua. Một mô hình lười luôn trả lời «không có người đi bộ». Hãy tính hai số:<br>① <b>Accuracy</b>: trong tất cả <b>${d.ALL}</b> khung hình, nó trả lời đúng bao nhiêu phần. Khung hình không có người mà nó nói «không có người đi bộ» cũng tính là đúng.<br>② <b>Độ bao phủ</b>: trong <b>${d.N}</b> khung hình có người đi bộ, nó tìm thấy bao nhiêu phần.`),
     fields: (d) => [
       { id: "acc", zh: "正確率", vi: "Accuracy", exp: (d.ALL - d.N) / d.ALL * 100, unit: "%", tol: 0.6 },
       { id: "rec", zh: "召回率", vi: "Độ bao phủ", exp: 0, ...OPT_PCT },
