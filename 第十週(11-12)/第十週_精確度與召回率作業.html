@@ -313,22 +313,22 @@ TOOLS.push({ id: "t1", seedI: 8, tag: { zh: "必做", vi: "Bắt buộc" },
 TOOLS.push({ id: "t2", seedI: 9, tag: { zh: "必做", vi: "Bắt buộc" },
   gen() { return {}; },
   title: () => T("IoU 小遊戲：拖拖看", "Trò chơi IoU: kéo thử"),
-  body: () => T("白色虛線是標準答案，<b>橘色框是模型框的</b>。用手指或滑鼠<b>拖動橘框</b>，拉右下角的圓點可以改大小，看 IoU（重疊）怎麼變。IoU ≥ 0.5 才算框對。<br>1. 讓 IoU 落在 <b>0.50–0.60</b>，按「記錄」。<br>2. 讓 IoU 落在 <b>0.20–0.30</b>，按「記錄」。<br>3. 用算的：兩個框一樣大，重疊一半（交集＝一個框面積的一半），IoU 是多少？<br>4. 用算的：橘框<b>完全包住</b>答案框，面積是答案框的 2 倍，IoU 是多少？",
-    "Khung nét đứt trắng là đáp án chuẩn, <b>khung cam là khung mô hình</b>. Dùng ngón tay hoặc chuột <b>kéo khung cam</b>, kéo chấm tròn góc dưới bên phải để đổi kích thước, xem IoU (độ chồng) thay đổi thế nào. IoU ≥ 0,5 mới tính khoanh đúng.<br>1. Làm IoU nằm trong <b>0,50–0,60</b>, bấm «Ghi lại».<br>2. Làm IoU nằm trong <b>0,20–0,30</b>, bấm «Ghi lại».<br>3. Tính: hai khung bằng nhau, chồng lên một nửa (phần giao = một nửa diện tích một khung). IoU bằng bao nhiêu?<br>4. Tính: khung cam <b>bao trọn</b> khung đáp án, diện tích gấp 2 lần khung đáp án. IoU bằng bao nhiêu?"),
+  body: () => T("白色虛線是標準答案，<b>橘色框是模型框的</b>。用手指或滑鼠<b>拖動橘框</b>，拉右下角的圓點可以改大小，看 IoU（重疊）怎麼變。IoU ≥ 0.5 才算框對。<br>1. 讓 IoU 落在 <b>0.50–0.60</b>，按「記錄」。<br>2. 讓 IoU 落在 <b>0.20–0.30</b>，按「記錄」。<br>3. 用算的：兩個框的面積<b>都是 100</b>，重疊的那一塊面積是 <b>50</b>。IoU 是多少？<br>4. 用算的：答案框的面積是 <b>100</b>，橘框<b>完全包住</b>它，橘框的面積是 <b>200</b>。IoU 是多少？<br>（3、4 題填小數、分數或百分數都可以。）",
+    "Khung nét đứt trắng là đáp án chuẩn, <b>khung cam là khung mô hình</b>. Dùng ngón tay hoặc chuột <b>kéo khung cam</b>, kéo chấm tròn góc dưới bên phải để đổi kích thước, xem IoU (độ chồng) thay đổi thế nào. IoU ≥ 0,5 mới tính khoanh đúng.<br>1. Làm IoU nằm trong <b>0,50–0,60</b>, bấm «Ghi lại».<br>2. Làm IoU nằm trong <b>0,20–0,30</b>, bấm «Ghi lại».<br>3. Tính: diện tích hai khung <b>đều là 100</b>, phần chồng nhau có diện tích <b>50</b>. IoU bằng bao nhiêu?<br>4. Tính: diện tích khung đáp án là <b>100</b>, khung cam <b>bao trọn</b> nó, diện tích khung cam là <b>200</b>. IoU bằng bao nhiêu?<br>(Câu 3, 4 điền số thập phân, phân số hoặc phần trăm đều được.)"),
   ui: `<svg id="t2svg" class="svgbox" viewBox="0 0 420 270"></svg>
        <div class="row"><span class="big" id="t2iou">0.00</span><span id="t2st" class="pill n"></span><span class="grow"></span>
          <button class="sm" id="t2r1"></button><button class="sm" id="t2r2"></button></div>`,
   fields: () => [
     { id: "r1", kind: "rec", zh: "記錄 1：IoU 0.50–0.60", vi: "Ghi 1: IoU 0,50–0,60", ok: (v) => v >= 0.5 && v <= 0.6 },
     { id: "r2", kind: "rec", zh: "記錄 2：IoU 0.20–0.30", vi: "Ghi 2: IoU 0,20–0,30", ok: (v) => v >= 0.2 && v <= 0.3 },
-    { id: "h", nl: true, zh: "一樣大、重疊一半　IoU", vi: "Bằng nhau, chồng một nửa: IoU", exp: 1 / 3, tol: 0.02 },
-    { id: "c", zh: "完全包住、2 倍面積　IoU", vi: "Bao trọn, diện tích gấp 2: IoU", exp: 0.5, tol: 0.02 }],
+    { id: "h", nl: true, zh: "第 3 題：面積 100 和 100、重疊 50　IoU", vi: "Câu 3: diện tích 100 và 100, chồng 50: IoU", exp: 1 / 3, tol: 0.02 },
+    { id: "c", zh: "第 4 題：面積 100 和 200、完全包住　IoU", vi: "Câu 4: diện tích 100 và 200, bao trọn: IoU", exp: 0.5, tol: 0.02 }],
   hint: { zh: `<h4>IoU 是什麼</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span><span class="n">聯集面積 ＝ 面積 A ＋ 面積 B − 交集面積（重疊的那一塊不要算兩次）。兩個框完全不重疊：IoU ＝ 0；完全重疊：IoU ＝ 1；IoU ≥ 0.5 才算框對。</span>
 <h4>操作</h4><ol><li>拖橘框移動，拉右下角圓點改大小，看 IoU 的數字。想要 0.50–0.60：從兩個框幾乎重疊開始，慢慢往旁邊移，數字落在範圍內就按記錄。</li><li>想要 0.20–0.30：再移開一點。</li></ol>
-<h4>兩個用算的題</h4><ol><li>「一樣大、重疊一半」：設一個框的面積 ＝ A。交集 ＝ A 的一半；聯集 ＝ A ＋ A − 交集。再算 交集 ÷ 聯集。</li><li>「完全包住、2 倍面積」：大框面積 ＝ 2A，小框面積 ＝ A，小框完全在大框裡。交集 ＝ 小框的面積；聯集 ＝ 大框的面積。再算 交集 ÷ 聯集。</li></ol>
+<h4>兩個用算的題</h4><ol><li>第 3 題：交集 ＝ 50；聯集 ＝ 100 ＋ 100 − 50（重疊的 50 不要算兩次）。IoU ＝ 交集 ÷ 聯集。</li><li>第 4 題：答案框完全在橘框裡面，所以交集 ＝ 答案框的面積 ＝ 100；聯集 ＝ 橘框的面積 ＝ 200（答案框已經包在裡面，不用再加）。IoU ＝ 交集 ÷ 聯集。</li></ol>
 `, vi: `<h4>IoU là gì</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span><span class="n">Diện tích hợp = diện tích A + diện tích B − diện tích giao (phần chồng nhau không tính hai lần). Hai khung không chồng nhau: IoU = 0; trùng khít: IoU = 1; IoU ≥ 0,5 mới tính khoanh đúng.</span>
 <h4>Thao tác</h4><ol><li>Kéo khung cam để di chuyển, kéo chấm tròn góc dưới bên phải để đổi kích thước, xem số IoU. Muốn 0,50–0,60: bắt đầu từ lúc hai khung gần trùng nhau, từ từ dời sang bên, khi số nằm trong khoảng thì bấm «Ghi lại».</li><li>Muốn 0,20–0,30: dời ra xa thêm một chút.</li></ol>
-<h4>Hai câu phải tính</h4><ol><li>«Bằng nhau, chồng một nửa»: gọi diện tích một khung là A. Giao = một nửa A; hợp = A + A − giao. Rồi tính giao ÷ hợp.</li><li>«Bao trọn, diện tích gấp 2»: khung lớn = 2A, khung nhỏ = A, khung nhỏ nằm hoàn toàn trong khung lớn. Giao = diện tích khung nhỏ; hợp = diện tích khung lớn. Rồi tính giao ÷ hợp.</li></ol>
+<h4>Hai câu phải tính</h4><ol><li>Câu 3: giao = 50; hợp = 100 + 100 − 50 (phần chồng 50 không tính hai lần). IoU = giao ÷ hợp.</li><li>Câu 4: khung đáp án nằm hoàn toàn trong khung cam, nên giao = diện tích khung đáp án = 100; hợp = diện tích khung cam = 200 (khung đáp án đã nằm bên trong, không cộng thêm). IoU = giao ÷ hợp.</li></ol>
 ` },
   sum: () => "",
   wire(root) {
@@ -512,6 +512,7 @@ function evalField(qid, f) {
   if (f.kind === "rec") return { has, ok: f.ok(+raw) };
   let v = parseNum(raw); if (isNaN(v)) return { has, ok: false, bad: true };
   if (f.unit === "%" && v > 0 && v <= 1 && f.exp >= 3) v *= 100;
+  if (f.unit !== "%" && /[%％]/.test(raw) && Math.abs(f.exp) <= 1) v /= 100;      // IoU、門檻這類答案本來是 0–1 的小數，學生寫 33% 也算（2026-11-09）
   return { has, ok: Math.abs(v - f.exp) <= f.tol + 1e-9 };
 }
 function evalQ(it) { const rs = it.fields.map((f) => ({ f, ...evalField(it.q.id, f) })); return { rs, done: rs.every((x) => x.has), ok: rs.every((x) => x.ok) }; }
