@@ -48,7 +48,8 @@ input[readonly]{background:var(--card)}
 .fld.ng input,.fld.ng select{border-color:var(--red);background:#FFF5F4}
 .fld.ok .st{color:var(--ok)}.fld.ng .st{color:var(--red)}
 .fld.wide{grid-column:1/-1}
-.fld.nl{grid-column-start:1}   /* 換行：同一組的格子排在同一列（門檻 0.3 一組、門檻 0.55 一組…），免得兩組混在一列看錯 */
+.fld.nl{grid-column-start:1}
+.mt{border-collapse:collapse;margin:6px 0;font-size:14px}.mt th,.mt td{border:1px solid var(--line);padding:6px 14px;text-align:center}.mt th{background:var(--card);color:var(--mute);font-weight:600;font-size:12px}.mt th:not(:first-child){font-size:17px;color:var(--ink)}.mt td:first-child{font-weight:700;background:#F9FBFC}   /* 換行：同一組的格子排在同一列（門檻 0.3 一組、門檻 0.55 一組…），免得兩組混在一列看錯 */
 .bar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .hint{font-size:12px;color:var(--mute)}
 details{margin-top:6px;font-size:12.5px}
@@ -191,13 +192,13 @@ const FORMULA = {
   zh: `<h4>四種結果（偵測）</h4><b>框對 TP</b>：模型框了，答案真的有（IoU ≥ 0.5，一個答案只配一個框）。<b>多框 FP</b>：模型框了，答案沒有。<b>漏掉 FN</b>：答案有，模型沒框到。TN（沒框、本來也沒有）在偵測裡數不完，所以不用。
 <h4>兩個分數</h4><span class="f">精確度 ＝ TP ÷ (TP ＋ FP)</span><span class="n">＝模型框的，有幾成是對的（分母是</span><b>模型一共框了幾個</b>）。<span class="f">召回率 ＝ TP ÷ (TP ＋ FN)</span><span class="n">＝該找的，找到幾成（分母是</span><b>答案一共幾個</b>）。<span class="f">正確率 ＝ (TP ＋ TN) ÷ 全部</span><span class="n">→ 偵測不用。</span>
 <h4>門檻</h4>門檻拉高：多框變少、漏掉變多，精確度通常上升、召回率下降；門檻拉低則相反。
-<h4>IoU 與刪重複（NMS）</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span><span class="n">聯集 ＝ A ＋ B − 交集。IoU ≥ 0.5 才算框對。刪重複：留分數最高的，刪掉跟它 IoU </span><b>大於門檻</b>的框，從剩下的再挑最高分，重複到沒有框。
+<h4>IoU 與追蹤配對</h4><span class="f">IoU ＝ 交集面積 ÷ 聯集面積</span><span class="n">聯集 ＝ A ＋ B − 交集。IoU ≥ 0.5 才算框對。追蹤配對：上一張的框和這一張的框，</span><b>IoU 最大的一對先配</b>，配好的不再配別人；<b>不到 0.3 不配</b>，沒配到的框給新號碼。
 <h4>追蹤算速度</h4><span class="f">速度 ＝ 距離 ÷ 時間</span><span class="n">公尺／秒 × 3.6 ＝ 公里／小時。</span>
 <div class="tip">填百分比，四捨五入到整數（例：87）。每題的「提示」有步驟和另一組數字的算例。</div>`,
   vi: `<h4>Bốn kết quả (phát hiện)</h4><b>Khoanh đúng TP</b>: mô hình khoanh, đáp án có thật (IoU ≥ 0,5; mỗi đáp án chỉ ghép với một khung). <b>Khoanh thừa FP</b>: mô hình khoanh nhưng đáp án không có. <b>Sót FN</b>: đáp án có nhưng mô hình không khoanh được. TN (không khoanh và vốn dĩ cũng không có) đếm không xuể nên phát hiện không dùng.
 <h4>Hai điểm số</h4><span class="f">Độ chính xác = TP ÷ (TP + FP)</span><span class="n">= trong các khung mô hình đưa ra, đúng bao nhiêu phần (mẫu số = </span><b>mô hình khoanh tất cả bao nhiêu khung</b>). <span class="f">Độ bao phủ = TP ÷ (TP + FN)</span><span class="n">= trong những thứ cần tìm, tìm được bao nhiêu phần (mẫu số = </span><b>đáp án có tất cả bao nhiêu</b>). <span class="f">Accuracy = (TP + TN) ÷ tất cả</span><span class="n">→ phát hiện không dùng.</span>
 <h4>Ngưỡng</h4>Nâng ngưỡng: khung thừa giảm, sót tăng; độ chính xác thường tăng, độ bao phủ giảm. Hạ ngưỡng thì ngược lại.
-<h4>IoU và bỏ trùng (NMS)</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span><span class="n">Hợp = A + B − giao. IoU ≥ 0,5 mới tính khoanh đúng. Bỏ trùng: giữ khung điểm cao nhất, xóa các khung có IoU </span><b>lớn hơn ngưỡng</b> so với nó, rồi trong các khung còn lại lại chọn khung điểm cao nhất, lặp đến khi hết khung.
+<h4>IoU và ghép theo dõi</h4><span class="f">IoU = diện tích giao ÷ diện tích hợp</span><span class="n">Hợp = A + B − giao. IoU ≥ 0,5 mới tính khoanh đúng. Ghép theo dõi: khung ảnh trước và khung ảnh này, cặp </span><b>IoU lớn nhất ghép trước</b>, đã ghép thì không ghép với ai khác; <b>dưới 0,3 thì không ghép</b>, khung chưa được ghép thì lấy số mới.
 <h4>Tính tốc độ từ theo dõi</h4><span class="f">Tốc độ = quãng đường ÷ thời gian</span><span class="n">m/s × 3,6 = km/h.</span>
 <div class="tip">Điền phần trăm, làm tròn thành số nguyên (ví dụ: 87). Phần «Gợi ý» của mỗi câu có các bước và ví dụ với số khác.</div>`
 };
@@ -362,62 +363,48 @@ TOOLS.push({ id: "t2", seedI: 9, tag: { zh: "必做", vi: "Bắt buộc" },
     root._redraw = upd; root._set = (b) => { Object.assign(M, { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] }); upd(); }; upd();
   } });
 
-/* T3 NMS */
-const NMS_BOXES = [
-  { id: "A1", b: [60, 70, 170, 200], s: 0.92, pos: "tl" }, { id: "A2", b: [78, 84, 190, 214], s: 0.85, pos: "bl" }, { id: "A3", b: [105, 70, 215, 200], s: 0.61, pos: "tr" },
-  { id: "B1", b: [300, 90, 400, 210], s: 0.88, pos: "tl" }, { id: "B2", b: [316, 104, 418, 224], s: 0.7, pos: "br" }, { id: "C1", b: [255, 90, 355, 210], s: 0.47, pos: "tl" }];
+/* T3 追蹤配對（2026-11-09 使用者：原本的刪重複 NMS 很難操作作答，換成這題；每個學號的表不同） */
+const CIRC = "①②③④";
+function trackMatch(M, ids) {            // M[i][j]＝上一張第 i 個號碼的框 × 這一張第 j 個框的 IoU；IoU 大的先配、< 0.3 不配 → 每個新框拿到的號碼（沒配到＝"new"）
+  const pairs = []; M.forEach((row, i) => row.forEach((v, j) => { if (v >= 0.3) pairs.push([v, i, j]); }));
+  pairs.sort((x, y) => y[0] - x[0]); const ui = new Set(), uj = new Set(), ans = M[0].map(() => "new");
+  pairs.forEach(([v, i, j]) => { if (ui.has(i) || uj.has(j)) return; ui.add(i); uj.add(j); ans[j] = "#" + ids[i]; });
+  return ans;
+}
 TOOLS.push({ id: "t3", seedI: 10, tag: { zh: "必做", vi: "Bắt buộc" },
-  gen() { return {}; },
-  title: () => T("刪重複（NMS）：自己刪一次", "Bỏ trùng (NMS): tự xóa một lần"),
-  body: () => T("畫面上有 6 個框，框旁是分數。做法：留分數最高的，把跟它重疊太多（<b>IoU 大於門檻</b>）的刪掉；再從剩下的挑分數最高的，重複到沒有框為止。<br>1. IoU 門檻設 <b>0.5</b>：<b>點</b>你要<b>刪掉</b>的框（變灰），按「檢查」。不確定就按「逐步示範」。<br>2. 如果 IoU 門檻改成 <b>0.3</b>，最後留下幾個框？<br>3. 如果 IoU 門檻改成 <b>0.9</b>，最後留下幾個框？",
-    "Trên hình có 6 khung, bên cạnh là điểm. Cách làm: giữ khung điểm cao nhất, xóa các khung chồng lên nó quá nhiều (<b>IoU lớn hơn ngưỡng</b>); rồi lại chọn khung điểm cao nhất trong số còn lại, lặp đến khi hết khung.<br>1. Ngưỡng IoU = <b>0,5</b>: <b>bấm</b> vào khung cần <b>xóa</b> (chuyển xám), rồi bấm «Kiểm tra». Không chắc thì bấm «Chạy từng bước».<br>2. Nếu ngưỡng IoU đổi thành <b>0,3</b>, cuối cùng còn lại mấy khung?<br>3. Nếu ngưỡng IoU đổi thành <b>0,9</b>, cuối cùng còn lại mấy khung?"),
-  ui: `<svg id="t3svg" class="svgbox" viewBox="0 0 440 260"></svg>
-       <div class="row"><button class="sm" id="t3chk"></button><button class="sm" id="t3step"></button><button class="sm" id="t3reset"></button><span id="t3msg" class="hint grow"></span></div>
-       <div class="res note" id="t3demo"></div>`,
-  fields: () => [
-    { id: "ok", kind: "rec", zh: "IoU 0.5：刪對了", vi: "IoU 0,5: xóa đúng", ok: (v) => v === 1, text: (v) => v === 1 ? "✓" : "" },
-    { id: "n3", zh: "門檻 0.3　留下幾個", vi: "Ngưỡng 0,3: còn mấy khung", exp: nms(NMS_BOXES, 0.3).length, tol: 0 },
-    { id: "n9", zh: "門檻 0.9　留下幾個", vi: "Ngưỡng 0,9: còn mấy khung", exp: nms(NMS_BOXES, 0.9).length, tol: 0 }],
-  hint: { zh: `<h4>刪重複（NMS）的步驟</h4><ol><li>把所有框照分數從高排到低。</li><li>留下分數最高的那一個。</li><li>算它和其他框的 IoU，<b>IoU 大於門檻</b>的都刪掉（它們框的是同一個東西）。</li><li>從剩下的框裡，再挑分數最高的，重複第 2、3 步，直到沒有框為止。</li></ol>
-<div class="tip">刪的條件是「IoU 大於門檻」。門檻愈小，愈容易被刪，留下愈少；門檻很大（接近 1），幾乎不會刪，留下愈多。IoU 很小的兩個框，代表框的是不同的東西，不會互相刪。</div>
-<h4>怎麼做這題</h4>按「逐步示範」，每一步會印出每個剩下的框和最高分框的 IoU（示範的門檻是 0.5）。題目問門檻 0.3 和 0.9 的時候，就拿示範印出來的 IoU 數字自己比：IoU <b>大於</b>門檻才刪。`, vi: `<h4>Các bước bỏ trùng (NMS)</h4><ol><li>Sắp xếp các khung theo điểm từ cao xuống thấp.</li><li>Giữ lại khung điểm cao nhất.</li><li>Tính IoU của nó với các khung còn lại; khung nào có <b>IoU lớn hơn ngưỡng</b> thì xóa (chúng khoanh cùng một vật).</li><li>Trong các khung còn lại, lại chọn khung điểm cao nhất, lặp lại bước 2, 3 cho đến khi hết khung.</li></ol>
-<div class="tip">Điều kiện xóa là «IoU lớn hơn ngưỡng». Ngưỡng càng nhỏ càng dễ bị xóa, còn lại càng ít; ngưỡng rất lớn (gần 1) hầu như không xóa, còn lại nhiều. Hai khung IoU rất nhỏ nghĩa là khoanh hai vật khác nhau, không xóa nhau.</div>
-<h4>Cách làm câu này</h4>Bấm «Chạy từng bước»: mỗi bước sẽ in IoU của từng khung còn lại với khung điểm cao nhất (ngưỡng mô phỏng là 0,5). Với câu hỏi ngưỡng 0,3 và 0,9, dùng các số IoU đó tự so: IoU <b>lớn hơn</b> ngưỡng thì mới xóa.` },
-  sum: () => "",
-  wire(root) {
-    const svg = $("#t3svg", root); let del = new Set(), steps = null, si = 0;
-    const cols = { A1: "#1F6FBF", A2: "#E08A00", A3: "#C2185B", B1: "#2E9E4F", B2: "#7A5CFF", C1: "#7B4B2A" };   // 每個框一種顏色（2026-11-09 使用者：左邊都是綠色系，不好分）
-    const draw = (hi) => {
-      let h = `<rect width="440" height="260" fill="#F7F9FB"/>`;
-      NMS_BOXES.forEach((o) => {
-        const d = del.has(o.id), c = cols[o.id], b = o.b;
-        h += `<g data-id="${o.id}" style="cursor:pointer"><rect x="${b[0]}" y="${b[1]}" width="${b[2] - b[0]}" height="${b[3] - b[1]}" fill="${d ? "rgba(120,120,120,.18)" : c + "22"}" stroke="${d ? "#9AA5B1" : c}" stroke-width="${hi === o.id ? 4 : 2.5}" ${d ? 'stroke-dasharray="5 4"' : ""}/>
-          <rect x="${o.pos[1] === "l" ? b[0] + 2 : b[2] - 38}" y="${o.pos[0] === "t" ? b[1] + 2 : b[3] - 18}" width="36" height="16" rx="3" fill="#fff" fill-opacity=".92" stroke="${d ? "#9AA5B1" : c}" stroke-width="1.5"/><text x="${(o.pos[1] === "l" ? b[0] + 2 : b[2] - 38) + 18}" y="${(o.pos[0] === "t" ? b[1] + 2 : b[3] - 18) + 12.5}" text-anchor="middle" font-size="13" font-weight="700" fill="${d ? "#9AA5B1" : c}">${o.s.toFixed(2)}</text>${d ? `<text x="${(b[0] + b[2]) / 2 - 6}" y="${(b[1] + b[3]) / 2 + 6}" font-size="18" fill="#D9463E">✕</text>` : ""}</g>`;
-      });
-      svg.innerHTML = h;
-      $$("g[data-id]", svg).forEach((g) => { g.onclick = () => { if (steps) return; const id = g.dataset.id; del.has(id) ? del.delete(id) : del.add(id); draw(); }; });
-      $("#t3chk", root).textContent = T("檢查（IoU 0.5）", "Kiểm tra (IoU 0,5)"); $("#t3step", root).textContent = T("逐步示範", "Chạy từng bước"); $("#t3reset", root).textContent = T("重來", "Làm lại");
+  gen(r) {
+    const ids = []; while (ids.length < 3) { const v = ri(r, 11, 98); if (!ids.includes(v)) ids.push(v); } ids.sort((x, y) => x - y);
+    const nw = ri(r, 0, 3), cols = [0, 1, 2, 3].filter((j) => j !== nw);
+    for (let k = cols.length - 1; k > 0; k--) { const m = ri(r, 0, k); [cols[k], cols[m]] = [cols[m], cols[k]]; }      // cols[i]＝第 i 個號碼真正配到的框
+    const R2 = (x) => Math.round(x * 100) / 100;
+    const M = ids.map(() => [0, 1, 2, 3].map(() => R2(rf(r, 0, 0.26))));
+    const used = new Set();
+    ids.forEach((id, i) => { let v = R2(rf(r, 0.58, 0.95)); while (used.has(v)) v = R2(v + 0.01); used.add(v); M[i][cols[i]] = v; });
+    const i0 = ri(r, 0, 2), j0 = cols[(i0 + 1 + ri(r, 0, 1)) % 3];       // 陷阱：這個號碼跟別人的框也有一點重疊（> 0.3），但比它自己的配對小，所以不能配
+    M[i0][j0] = R2(rf(r, 0.32, 0.46));
+    M[ri(r, 0, 2)][nw] = R2(rf(r, 0.2, 0.29));                            // 新來的框：跟誰都不到 0.3（有一格很接近）
+    return { ids, M, ans: trackMatch(M, ids) };
+  },
+  title: () => T("追蹤配對：誰拿到哪個號碼？", "Ghép theo dõi: ai lấy số nào?"),
+  body: (d) => T(`上一張照片，追蹤到 3 個人，號碼是 <b>${d.ids.map((v) => "#" + v).join("、")}</b>。這一張照片，模型框出 <b>4 個框</b>（①②③④），還沒有號碼。下表是「上一張的框」和「這一張的框」兩兩比出來的 <b>IoU</b>。<br>做法：整張表找<b>最大</b>的 IoU，這一對先配；配好的號碼和框，都不再配別人；再找剩下最大的，重複。<b>IoU 不到 0.3 就不配</b>，沒配到的框，拿<b>新號碼</b>。<br>請問 4 個框，各拿到哪個號碼？`,
+    `Ở ảnh trước, theo dõi được 3 người, số là <b>${d.ids.map((v) => "#" + v).join(", ")}</b>. Ở ảnh này, mô hình khoanh <b>4 khung</b> (①②③④), chưa có số. Bảng dưới là <b>IoU</b> của từng cặp «khung ảnh trước» và «khung ảnh này».<br>Cách làm: tìm <b>IoU lớn nhất</b> trong cả bảng, ghép cặp đó trước; số và khung đã ghép thì không ghép với ai khác nữa; rồi tìm số lớn nhất còn lại, lặp lại. <b>IoU dưới 0,3 thì không ghép</b>, khung nào chưa được ghép thì lấy <b>số mới</b>.<br>Hỏi: mỗi khung trong 4 khung lấy số nào?`),
+  ui: `<div id="t3tbl"></div>`,
+  fields: (d) => d.ans.map((a, j) => ({ id: "b" + j, kind: "sel", zh: `框 ${CIRC[j]} 拿到的號碼`, vi: `Khung ${CIRC[j]} lấy số`, exp: a,
+    opts: [["", "— 請選 —", "— chọn —"], ...d.ids.map((v) => ["#" + v, "#" + v, "#" + v]), ["new", "新號碼", "số mới"]] })),
+  hint: { zh: (d) => `<h4>配對的規則</h4><ol><li>整張表有 12 個數字，先找<b>最大</b>的那一個。它那一列的號碼，和它那一欄的框，配成一對。</li><li>這個號碼和這個框，都不再配別人：把這一列、這一欄劃掉。</li><li>剩下的數字裡，再找最大的，重複第 1、2 步。</li><li>找到的最大數字<b>不到 0.3</b> 就停；還沒配到的框，拿<b>新號碼</b>。</li></ol>
+<div class="tip">有的號碼，和兩個框都有一點重疊（IoU 大於 0.3）。不要看到大於 0.3 就配：<b>先配最大的</b>，它的框就被用掉了，另一個號碼不能再用。</div>
+<div class="my"><b>你的題目</b><br>號碼：${d.ids.map((v) => "#" + v).join("、")}　　框：①②③④<br>想一想：4 個框，最後只有 3 個號碼可以配，所以一定有<b>一個</b>框拿新號碼。</div>`,
+    vi: (d) => `<h4>Quy tắc ghép</h4><ol><li>Cả bảng có 12 số, tìm số <b>lớn nhất</b> trước. Số ở hàng đó và khung ở cột đó ghép thành một cặp.</li><li>Số và khung này không ghép với ai khác nữa: gạch bỏ hàng và cột đó.</li><li>Trong các số còn lại, lại tìm số lớn nhất, lặp lại bước 1, 2.</li><li>Số lớn nhất tìm được <b>dưới 0,3</b> thì dừng; khung nào chưa được ghép thì lấy <b>số mới</b>.</li></ol>
+<div class="tip">Có số trùng một chút với hai khung (IoU lớn hơn 0,3). Đừng thấy lớn hơn 0,3 là ghép ngay: <b>ghép cặp lớn nhất trước</b>, khung của nó đã dùng rồi, số kia không dùng lại được.</div>
+<div class="my"><b>Đề của bạn</b><br>Số: ${d.ids.map((v) => "#" + v).join(", ")}　　Khung: ①②③④<br>Nghĩ xem: 4 khung mà chỉ có 3 số để ghép, nên chắc chắn có <b>một</b> khung lấy số mới.</div>` },
+  sum: (d) => `${d.ids.map((v) => "#" + v).join(" ")}／4 ${T("框", "khung")}`,
+  wire(root, d) {
+    const draw = () => {
+      let h = `<div style="overflow-x:auto"><table class="mt"><thead><tr><th>${T("上一張的框　＼　這一張的框", "Khung ảnh trước ＼ khung ảnh này")}</th>${[0, 1, 2, 3].map((j) => `<th>${CIRC[j]}</th>`).join("")}</tr></thead><tbody>`;
+      d.ids.forEach((id, i) => { h += `<tr><td>#${id}</td>${d.M[i].map((v) => `<td>${v.toFixed(2)}</td>`).join("")}</tr>`; });
+      root.innerHTML = h + `</tbody></table></div><div class="hint">${T("表裡的數字是 IoU。", "Số trong bảng là IoU.")}</div>`;
     };
-    $("#t3chk", root).onclick = () => {
-      const keep = new Set(nms(NMS_BOXES, 0.5)), mine = new Set(NMS_BOXES.filter((o) => !del.has(o.id)).map((o) => o.id));
-      const ok = keep.size === mine.size && [...keep].every((k) => mine.has(k));
-      $("#t3msg", root).innerHTML = ok ? `<b style="color:#2E7D5B">✓ ${T("對了", "Đúng rồi")}</b>` : `<b style="color:#D9463E">✗ ${T("還不對，再看一次或按逐步示範", "Chưa đúng, xem lại hoặc bấm Chạy từng bước")}</b>`;
-      setRec("t3", "ok", ok ? 1 : 0);
-    };
-    $("#t3reset", root).onclick = () => { del = new Set(); steps = null; si = 0; $("#t3demo", root).innerHTML = ""; $("#t3msg", root).textContent = ""; draw(); };
-    $("#t3step", root).onclick = () => {
-      if (!steps) { steps = []; const rest = NMS_BOXES.slice().sort((a, b) => b.s - a.s); const dl = new Set();
-        while (rest.length) { const top = rest.shift(); const gone = [], stay = []; for (let i = rest.length - 1; i >= 0; i--) { const v = iou(top.b, rest[i].b); if (v > 0.5) { gone.push([rest[i].id, v]); dl.add(rest[i].id); rest.splice(i, 1); } else stay.push([rest[i].id, v]); }
-          steps.push({ top, gone, stay: stay.reverse(), del: new Set(dl) }); }
-        si = 0; }
-      if (si >= steps.length) { $("#t3demo", root).innerHTML = T("示範結束，按「重來」可以自己做。", "Hết phần mô phỏng, bấm «Làm lại» để tự làm."); return; }
-      const st = steps[si++]; del = new Set(st.del); draw(st.top.id);
-      const dot = (id) => `<b style="color:${cols[id]}">●</b> `, sc = (id) => NMS_BOXES.find((o) => o.id === id).s.toFixed(2), fv = (v) => (LANG === "zh" ? v.toFixed(2) : v.toFixed(2).replace(".", ","));
-      const lines = st.gone.map(([id, v]) => T(`${dot(id)}分數 ${sc(id)} 的框：IoU ＝ ${fv(v)} &gt; 0.5，<b>刪掉</b>。`, `${dot(id)}Khung điểm ${sc(id)}: IoU = ${fv(v)} &gt; 0,5, <b>xóa</b>.`))
-        .concat(st.stay.map(([id, v]) => T(`${dot(id)}分數 ${sc(id)} 的框：IoU ＝ ${fv(v)}，沒有超過 0.5，先留著。`, `${dot(id)}Khung điểm ${sc(id)}: IoU = ${fv(v)}, không quá 0,5, tạm giữ.`)));
-      $("#t3demo", root).innerHTML = T(`第 ${si} 步：留下分數最高的 ${dot(st.top.id)}<b>${st.top.s.toFixed(2)}</b>。`, `Bước ${si}: giữ khung điểm cao nhất ${dot(st.top.id)}<b>${st.top.s.toFixed(2)}</b>.`) + "<br>" + (lines.length ? lines.join("<br>") : T("沒有其他的框了。", "Không còn khung nào khác."));
-    };
-    root._redraw = () => draw(); root._del = (ids) => { del = new Set(ids); draw(); }; draw();
+    root._redraw = draw; draw();
   } });
 
 /* T4 安全門檻模擬（選做） */
@@ -584,7 +571,7 @@ $("#btnSheet").onclick = sheet;
 $("#btnBack").onclick = () => { document.body.classList.remove("sheet"); $("#btnBack").style.display = "none"; };
 $("#btnWipe").onclick = () => { if (confirm(T("清除這個學號所有的作答？", "Xóa toàn bộ bài làm của mã số này?"))) { S.ans = {}; S.tries = {}; save(); render(); } };
 boot();
-window.__HW = { INST: () => INST, S, setSid(v) { S.sid = v; $("#hwSid").value = v; boot(); }, evalQ, fillExpected() { INST.forEach((it) => it.fields.forEach((f) => { if (f.kind === "rec") return; S.ans[fkey(it.q.id, f.id)] = f.kind === "sel" ? f.exp : String(f.unit === "%" ? Math.round(f.exp) : (Math.round(f.exp * 100) / 100)); })); save(); render(); }, nms, evalThr, SIM, simAns, NMS_BOXES };
+window.__HW = { INST: () => INST, S, setSid(v) { S.sid = v; $("#hwSid").value = v; boot(); }, evalQ, fillExpected() { INST.forEach((it) => it.fields.forEach((f) => { if (f.kind === "rec") return; S.ans[fkey(it.q.id, f.id)] = f.kind === "sel" ? f.exp : String(f.unit === "%" ? Math.round(f.exp) : (Math.round(f.exp * 100) / 100)); })); save(); render(); }, nms, evalThr, SIM, simAns, trackMatch };
 })();
 </script>
 </body></html>
