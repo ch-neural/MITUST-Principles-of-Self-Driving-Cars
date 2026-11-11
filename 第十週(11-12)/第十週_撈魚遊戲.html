@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第十週　撈魚遊戲：孔徑、精確度與召回率</title>
+<style>
+:root{--navy:#0B1F3A;--navy2:#13314F;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+      --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#EEF2F6;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:14px;line-height:1.5}
+#wrap{max-width:980px;margin:0 auto;padding:10px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.panel[hidden]{display:none}
+h1{font-size:18px;margin:0;color:var(--navy)}
+h1 small{display:block;font-size:12px;color:var(--mute);font-weight:400;margin-top:1px}
+h2{font-size:15px;margin:0 0 6px;color:var(--navy)}
+h2 small{font-weight:400;color:var(--mute);font-size:12px;margin-left:6px}
+.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.top .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lang button{padding:5px 10px;font-size:12px}
+.sid{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}
+.sid span{white-space:nowrap}
+.sid input{width:120px;min-height:32px;padding:5px 8px}
+.intro{font-size:13.5px;line-height:1.65;margin:8px 0 0}
+.intro b{color:var(--navy)}
+button{font-family:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--teal)}
+button:disabled{opacity:.45;cursor:default}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.go{background:var(--teal);color:#fff;border-color:var(--teal-d);font-weight:700}
+button.chip{border-radius:16px;padding:5px 11px;font-size:12.5px}
+input[type=text]{font-family:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);width:100%;min-height:36px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.chips .lb{font-size:12px;color:var(--mute);margin-right:2px}
+.info{font-size:13px;margin:0 0 6px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.info b{color:var(--navy)}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--mute);align-items:center;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:5px;margin-right:4px;vertical-align:-1px}
+.cvwrap{position:relative;border-radius:8px;overflow:hidden;line-height:0;border:1px solid #9FC3D6}
+canvas{display:block;width:100%;height:auto}
+#cv{aspect-ratio:900/600;touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+#hint{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);pointer-events:none;text-align:center;line-height:1.4;
+      background:rgba(11,31,58,.72);color:#fff;border-radius:12px;padding:10px 16px;font-size:15px;font-weight:700;max-width:86%}
+#hint small{display:block;font-weight:400;font-size:12px;opacity:.9;margin-top:2px}
+#hint .ar{display:inline-block;margin-left:6px;font-size:22px;animation:nudge 1.1s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(12px)}}
+.noanim #hint .ar{animation:none}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:10px 14px;align-items:center;margin-top:10px}
+.ctl .sl label{display:block;font-size:12.5px;color:var(--mute);margin-bottom:1px}
+.ctl .big{font-size:24px;font-weight:800;color:var(--navy);line-height:1.1}
+.ctl .big small{font-size:13px;font-weight:600;color:var(--mute);margin-left:3px}
+input[type=range]{width:100%;accent-color:var(--teal-d);height:30px}
+.ctl .bt{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.lock{font-size:12px;color:var(--mute);margin-top:4px;min-height:17px}
+.opt{font-size:12.5px;color:var(--mute);margin-top:6px;display:flex;gap:6px;align-items:center}
+.opt input{width:16px;height:16px;accent-color:var(--teal-d)}
+@media (max-width:620px){.ctl{grid-template-columns:1fr}.ctl .bt{justify-content:flex-start}#hint{font-size:13px;padding:8px 12px}}
+.steps h3{margin:12px 0 2px;font-size:14px;color:var(--teal-d)}
+.steps h3 small{font-weight:400;color:var(--mute);font-size:12px;margin-left:6px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:6px}
+.fld label{display:block;font-size:12.5px;color:var(--mute);margin-bottom:2px}
+.fld .iw{display:flex;align-items:center;gap:6px}
+.fld .iw span.u{font-size:13px;color:var(--mute);white-space:nowrap}
+.fld .st{font-size:12px;margin-top:2px;min-height:17px}
+.fld.ok input{border-color:var(--ok);background:#F1FAF5}
+.fld.ng input{border-color:var(--red);background:#FFF5F4}
+.fld.ok .st{color:var(--ok)}.fld.ng .st{color:var(--red)}
+.note{font-size:12px;color:var(--mute);margin:3px 0}
+.bar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+details{margin-top:8px;font-size:12.5px}
+details summary{cursor:pointer;color:var(--teal-d);font-weight:700}
+details .hb{background:var(--card);border-radius:7px;padding:8px 11px;margin-top:4px;line-height:1.65}
+.hb .f{display:block;background:#fff;border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin:5px 0 1px;font-weight:700;color:var(--navy)}
+.hb .n{display:block;color:var(--mute);font-size:12px;margin:0 0 4px}
+.ans{background:#EDF8F3;border-left:4px solid var(--ok);border-radius:6px;padding:9px 12px;margin-top:10px;line-height:1.8;font-size:13.5px}
+.ans[hidden]{display:none}
+.ans .f{display:block;font-weight:700;color:var(--navy)}
+.ans .rd{display:block;margin-top:6px;padding-top:6px;border-top:1px dashed #B7D9C6;color:var(--ink)}
+.ans .ms{display:block;margin-top:4px;font-weight:700}
+.ans .ms.good{color:var(--ok)}.ans .ms.bad{color:var(--red)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{border:1px solid var(--line);padding:5px 7px;text-align:center}
+.tbl th{background:var(--card);font-size:12px;color:var(--mute)}
+.foot{font-size:13px;line-height:1.7}
+.foot b{color:var(--navy)}
+</style></head>
+<body>
+<div id="wrap">
+
+<div class="panel">
+  <div class="top">
+    <h1><span data-k="title"></span><small data-k="sub"></small></h1>
+    <div class="r">
+      <label class="sid"><span data-k="sid"></span><input type="text" id="sid" inputmode="numeric" autocomplete="off" maxlength="16"></label>
+      <span class="lang"><button id="btnZh" class="on">中文</button> <button id="btnVi">Tiếng Việt</button></span>
+    </div>
+  </div>
+  <p class="intro" data-k="intro"></p>
+  <div class="chips"><span class="lb" data-k="mission"></span>
+    <button class="chip on" data-m="0" data-k="m0"></button>
+    <button class="chip" data-m="1" data-k="m1"></button>
+    <button class="chip" data-m="2" data-k="m2"></button>
+    <button class="chip" data-m="3" data-k="m3"></button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="info">
+    <span id="riverInfo"></span>
+    <span class="legend"><span><i style="background:#FF8A3D"></i><span data-k="lgFish"></span></span><span><i style="background:#8D6E63"></i><span data-k="lgJunk"></span></span></span>
+  </div>
+  <div class="cvwrap">
+    <canvas id="cv" width="1800" height="1200"></canvas>
+    <div id="hint"><span data-k="hint"></span><span class="ar">➜</span><small data-k="hint2"></small></div>
+  </div>
+  <div class="ctl">
+    <div class="sl">
+      <label for="hole"><span data-k="hole"></span></label>
+      <div class="big"><span id="holeVal">5.0</span><small data-k="cm"></small></div>
+      <input type="range" id="hole" min="1" max="9" step="0.5" value="5">
+    </div>
+    <div class="bt">
+      <button id="btnAuto" class="go"></button>
+      <button id="btnReset" data-k="reset"></button>
+    </div>
+  </div>
+  <div class="lock" id="lock"></div>
+  <label class="opt"><input type="checkbox" id="showSize"><span data-k="showSize"></span></label>
+</div>
+
+<div class="panel steps" id="resPanel" hidden>
+  <h2 id="resTitle"></h2>
+  <div class="note" data-k="trayTitle"></div>
+  <div class="cvwrap" style="border-color:#B9CBD6"><canvas id="tray" width="1800" height="300"></canvas></div>
+  <div class="note" id="missNote" data-k="missNote"></div>
+
+  <h3><span data-k="step1"></span><small data-k="step1n"></small></h3>
+  <div class="fields">
+    <div class="fld" id="f_tp"><label for="i_tp" data-k="tp"></label><div class="iw"><input type="text" id="i_tp" inputmode="numeric" autocomplete="off"><span class="u" data-k="uFish"></span></div><div class="st"></div></div>
+    <div class="fld" id="f_fp"><label for="i_fp" data-k="fp"></label><div class="iw"><input type="text" id="i_fp" inputmode="numeric" autocomplete="off"><span class="u" data-k="uJunk"></span></div><div class="st"></div></div>
+    <div class="fld" id="f_fn"><label for="i_fn" data-k="fn"></label><div class="iw"><input type="text" id="i_fn" inputmode="numeric" autocomplete="off"><span class="u" data-k="uFish"></span></div><div class="st"></div></div>
+  </div>
+
+  <h3><span data-k="step2"></span><small data-k="step2n"></small></h3>
+  <div class="fields">
+    <div class="fld" id="f_p"><label for="i_p" data-k="pr"></label><div class="iw"><input type="text" id="i_p" inputmode="decimal" autocomplete="off"></div><div class="st"></div></div>
+    <div class="fld" id="f_r"><label for="i_r" data-k="rc"></label><div class="iw"><input type="text" id="i_r" inputmode="decimal" autocomplete="off"></div><div class="st"></div></div>
+  </div>
+
+  <details><summary data-k="hintSum"></summary><div class="hb" data-k="hintBody"></div></details>
+
+  <div class="bar">
+    <button id="btnCheck" class="go" data-k="check"></button>
+    <button id="btnReveal" data-k="reveal"></button>
+    <button id="btnAgain" data-k="again"></button>
+  </div>
+  <div class="ans" id="ans" hidden></div>
+</div>
+
+<div class="panel" id="histPanel" hidden>
+  <h2 data-k="histTitle"></h2>
+  <table class="tbl"><thead><tr id="histHead"></tr></thead><tbody id="histBody"></tbody></table>
+</div>
+
+<div class="panel foot" data-k="foot"></div>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ───── 文字（中／越） ───── */
+const TXT={
+ title:["撈魚遊戲","Trò chơi vớt cá"],
+ sub:["孔徑、精確度與召回率","Cỡ mắt lưới, độ chính xác và độ bao phủ"],
+ sid:["學號（選填）","MSSV (không bắt buộc)"],
+ intro:["河裡有<b>魚</b>（要的）和<b>垃圾</b>（不要的）。選好網眼的大小，把網拉過河：<b>比網眼大的卡住，被撈上來；比網眼小的，從網眼漏掉</b>（東西的大小，看身體最粗的地方）。撈完以後，自己算精確度和召回率。不同學號，河裡的魚和垃圾不同。",
+        "Dưới sông có <b>cá</b> (thứ cần) và <b>rác</b> (thứ không cần). Chọn cỡ mắt lưới rồi kéo lưới qua sông: <b>vật to hơn mắt lưới thì bị kẹt lại, vớt lên; vật nhỏ hơn thì lọt qua mắt lưới</b> (kích thước tính ở chỗ dày nhất của vật). Vớt xong, hãy tự tính độ chính xác và độ bao phủ. Mỗi MSSV có một con sông khác nhau."],
+ mission:["任務","Nhiệm vụ"],
+ m0:["自由玩","Chơi tự do"],
+ m1:["魚一條都不能漏","Không được sót con cá nào"],
+ m2:["撈上來的東西，至少 8 成是魚","Trong lưới phải có ít nhất 80% là cá"],
+ m3:["精確度、召回率都要 70% 以上","Độ chính xác và độ bao phủ đều ≥ 70%"],
+ lgFish:["魚（要的）","Cá (cần vớt)"],
+ lgJunk:["垃圾（不要的）","Rác (không cần)"],
+ hint:["按住河面，往右拖，把網拉過去","Giữ trên mặt sông, kéo sang phải để kéo lưới"],
+ hint2:["也可以按鍵盤的 → 鍵，或按「自動拉網」","Hoặc nhấn phím →, hoặc nút «Tự động kéo»"],
+ hole:["孔徑（網眼邊長）","Cỡ mắt lưới (cạnh ô)"],
+ cm:["公分","cm"],
+ auto:["自動拉網","Tự động kéo lưới"],
+ autoP:["暫停","Tạm dừng"],
+ reset:["收網重來","Thu lưới, làm lại"],
+ showSize:["顯示每個東西的大小（公分）","Hiện kích thước từng vật (cm)"],
+ locked:["拉網中，孔徑不能改。按「收網重來」可以換孔徑。","Đang kéo lưới nên không đổi được cỡ mắt lưới. Nhấn «Thu lưới, làm lại» để đổi."],
+ trayTitle:["網裡撈到的東西","Những thứ vớt được trong lưới"],
+ missNote:["河裡的紅圈，是漏網的魚。","Vòng đỏ trên sông là những con cá lọt lưới."],
+ step1:["① 數一數","① Đếm"],
+ step1n:["看網裡的東西，和河裡的紅圈","Nhìn những thứ trong lưới và các vòng đỏ trên sông"],
+ tp:["TP　撈到的魚（撈對）","TP  Cá vớt được (đúng)"],
+ fp:["FP　撈到的垃圾（多撈）","FP  Rác vớt nhầm (thừa)"],
+ fn:["FN　漏掉的魚","FN  Cá bị sót"],
+ uFish:["條","con"],
+ uJunk:["件","món"],
+ step2:["② 算一算","② Tính"],
+ step2n:["百分比、小數、分數都可以","Phần trăm, số thập phân hay phân số đều được"],
+ pr:["精確度　precision","Độ chính xác (precision)"],
+ rc:["召回率　recall","Độ bao phủ (recall)"],
+ hintSum:["看提示（公式）","Xem gợi ý (công thức)"],
+ hintBody:["<b>TP</b>：網裡的魚。<b>FP</b>：網裡的垃圾。<b>FN</b>：河裡的魚，減掉網裡的魚（漏掉的）。<span class='f'>精確度 ＝ TP ÷ (TP ＋ FP)</span><span class='n'>網裡所有的東西，有幾成是魚。分母是「網裡一共有幾個東西」。</span><span class='f'>召回率 ＝ TP ÷ (TP ＋ FN)</span><span class='n'>河裡所有的魚，撈到幾成。分母是「河裡一共有幾條魚」。</span>",
+           "<b>TP</b>: cá trong lưới. <b>FP</b>: rác trong lưới. <b>FN</b>: số cá dưới sông trừ số cá trong lưới (cá bị sót).<span class='f'>Độ chính xác = TP ÷ (TP + FP)</span><span class='n'>Trong mọi thứ ở trong lưới, bao nhiêu phần là cá. Mẫu số = «trong lưới có tất cả bao nhiêu thứ».</span><span class='f'>Độ bao phủ = TP ÷ (TP + FN)</span><span class='n'>Trong tất cả cá dưới sông, vớt được bao nhiêu phần. Mẫu số = «dưới sông có tất cả bao nhiêu con cá».</span>"],
+ check:["檢查","Kiểm tra"],
+ reveal:["看答案","Xem đáp án"],
+ again:["再玩一次（換孔徑）","Chơi lại (đổi cỡ mắt lưới)"],
+ ok:["✓ 正確","✓ Đúng"],
+ ng:["✗ 再想想","✗ Chưa đúng, thử lại"],
+ swap:["✗ 這個數字是另一個分數的答案，分母可能搞混了","✗ Số này là đáp án của điểm số còn lại, có thể bạn nhầm mẫu số"],
+ empty:["請先填","Hãy nhập trước"],
+ allok:["全部正確！","Đúng hết rồi!"],
+ ansTitle:["答案","Đáp án"],
+ histTitle:["每一輪的紀錄（看過答案的）","Ghi chép từng lượt (những lượt đã xem đáp án)"],
+ foot:["<b>孔徑＝門檻。</b>孔徑調大，只有大的東西會留下來：撈得少、挑得嚴，魚也跟著漏掉（召回率降低），垃圾也漏掉了（精確度通常升高，但不一定）。孔徑調小，什麼都撈：魚一條不漏（召回率高），垃圾也跟著上來（精確度低）。想要兩個都高，要靠魚和垃圾的大小分得開。大小重疊的時候，兩個分數沒辦法同時 100%，這就是偵測模型調門檻時遇到的取捨。",
+        "<b>Cỡ mắt lưới = ngưỡng.</b> Tăng cỡ mắt lưới thì chỉ vật to mới bị giữ lại: vớt ít, chọn khắt khe, cá cũng lọt theo (độ bao phủ giảm), rác cũng lọt đi (độ chính xác thường tăng nhưng không chắc). Giảm cỡ mắt lưới thì vớt tất cả: không sót con cá nào (độ bao phủ cao), rác cũng lên theo (độ chính xác thấp). Muốn cả hai cùng cao thì kích thước cá và rác phải khác nhau rõ rệt. Khi kích thước chồng lấn, hai điểm số không thể cùng đạt 100%. Đó chính là sự đánh đổi khi chỉnh ngưỡng của mô hình phát hiện."]
+};
+let LANG='zh';
+const tr=k=>TXT[k][LANG==='zh'?0:1];
+const $=s=>document.querySelector(s);
+const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+
+/* ───── 河的產生（學號當種子）；測試用，請勿改動標記 ───── */
+// <GEN>
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+/* 大小一律取 x.2 x.3 x.7 x.8，不會剛好等於孔徑（孔徑每 0.5 一格），所以「卡住／漏掉」沒有平手 */
+function qsize(v){const i=Math.floor(v),f=v-i,o=[0.2,0.3,0.7,0.8];let b=o[0];for(const x of o)if(Math.abs(x-f)<Math.abs(b-f))b=x;return Math.round((i+b)*10)/10;}
+const GRIDH=[];for(let h=1;h<=9;h+=0.5)GRIDH.push(h);
+function genRiver(base){
+  const TYPES=['bottle','can','boot','tire'];let first=null;
+  for(let att=0;att<600;att++){
+    const r=mulberry((base+att*7919)>>>0),fish=[],junk=[];
+    for(let k=0;k<8;k++)fish.push(qsize(3.4+k*0.9+r()*0.7));   /* 魚 3.3–10.8 公分，最大一條一定超過孔徑上限 9，所以網裡至少有一條魚 */
+    for(let k=0;k<9;k++)junk.push(qsize(1.2+r()*3.0));           /* 小垃圾 */
+    for(let k=0;k<3;k++)junk.push(qsize(4.4+r()*3.2));           /* 大垃圾：讓取捨真的存在 */
+    const cv=GRIDH.map(h=>{const tp=fish.filter(d=>d>h).length,fp=junk.filter(d=>d>h).length;return{P:tp/(tp+fp),R:tp/8};});
+    const mm=Math.max(...cv.map(x=>Math.min(x.P,x.R)));
+    const perfect=cv.some(x=>x.P>=.95&&x.R>=.95);
+    const r1=cv.filter(x=>x.R===1).pop();
+    const out={fish,junk,types:junk.map(()=>TYPES[Math.floor(r()*4)]),hues:fish.map(()=>Math.floor(r()*5)),att};
+    if(mm>=.72&&mm<=.88&&!perfect&&r1&&r1.P<.65&&cv.some(x=>x.P>=.8))return out;   /* 任務 3 做得到、任務 1 會付出代價、不可能兩個都滿分 */
+    if(!first)first=out;
+  }
+  return first;
+}
+// </GEN>
+
+/* ───── 畫面與物理 ───── */
+const W=900,H=600,S=8,SURF=46,VMAX=420,VAUTO=210,VKEY=260;
+const FL={fish:1.9,bottle:2.3,can:1.35,boot:1.7,tire:1.0};
+const FISHCOL=[['#FF8A3D','#FFC299'],['#FFC233','#FFE59A'],['#2FB6C9','#9BE0EA'],['#5B8DEF','#B5CBF8'],['#EC6A9A','#F8BAD2']];
+const cv=$('#cv'),c=cv.getContext('2d'),trayCv=$('#tray'),tc=trayCv.getContext('2d');
+let sid='',base=0,river=null,items=[],hold=5,phase='ready',netX=0,target=0,dragging=false,auto=false,keyR=false;
+let T=0,haulT=0,bubbles=[],caught=[],res=null,revealed=false,hist=[],mission=0,showSize=false;
+const stripW=h=>Math.max(30,Math.min(90,3*h*S));
+const isTest=/[?&]test/.test(location.search);
+if(/[?&]noanim/.test(location.search))document.documentElement.classList.add('noanim');
+
+function buildItems(){
+  const r=mulberry((base^0x5bd1e995)>>>0),list=[];
+  river.fish.forEach((d,i)=>list.push(mk('fish','fish',d,river.hues[i])));
+  river.junk.forEach((d,i)=>list.push(mk('junk',river.types[i],d,0)));
+  function mk(kind,type,d,hue){const Hp=d*S;return{kind,type,d,hue,Hp,L:Hp*FL[type],state:'free',x:0,y:0,ix:0,iy:0,vx:0,vy:0,tvx:0,tvy:0,tt:0,ph:r()*6.28,ang:0,flash:0,rel:0,dir:1};}
+  const placed=[];
+  [...list].sort((a,b)=>b.Hp-a.Hp).forEach(it=>{
+    let best=null,bestN=1e9;
+    for(let k=0;k<80;k++){
+      const x=138+it.L/2+r()*(W-34-it.L/2-138-it.L/2),y=SURF+14+it.Hp/2+r()*(H-22-it.Hp/2-SURF-14-it.Hp/2);
+      let n=0;for(const o of placed)if(Math.abs(x-o.ix)<(it.L+o.L)/2*0.75&&Math.abs(y-o.iy)<(it.Hp+o.Hp)/2*0.9)n++;
+      if(n<bestN){bestN=n;best={x,y};if(!n)break;}
+    }
+    it.ix=best.x;it.iy=best.y;placed.push(it);
+  });
+  /* 畫的順序：先垃圾後魚，魚在上面比較好數 */
+  list.sort((a,b)=>(a.kind==='junk'?0:1)-(b.kind==='junk'?0:1));
+  return list;
+}
+function retarget(it){
+  const sp=it.kind==='fish'?18+Math.random()*28:4+Math.random()*8,an=Math.random()*6.283;
+  it.tvx=Math.cos(an)*sp;it.tvy=Math.sin(an)*sp*0.5;it.tt=(it.kind==='fish'?1.2:2)+Math.random()*2.5;
+}
+function setRiver(){
+  base=hash('fish10:'+(sid||'0'));river=genRiver(base);items=buildItems();hist=[];
+  resetRound();renderInfo();renderHist();
+}
+function resetRound(){
+  phase='ready';dragging=false;auto=false;keyR=false;res=null;revealed=false;haulT=0;bubbles=[];caught=[];
+  for(const it of items){it.state='free';it.x=it.ix;it.y=it.iy;it.flash=0;it.rel=0;it.ang=0;retarget(it);it.vx=it.tvx;it.vy=it.tvy;}
+  netX=18+stripW(hold);target=netX;
+  $('#resPanel').hidden=true;$('#ans').hidden=true;
+  ['tp','fp','fn','p','r'].forEach(k=>{$('#i_'+k).value='';setSt(k,null,'');});
+  syncUI();
+}
+function startSweep(){if(phase==='ready'){phase='sweep';syncUI();}}
+
+function contact(){
+  if(phase!=='sweep'&&phase!=='haul')return;
+  const sw=stripW(hold);
+  for(const it of items){
+    if(it.state==='free'&&it.x-it.L/2<=netX){
+      if(it.d>hold){
+        it.state='caught';let rel=0;
+        for(const o of caught)if(Math.abs(o.y-it.y)<(o.Hp+it.Hp)/2-2)rel=Math.max(rel,o.rel+o.L+2);
+        it.rel=rel;caught.push(it);
+      }else{
+        it.state='passing';it.flash=1;
+        for(let k=0;k<4;k++)bubbles.push({x:it.x+(Math.random()-.5)*it.L*0.6,y:it.y+(Math.random()-.3)*it.Hp*0.5,r:2+Math.random()*3,vy:-(18+Math.random()*22),life:1});
+      }
+    }
+    if(it.state==='passing'&&it.x+it.L/2<netX-sw)it.state='passed';
+  }
+}
+function step(dt){
+  T+=dt;
+  if(phase==='sweep'){
+    let dx=0;
+    if(dragging)dx=Math.max(0,Math.min((target>W-40?W:target)-netX,VMAX*dt));   /* 拖到右岸附近就算拉到底，手指不用剛好碰到邊 */
+    if(auto)dx=Math.max(dx,VAUTO*dt);
+    if(keyR)dx=Math.max(dx,VKEY*dt);
+    if(dx>0)netX=Math.min(W-12,netX+dx);
+  }
+  for(const it of items){
+    if(it.state==='caught'){it.x=Math.min(netX+it.rel+it.L/2,W-6-it.L/2);it.ang=0;continue;}
+    it.tt-=dt;if(it.tt<=0)retarget(it);
+    const k=Math.min(1,dt*1.4);it.vx+=(it.tvx-it.vx)*k;it.vy+=(it.tvy-it.vy)*k;
+    it.x+=it.vx*dt;it.y+=it.vy*dt;
+    const xmin=(it.state==='free'?120:34)+it.L/2,xmax=W-30-it.L/2,ymin=SURF+10+it.Hp/2,ymax=H-22-it.Hp/2;
+    if(it.x<xmin){it.x=xmin;it.tvx=Math.abs(it.tvx);it.vx=Math.abs(it.vx);}
+    if(it.x>xmax){it.x=xmax;it.tvx=-Math.abs(it.tvx);it.vx=-Math.abs(it.vx);}
+    if(it.y<ymin){it.y=ymin;it.tvy=Math.abs(it.tvy);it.vy=Math.abs(it.vy);}
+    if(it.y>ymax){it.y=ymax;it.tvy=-Math.abs(it.tvy);it.vy=-Math.abs(it.vy);}
+    if(it.kind==='fish'){if(Math.abs(it.vx)>4)it.dir=it.vx>0?1:-1;it.ang=Math.max(-.35,Math.min(.35,it.vy/70))*it.dir;}
+    else it.ang=Math.sin(T*0.9+it.ph)*0.35;
+    if(it.flash>0)it.flash=Math.max(0,it.flash-dt*1.8);
+  }
+  contact();
+  if(phase==='sweep'&&netX>=W-12){phase='haul';haulT=0;syncUI();}
+  if(phase==='haul'){haulT=Math.min(1,haulT+dt/1.1);if(haulT>=1){phase='done';finishRound();}}
+  for(const b of bubbles){b.y+=b.vy*dt;b.life-=dt*0.9;}
+  bubbles=bubbles.filter(b=>b.life>0&&b.y>SURF);
+}
+
+/* ───── 畫圖 ───── */
+function rr(g,x,y,w,h,r){r=Math.min(r,w/2,h/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function sprite(g,it,x,y,ang,dir,t){
+  const Hp=it.Hp,L=it.L;g.save();g.translate(x,y);g.rotate(ang);if(it.kind==='fish')g.scale(dir,1);
+  g.lineWidth=1.3;g.strokeStyle='rgba(20,30,40,.45)';
+  if(it.kind==='fish'){
+    const col=FISHCOL[it.hue],wag=Math.sin(t*7+it.ph)*Hp*0.14;
+    g.fillStyle=col[0];g.beginPath();g.moveTo(-L*0.2,0);g.lineTo(-L*0.5,-Hp*0.42+wag);g.lineTo(-L*0.5,Hp*0.42+wag);g.closePath();g.fill();g.stroke();
+    g.beginPath();g.ellipse(L*0.06,0,L*0.38,Hp/2,0,0,6.283);g.fill();g.stroke();
+    g.fillStyle=col[1];g.beginPath();g.ellipse(L*0.08,Hp*0.15,L*0.3,Hp*0.27,0,0,6.283);g.fill();
+    g.fillStyle=col[0];g.beginPath();g.moveTo(-L*0.08,-Hp*0.45);g.lineTo(L*0.08,-Hp*0.62);g.lineTo(L*0.16,-Hp*0.43);g.closePath();g.fill();g.stroke();
+    const er=Math.max(1.6,Hp*0.09);g.fillStyle='#fff';g.beginPath();g.arc(L*0.27,-Hp*0.1,er,0,6.283);g.fill();
+    g.fillStyle='#111';g.beginPath();g.arc(L*0.285,-Hp*0.1,er*0.55,0,6.283);g.fill();
+  }else if(it.type==='bottle'){
+    const bw=L*0.68;g.fillStyle='rgba(170,215,240,.9)';rr(g,-L/2,-Hp/2,bw,Hp,Hp*0.28);g.fill();g.stroke();
+    rr(g,-L/2+bw-2,-Hp*0.22,L*0.2,Hp*0.44,Hp*0.1);g.fill();g.stroke();
+    g.fillStyle='#2E7D32';g.fillRect(-L/2+bw+L*0.17,-Hp*0.26,L*0.13,Hp*0.52);
+    g.fillStyle='rgba(255,255,255,.7)';g.fillRect(-L/2+bw*0.25,-Hp/2+1,bw*0.32,Hp-2);
+  }else if(it.type==='can'){
+    g.fillStyle='#B0BEC5';rr(g,-L/2,-Hp/2,L,Hp,Hp*0.12);g.fill();g.stroke();
+    g.fillStyle='#E53935';g.fillRect(-L*0.2,-Hp/2+1,L*0.4,Hp-2);
+    g.strokeStyle='rgba(20,30,40,.35)';g.beginPath();g.moveTo(-L/2+L*0.08,-Hp/2);g.lineTo(-L/2+L*0.08,Hp/2);g.moveTo(L/2-L*0.08,-Hp/2);g.lineTo(L/2-L*0.08,Hp/2);g.stroke();
+  }else if(it.type==='boot'){
+    g.fillStyle='#8D6E63';g.beginPath();
+    g.moveTo(-L*0.5,-Hp*0.5);g.lineTo(-L*0.1,-Hp*0.5);g.lineTo(-L*0.1,-Hp*0.05);g.lineTo(L*0.32,-Hp*0.05);g.quadraticCurveTo(L*0.52,Hp*0.05,L*0.5,Hp*0.5);g.lineTo(-L*0.5,Hp*0.5);g.closePath();g.fill();g.stroke();
+    g.fillStyle='#4E342E';g.fillRect(-L*0.5,Hp*0.34,L,Hp*0.16);
+  }else{ /* tire */
+    g.fillStyle='#37474F';g.beginPath();g.arc(0,0,Hp/2,0,6.283);g.arc(0,0,Hp*0.3,0,6.283,true);g.fill('evenodd');
+    g.strokeStyle='rgba(255,255,255,.28)';g.lineWidth=1;
+    for(let a=0;a<12;a++){const q=a*Math.PI/6;g.beginPath();g.moveTo(Math.cos(q)*Hp*0.34,Math.sin(q)*Hp*0.34);g.lineTo(Math.cos(q)*Hp*0.48,Math.sin(q)*Hp*0.48);g.stroke();}
+  }
+  g.restore();
+}
+function label(g,txt,x,y){g.font='600 13px system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';g.textAlign='center';g.lineWidth=3.5;g.strokeStyle='rgba(8,30,58,.8)';g.strokeText(txt,x,y);g.fillStyle='#fff';g.fillText(txt,x,y);}
+function drawNet(lift){
+  const sw=stripW(hold),x0=netX-sw,cell=hold*S,top=SURF-10,bot=H-6;
+  c.save();c.translate(0,lift);
+  c.fillStyle='rgba(255,255,255,.16)';c.fillRect(x0,top,sw,bot-top);
+  c.save();c.beginPath();c.rect(x0,top,sw,bot-top);c.clip();
+  for(const pass of [0,1]){
+    c.beginPath();
+    for(let x=x0;x<=x0+sw+.5;x+=cell){c.moveTo(x,top);c.lineTo(x,bot);}
+    for(let y=top;y<=bot+.5;y+=cell){c.moveTo(x0,y);c.lineTo(x0+sw,y);}
+    c.lineWidth=pass?(cell<14?1:1.6):(cell<14?2.2:3.4);c.strokeStyle=pass?'rgba(255,255,255,.95)':'rgba(8,40,80,.55)';c.stroke();
+  }
+  c.restore();
+  c.fillStyle='#5D4037';c.fillRect(x0-5,top-4,5,bot-top+4);c.fillRect(netX,top-4,5,bot-top+4);c.fillRect(x0-5,top-8,sw+10,6);
+  label(c,hold.toFixed(1)+' cm',x0+sw/2,top-16);
+  c.restore();
+}
+function drawRiver(){
+  c.setTransform(2,0,0,2,0,0);c.clearRect(0,0,W,H);
+  /* 天空、水、河床、兩岸 */
+  c.fillStyle='#CFE9F6';c.fillRect(0,0,W,SURF);
+  const gr=c.createLinearGradient(0,SURF,0,H);gr.addColorStop(0,'#7EC4E0');gr.addColorStop(1,'#2E7FA6');c.fillStyle=gr;c.fillRect(0,SURF,W,H-SURF);
+  c.fillStyle='#C9B27E';c.fillRect(0,H-16,W,16);
+  c.fillStyle='#6FAE5B';c.fillRect(0,SURF-6,14,H);c.fillRect(W-14,SURF-6,14,H);
+  c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=3;c.beginPath();
+  for(let x=0;x<=W;x+=10){const y=SURF+Math.sin(x*0.05+T*2)*2.5;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+  const lift=phase==='haul'?-(haulT*haulT*(3-2*haulT))*(H+80):(phase==='done'?-(H+80):0);
+  /* 沒被撈到的東西 */
+  for(const it of items)if(it.state!=='caught'){sprite(c,it,it.x,it.y,it.ang,it.dir,T);if(it.flash>0){c.strokeStyle='rgba(255,255,255,'+(it.flash*.9)+')';c.lineWidth=2;c.beginPath();c.ellipse(it.x,it.y,it.L*.6,it.Hp*.7,0,0,6.283);c.stroke();}}
+  if(phase!=='done')drawNet(lift);
+  if(phase!=='done')for(const it of caught){const sh=phase==='sweep'?Math.sin(T*14+it.ph)*1.4:0;sprite(c,it,it.x,it.y+sh+lift,0,-1,T);}
+  c.fillStyle='rgba(255,255,255,.55)';
+  for(const b of bubbles){c.globalAlpha=Math.max(0,Math.min(1,b.life));c.beginPath();c.arc(b.x,b.y,b.r,0,6.283);c.fill();}c.globalAlpha=1;
+  if(phase==='done'){ /* 漏掉的魚圈起來 */
+    for(const it of items)if(it.kind==='fish'&&it.state!=='caught'){
+      c.strokeStyle='#E53935';c.lineWidth=3;c.setLineDash([7,5]);c.beginPath();c.ellipse(it.x,it.y,it.L*.62,it.Hp*.78+4,0,0,6.283);c.stroke();c.setLineDash([]);
+    }
+  }
+  if(showSize){
+    for(const it of items){if(it.state==='caught'&&phase==='done')continue;
+      const yy=it.y+(it.state==='caught'?lift:0);label(c,it.d.toFixed(1),it.x,yy-it.Hp/2-6);}
+  }
+}
+function drawTray(rev){
+  const list=caught,GAP=26,MAXW=W-24;let rows=[],cur=[],w=0,hh=0;
+  for(const it of list){
+    if(cur.length&&w+it.L+GAP>MAXW){rows.push({cur,h:hh});cur=[];w=0;hh=0;}
+    cur.push(it);w+=it.L+GAP;hh=Math.max(hh,it.Hp);
+  }
+  if(cur.length)rows.push({cur,h:hh});
+  const th=Math.max(90,rows.reduce((a,r)=>a+r.h+(showSize?34:22),12));
+  trayCv.height=th*2;trayCv.style.aspectRatio=W+'/'+th;
+  tc.setTransform(2,0,0,2,0,0);tc.fillStyle='#E4EEF4';tc.fillRect(0,0,W,th);
+  let y=10;
+  for(const r of rows){
+    const cy=y+(showSize?14:6)+r.h/2;let x=16;
+    for(const it of r.cur){
+      const cx=x+it.L/2;sprite(tc,it,cx,cy,0,-1,0);
+      if(rev){tc.lineWidth=3;tc.setLineDash([6,4]);tc.strokeStyle=it.kind==='fish'?'#2E9E5B':'#E53935';tc.beginPath();tc.ellipse(cx,cy,it.L*.58,it.Hp*.7+3,0,0,6.283);tc.stroke();tc.setLineDash([]);}
+      if(showSize)label(tc,it.d.toFixed(1),cx,cy-it.Hp/2-8);
+      x+=it.L+GAP;
+    }
+    y+=r.h+(showSize?34:22);
+  }
+}
+function frame(ts){
+  if(!frame.last)frame.last=ts;const dt=Math.min(.05,(ts-frame.last)/1000);frame.last=ts;
+  frame.n=(frame.n||0)+1;if(!window.__FG_manual)step(dt);
+  drawRiver();requestAnimationFrame(frame);
+}
+
+/* ───── 成績、判分、畫面文字 ───── */
+const pct=v=>Math.round(v*100)+'%';
+const eqs=(v)=>{const q=v*100,e=LANG==='zh'?'＝':'=';return Math.abs(q-Math.round(q))<1e-9?e+' '+Math.round(q)+'%':'≈ '+Math.round(q)+'%';};
+function parseInt0(s){s=(s||'').trim();return /^\d+$/.test(s)?+s:null;}
+function parseVal(s){
+  s=(s||'').trim().replace(',','.').replace('％','%');if(!s)return null;
+  const hasPct=s.endsWith('%');if(hasPct)s=s.slice(0,-1).trim();
+  let m=s.match(/^(\d+(?:\.\d+)?)\s*[\/÷]\s*(\d+(?:\.\d+)?)$/);
+  if(m){return +m[2]===0?null:+m[1]/+m[2];}
+  if(!/^\d+(\.\d+)?$/.test(s))return null;
+  let v=+s;if(hasPct)v/=100;else if(v>1)v/=100;return v;
+}
+function setSt(k,ok,msg){const f=$('#f_'+k);f.classList.toggle('ok',ok===true);f.classList.toggle('ng',ok===false);f.querySelector('.st').textContent=msg||'';}
+function finishRound(){
+  const tp=caught.filter(i=>i.kind==='fish').length,fp=caught.length-tp,fishN=river.fish.length,fn=fishN-tp;
+  res={h:hold,tp,fp,fn,fishN,junkN:river.junk.length,P:tp/(tp+fp),R:tp/fishN,n:hist.length+1};
+  drawTray(false);$('#resPanel').hidden=false;syncUI();
+  if(!isTest)setTimeout(()=>$('#resPanel').scrollIntoView({behavior:'smooth',block:'nearest'}),250);
+}
+function check(){
+  if(!res)return;let all=true;
+  const ints={tp:res.tp,fp:res.fp,fn:res.fn};
+  for(const k of ['tp','fp','fn']){const v=parseInt0($('#i_'+k).value);if(v===null){setSt(k,false,tr('empty'));all=false;}else if(v===ints[k])setSt(k,true,tr('ok'));else{setSt(k,false,tr('ng'));all=false;}}
+  const tol=0.0055,tru={p:res.P,r:res.R};
+  for(const k of ['p','r']){
+    const v=parseVal($('#i_'+k).value),o=k==='p'?'r':'p';
+    if(v===null){setSt(k,false,tr('empty'));all=false;}
+    else if(Math.abs(v-tru[k])<=tol)setSt(k,true,tr('ok'));
+    else if(Math.abs(tru.p-tru.r)>tol&&Math.abs(v-tru[o])<=tol){setSt(k,false,tr('swap'));all=false;}
+    else{setSt(k,false,tr('ng'));all=false;}
+  }
+  if(all){$('#f_p .st').textContent=tr('ok')+'　'+tr('allok');}
+}
+function reading(P,R){
+  const p=pct(P),r=pct(R);
+  if(R===1&&P<.6)return LANG==='zh'?`魚一條都沒漏，但垃圾也跟著上來，所以精確度只有 ${p}。孔徑太小：什麼都撈，召回率高、精確度低。`:`Không sót con cá nào, nhưng rác cũng bị vớt lên theo nên độ chính xác chỉ ${p}. Mắt lưới quá nhỏ: vớt hết mọi thứ, độ bao phủ cao, độ chính xác thấp.`;
+  if(P>=.8&&R<.6)return LANG==='zh'?`網裡幾乎都是魚（精確度 ${p}），但河裡的魚只撈到 ${r}。孔徑太大：挑得很嚴，漏掉很多魚。`:`Trong lưới gần như toàn là cá (độ chính xác ${p}), nhưng chỉ vớt được ${r} số cá dưới sông. Mắt lưới quá lớn: chọn rất khắt khe nên sót nhiều cá.`;
+  if(P>=.7&&R>=.7)return LANG==='zh'?`兩個都不差：精確度 ${p}、召回率 ${r}。這個孔徑剛好落在魚和垃圾大小的分界附近。`:`Cả hai đều khá: độ chính xác ${p}, độ bao phủ ${r}. Cỡ mắt lưới này gần với ranh giới giữa kích thước cá và rác.`;
+  return LANG==='zh'?`精確度 ${p}：網裡的東西有 ${p} 是魚。召回率 ${r}：河裡的魚撈到 ${r}。`:`Độ chính xác ${p}: trong lưới có ${p} là cá. Độ bao phủ ${r}: vớt được ${r} số cá dưới sông.`;
+}
+function missionMsg(){
+  if(!mission)return '';const {P,R,fn}=res;
+  const L=(zh,vi)=>LANG==='zh'?zh:vi;
+  if(mission===1)return fn===0?[1,L('✓ 任務達成：魚一條都沒漏。','✓ Hoàn thành: không sót con cá nào.')]:[0,L('✗ 還有魚漏掉了。孔徑再小一點試試。','✗ Vẫn còn cá bị sót. Thử giảm cỡ mắt lưới.')];
+  if(mission===2)return P>=.8?[1,L('✓ 任務達成：網裡至少 8 成是魚。','✓ Hoàn thành: trong lưới có ít nhất 80% là cá.')]:[0,L('✗ 垃圾還太多。孔徑再大一點試試。','✗ Vẫn còn nhiều rác. Thử tăng cỡ mắt lưới.')];
+  if(P>=.7&&R>=.7)return [1,L('✓ 任務達成：兩個分數都 70% 以上。','✓ Hoàn thành: cả hai điểm số đều từ 70% trở lên.')];
+  if(R<.7&&P>=.7)return [0,L('✗ 召回率不到 70%。孔徑小一點試試。','✗ Độ bao phủ chưa đến 70%. Thử giảm cỡ mắt lưới.')];
+  if(P<.7&&R>=.7)return [0,L('✗ 精確度不到 70%。孔徑大一點試試。','✗ Độ chính xác chưa đến 70%. Thử tăng cỡ mắt lưới.')];
+  return [0,L('✗ 兩個都不到 70%。換個孔徑再試。','✗ Cả hai đều chưa đến 70%. Thử cỡ mắt lưới khác.')];
+}
+function revealAns(){
+  if(!res)return;revealed=true;if(['tp','fp','fn','p','r'].some(k=>$('#i_'+k).value.trim()))check();drawTray(true);
+  const {tp,fp,fn,fishN,P,R}=res,z=LANG==='zh',box=$('#ans'),E=z?'＝':'=',PL=z?'＋':'+';
+  const ms=missionMsg();
+  box.innerHTML=`<b>${tr('ansTitle')}</b>
+  <span class="f">TP ${E} ${tp}　<span style="font-weight:400">${z?'（網裡的魚）':'(cá trong lưới)'}</span></span>
+  <span class="f">FP ${E} ${fp}　<span style="font-weight:400">${z?'（網裡的垃圾）':'(rác trong lưới)'}</span></span>
+  <span class="f">FN ${E} ${fishN} − ${tp} ${E} ${fn}　<span style="font-weight:400">${z?'（漏掉的魚）':'(cá bị sót)'}</span></span>
+  <span class="f">${z?'精確度':'Độ chính xác'} ${E} ${tp} ÷ (${tp} ${PL} ${fp}) ${E} ${tp} ÷ ${tp+fp} ${eqs(P)}</span>
+  <span class="f">${z?'召回率':'Độ bao phủ'} ${E} ${tp} ÷ (${tp} ${PL} ${fn}) ${E} ${tp} ÷ ${fishN} ${eqs(R)}</span>
+  <span class="rd">${reading(P,R)}</span>${ms?`<span class="ms ${ms[0]?'good':'bad'}">${ms[1]}</span>`:''}`;
+  box.hidden=false;
+  if(!hist.some(h=>h.n===res.n))hist.push({...res});
+  renderHist();
+}
+function renderHist(){
+  $('#histPanel').hidden=!hist.length;if(!hist.length)return;
+  const z=LANG==='zh';
+  $('#histHead').innerHTML=['#',z?'孔徑 (cm)':'Mắt lưới (cm)','TP','FP','FN',z?'精確度':'Độ chính xác',z?'召回率':'Độ bao phủ'].map(t=>`<th>${t}</th>`).join('');
+  $('#histBody').innerHTML=hist.map(h=>`<tr><td>${h.n}</td><td>${h.h.toFixed(1)}</td><td>${h.tp}</td><td>${h.fp}</td><td>${h.fn}</td><td>${pct(h.P)}</td><td>${pct(h.R)}</td></tr>`).join('');
+}
+function renderInfo(){
+  const z=LANG==='zh',n=river.fish.length,m=river.junk.length;
+  $('#riverInfo').innerHTML=z?`這條河裡有 <b>魚 ${n} 條</b>、<b>垃圾 ${m} 件</b>（就像標註好的標準答案）`:`Sông này có <b>${n} con cá</b> và <b>${m} món rác</b> (giống như đáp án đã gán nhãn)`;
+}
+function syncUI(){
+  const z=LANG==='zh';
+  $('#btnAuto').textContent=auto&&phase==='sweep'?tr('autoP'):tr('auto');
+  $('#btnAuto').disabled=(phase==='haul'||phase==='done');
+  $('#hole').disabled=phase!=='ready';
+  $('#lock').textContent=phase==='ready'?'':tr('locked');
+  $('#hint').style.display=phase==='ready'?'':'none';
+  if(res)$('#resTitle').innerHTML=z?`第 ${res.n} 輪　孔徑 ${res.h.toFixed(1)} 公分`:`Lượt ${res.n} — cỡ mắt lưới ${res.h.toFixed(1)} cm`;
+  document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',+b.dataset.m===mission));
+}
+function applyLang(){
+  document.querySelectorAll('[data-k]').forEach(e=>{e.innerHTML=tr(e.dataset.k);});
+  $('#btnZh').className=LANG==='zh'?'on':'';$('#btnVi').className=LANG==='vi'?'on':'';
+  document.documentElement.lang=LANG==='zh'?'zh-Hant':'vi';
+  document.title=LANG==='zh'?'第十週　撈魚遊戲：孔徑、精確度與召回率':'Tuần 10 — Trò chơi vớt cá: cỡ mắt lưới, độ chính xác, độ bao phủ';
+  if(river)renderInfo();renderHist();syncUI();
+  if(revealed)revealAns();
+}
+function save(){store.set('fish10',JSON.stringify({lang:LANG,sid}));}
+
+/* ───── 操作 ───── */
+const px=e=>{const r=cv.getBoundingClientRect();return(e.clientX-r.left)*W/r.width;};
+cv.addEventListener('pointerdown',e=>{if(phase!=='ready'&&phase!=='sweep')return;dragging=true;target=px(e);try{cv.setPointerCapture(e.pointerId);}catch(_){}startSweep();});
+cv.addEventListener('pointermove',e=>{if(dragging)target=px(e);});
+['pointerup','pointercancel'].forEach(n=>cv.addEventListener(n,()=>{dragging=false;}));
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'&&e.target.tagName!=='INPUT'&&(phase==='ready'||phase==='sweep')){keyR=true;startSweep();e.preventDefault();}});
+document.addEventListener('keyup',e=>{if(e.key==='ArrowRight')keyR=false;});
+$('#hole').addEventListener('input',e=>{hold=+e.target.value;$('#holeVal').textContent=hold.toFixed(1);if(phase==='ready'){netX=18+stripW(hold);target=netX;}});
+$('#btnAuto').onclick=()=>{if(phase==='ready'){auto=true;startSweep();}else if(phase==='sweep'){auto=!auto;}syncUI();};
+$('#btnReset').onclick=()=>resetRound();
+$('#btnAgain').onclick=()=>{resetRound();window.scrollTo({top:0,behavior:'smooth'});};
+$('#btnCheck').onclick=check;$('#btnReveal').onclick=revealAns;
+$('#showSize').onchange=e=>{showSize=e.target.checked;if(res)drawTray(revealed);};
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{mission=+b.dataset.m;syncUI();if(revealed)revealAns();});
+$('#btnZh').onclick=()=>{LANG='zh';save();applyLang();};$('#btnVi').onclick=()=>{LANG='vi';save();applyLang();};
+$('#sid').addEventListener('change',e=>{sid=e.target.value.trim();save();setRiver();});
+
+/* ───── 啟動 ───── */
+try{const s=JSON.parse(store.get('fish10')||'null');if(s){if(s.lang==='vi')LANG='vi';if(s.sid){sid=String(s.sid);$('#sid').value=sid;}}}catch(e){}
+setRiver();applyLang();
+window.__FG={items:()=>items,river:()=>river,res:()=>res,hist:()=>hist,genRiver,hash,mulberry,
+  setHole(h){hold=h;$('#hole').value=h;$('#holeVal').textContent=h.toFixed(1);if(phase==='ready')netX=18+stripW(h);},
+  reset:resetRound,step,draw:drawRiver,phase:()=>phase,netX:()=>netX,dbg:()=>({dragging,target,netX,phase,auto,frames:frame.n||0,T}),
+  run(h,dtv){this.setHole(h);auto=true;startSweep();let n=0;while(phase!=='done'&&n++<60000)step(dtv||1/60);return res;},
+  fill(k,v){$('#i_'+k).value=v;},check,revealAns,setSid(s){sid=s;setRiver();},setLang(l){LANG=l;applyLang();},setMission(m){mission=m;syncUI();},drawTray};
+requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
