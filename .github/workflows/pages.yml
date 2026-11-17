@@ -141,7 +141,7 @@ jobs:
           cp -- '第十週(11-12)/第十週_撈魚遊戲.html' _site/week10/fish/index.html
           # 第十二週：手機 GPS 定位散布量測（課後作業，單一檔案、不連外；手機要 https 才允許讀位置）
           cp -- '第十二週(11-26)/第十二週_定位散布量測.html' _site/week12/gps/index.html
-          # 第十二週：卡曼增益隨堂練習（第 2 節最後做，數字依學號而不同，單一檔案、不連外、不收答案；11/17 取代 GPS 課後作業）
+          # 第十二週：卡曼增益練習（第 3 節練習一，數字依學號而不同，單一檔案、不連外、不收答案；11/17 取代 GPS 課後作業）
           cp -- '第十二週(11-26)/第十二週_卡曼增益隨堂練習.html' _site/week12/kalman/index.html
 
       - name: Upload the website
