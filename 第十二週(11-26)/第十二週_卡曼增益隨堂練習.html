@@ -96,7 +96,7 @@
       <li><span class="f">x ＝ x₁ ＋ K × (x₂ − x₁)</span>
           <span class="n" data-zh="從 x₁ 出發，往 x₂ 挪「差距的 K 倍」。取到小數點後一位。" data-vi="Bắt đầu từ x₁, dịch về phía x₂ một đoạn bằng K lần khoảng cách. Lấy một chữ số thập phân."></span></li>
       <li><span class="f">σ² ＝ (1 − K) × σ₁²　→　σ ＝ √σ²</span>
-          <span class="n" data-zh="最後要開根號。σ 取到小數點後兩位。" data-vi="Cuối cùng phải khai căn. σ lấy hai chữ số thập phân."></span></li>
+          <span class="n" data-zh="σ 跟第 ② 步算出的 x 無關，只看 K 和 σ₁（兩個來源有多準）。最後要開根號，σ 取到小數點後兩位。" data-vi="σ không dùng x tính ở bước ②, chỉ dùng K và σ₁ (độ chính xác của hai nguồn). Cuối cùng phải khai căn, σ lấy hai chữ số thập phân."></span></li>
     </ol>
     <div class="sqrt"><span data-zh="開根號小幫手：" data-vi="Máy khai căn:"></span><span>√</span><input type="text" id="sqIn" inputmode="decimal" aria-label="√"><span>＝</span><b id="sqOut">—</b></div>
     <details><summary data-zh="第 3 張的例子" data-vi="Ví dụ ở trang 3"></summary>
@@ -149,8 +149,8 @@ function parseNum(s) {
   else v = /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : NaN;
   return pct ? v / 100 : v;
 }
-/* 判一格：回傳 { ok, code }；code 是錯的時候最可能的原因（給提示用） */
-function judge(q, f, raw) {
+/* 判一格：回傳 { ok, code }；code 是錯的時候最可能的原因（給提示用）。ctx.x＝學生自己第 ② 格的答案（σ 那格用來認「拿 x 開根號」） */
+function judge(q, f, raw, ctx) {
   if (raw == null || String(raw).trim() === "") return { ok: false, code: "empty" };
   const v = parseNum(raw);
   if (isNaN(v)) return { ok: false, code: "nan" };
@@ -178,9 +178,21 @@ function judge(q, f, raw) {
   }
   /* f === "s" */
   if (near(v, S.s, T.s)) return { ok: true };
-  if (near(v, (1 - S.K) * S.v1, 0.0051 * S.v1 + 0.03)) return { ok: false, code: "s_var" };
-  if (near(v, (1 - S.K) * q.s1, 0.0051 * q.s1 + 0.03)) return { ok: false, code: "s_nosq" };
-  if (near(v, Math.sqrt((1 - S.K) * S.v2), T.s * 1.5) || near(v, (1 - S.K) * S.v2, 0.0051 * S.v2 + 0.03)) return { ok: false, code: "s_v2" };
+  /* 每一種錯誤算法：[提示代碼, 那樣算會得到的數, 容許範圍]；都對得上時，挑離得最近的（用範圍正規化） */
+  const xs = [S.x, Math.round(S.x * 10) / 10];
+  if (ctx && isFinite(ctx.x)) xs.push(ctx.x);                  // 學生自己第 ② 格填的 x
+  const pats = [
+    ["s_var", (1 - S.K) * S.v1, 0.0051 * S.v1 + 0.03],
+    ["s_nosq", (1 - S.K) * q.s1, 0.0051 * q.s1 + 0.03],
+    ["s_v2", Math.sqrt((1 - S.K) * S.v2), T.s * 1.5],
+    ["s_v2", (1 - S.K) * S.v2, 0.0051 * S.v2 + 0.03],
+    /* 2026-11-17 使用者自己試的時候，把第 ② 步的 23.8 拿去開根號：σ 跟 x 無關 */
+    ...xs.map((x) => ["s_fromx", Math.sqrt(Math.abs(x)), T.x * 1.5 / (2 * Math.sqrt(Math.abs(x) || 1)) + 0.006]),
+    ...xs.map((x) => ["s_fromx", x, T.x * 1.5]),
+  ];
+  let best = null;
+  pats.forEach(([code, tgt, tol]) => { const z = Math.abs(v - tgt) / tol; if (z <= 1 + 1e-9 && (!best || z < best.z)) best = { code, z }; });
+  if (best) return { ok: false, code: best.code };
   if (v >= Math.min(q.s1, q.s2)) return { ok: false, code: "s_big" };
   if (near(v, S.s, 0.1)) return { ok: false, code: "round2" };
   return { ok: false, code: "gen" };
@@ -226,6 +238,8 @@ function hint(q, qk, f, code) {
     x_nobase: L("這只是要挪的那一段，還要加上出發的 x₁。", "Đây mới là đoạn cần dịch, còn phải cộng với x₁ (điểm xuất phát)."),
     x_out: L("合起來的結果，一定在 x₁ 和 x₂ 中間。", "Kết quả sau khi ghép luôn nằm giữa x₁ và x₂."),
     s_var: L("這是 σ²（變異數），還要開根號。", "Đây là σ² (phương sai), còn phải khai căn."),
+    s_fromx: L(`σ 不是從第 ② 步的答案來的：x 是「${q === "q1" ? "要幾分鐘" : "車子在哪"}」，σ 是「會差多少」。用 (1 − K) × σ₁²，再開根號。`,
+               `σ không tính từ đáp án bước ②: x là «${q === "q1" ? "mất bao nhiêu phút" : "xe ở đâu"}», σ là «sai khoảng bao nhiêu». Dùng (1 − K) × σ₁² rồi khai căn.`),
     s_nosq: L("要乘 σ₁²（先平方），最後再開根號。", "Phải nhân với σ₁² (bình phương trước), cuối cùng mới khai căn."),
     s_v2: L("公式是 (1 − K) × σ₁²，乘的是 σ₁²，不是 σ₂²。", "Công thức là (1 − K) × σ₁², nhân với σ₁², không phải σ₂²."),
     s_big: L("合起來的 σ 一定比 σ₁、σ₂ 都小（第 2 張）。", "σ sau khi ghép luôn nhỏ hơn cả σ₁ và σ₂ (trang 2)."),
@@ -341,7 +355,7 @@ function check(q) {
   } else {
     FIELDS[q].forEach((f) => {
       const k = q + f, raw = $("i_" + k).value; S.ans[k] = raw;
-      const r = judge(P[q], f, raw); S.ok[k] = r.ok; S.code[k] = r.ok ? "ok" : r.code;
+      const r = judge(P[q], f, raw, { x: parseNum(S.ans[q + "x"]) }); S.ok[k] = r.ok; S.code[k] = r.ok ? "ok" : r.code;
       if (!r.ok && r.code !== "empty") S.wrong[k] = (S.wrong[k] || 0) + 1;
     });
   }
