@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>找路練習台 · Bàn tập tìm đường</title>
+<style>
+  :root{--navy:#0B1F3A;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+        --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  /* Latin 字型要排在中文字型前面，否則越南文的聲調符號會錯位（第十週作業頁的教訓） */
+  body{margin:0;background:#EEF2F6;color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:15px;line-height:1.55}
+  #app{max-width:600px;margin:0 auto;padding:10px 12px 40px}
+  .top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .top h1{font-size:17px;margin:0;color:var(--navy);line-height:1.3}
+  .top h1 small{display:block;font-size:12px;font-weight:400;color:var(--mute)}
+  .lang{display:flex;flex:0 0 auto;margin-left:auto;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .lang button{padding:6px 11px;font-size:12px;background:#fff;border:none;border-radius:0}
+  .lang button.on{background:var(--navy);color:#fff}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:10px}
+  h2{font-size:15px;margin:0 0 6px;color:var(--navy);line-height:1.35}
+  h2 .tag{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--teal-d);border-radius:10px;padding:1px 8px;margin-right:6px;vertical-align:2px}
+  .note{font-size:12.5px;color:var(--mute);margin:2px 0 8px;line-height:1.5}
+  label{display:block;font-size:12.5px;color:var(--mute);margin:8px 0 3px}
+  input[type=text],select{width:100%;font:inherit;font-size:16px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .two label{margin-top:0}
+  button{font-family:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;cursor:pointer;line-height:1.25}
+  button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.main{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+  button.go{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
+  .row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+  .row button{flex:1 1 auto}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:6px 0}
+  .seg button{flex:1;border:none;border-radius:0;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  canvas{display:block;width:100%;touch-action:none;border-radius:8px;background:#283A54}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--mute);margin-top:6px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+  .res{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+  .res div{background:var(--card);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--mute);line-height:1.35}
+  .res b{display:block;font-size:19px;color:var(--navy);font-variant-numeric:tabular-nums}
+  .msg{font-size:13px;margin-top:6px;color:var(--navy)}
+  .msg.bad{color:var(--red)}
+  .formula{background:#FFF8E6;border:1px solid #F3D98B;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13.5px;color:#5A4300}
+  .formula b{color:var(--navy)}
+  .task{border-top:1px solid var(--line);padding:10px 0 4px}
+  .task:first-of-type{border-top:none;padding-top:0}
+  .task h3{font-size:14px;margin:0 0 4px;color:var(--navy)}
+  .task .st{font-weight:700;margin-left:6px}
+  .task .st.ok{color:var(--ok)}
+  .task p{margin:2px 0 6px;font-size:13.5px}
+  .task .got{font-size:12.5px;color:var(--ok);margin-top:4px}
+  .task .hint{font-size:12.5px;color:#7A1F1A;background:#FDECEA;border-radius:8px;padding:6px 9px;margin-top:5px}
+  .rssin{display:flex;gap:8px;align-items:center}
+  .rssin input{flex:1}
+  #done{display:none;background:#fff;border:3px solid var(--ok);border-radius:12px;padding:14px 15px;margin-bottom:10px}
+  #done .big{font-size:22px;font-weight:800;color:var(--ok);line-height:1.25}
+  #done .who{font-size:17px;font-weight:700;margin-top:6px}
+  #done .when{font-size:12px;color:var(--mute)}
+  #done table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+  #done th,#done td{border-top:1px solid var(--line);padding:4px;text-align:left;vertical-align:top}
+  #done th{color:var(--mute);font-weight:400;white-space:nowrap}
+  #done .go2{margin-top:10px;background:#E3F4EA;border-radius:8px;padding:9px 11px;font-size:14px;font-weight:700;color:var(--ok)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <h1><span data-zh="找路練習台" data-vi="Bàn tập tìm đường"></span>
+      <small data-zh="第十三週 第 3 節 · A* 找路與安全距離" data-vi="Tuần 13, tiết 3 · A* tìm đường và khoảng cách an toàn"></small></h1>
+    <div class="lang"><button id="btnZh">中文</button><button id="btnVi" class="on">Tiếng Việt</button></div>
+  </div>
+
+  <div id="done"></div>
+
+  <div class="panel">
+    <div class="two">
+      <div><label for="name" data-zh="姓名" data-vi="Họ tên"></label><input type="text" id="name" autocomplete="name"></div>
+      <div><label for="sid" data-zh="學號" data-vi="Mã số sinh viên"></label><input type="text" id="sid" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    </div>
+    <p class="note" style="margin:8px 0 0" data-zh="做完五個任務，最上面會出現完成畫面，截圖傳 LINE。結果只存在你的手機裡，不會上傳。"
+       data-vi="Làm xong 5 nhiệm vụ, màn hình hoàn thành hiện ở trên cùng, chụp lại gửi LINE. Kết quả chỉ lưu trên điện thoại của bạn."></p>
+  </div>
+
+  <div class="formula" id="fx"></div>
+
+  <div class="panel">
+    <h2 data-zh="地圖" data-vi="Bản đồ"></h2>
+    <div class="row" id="presets"></div>
+    <div class="seg" id="tools"></div>
+    <canvas id="cv"></canvas>
+    <div class="legend" id="legend"></div>
+    <label data-zh="找路的方法" data-vi="Cách tìm đường"></label>
+    <div class="seg" id="algos"></div>
+    <label id="penLab"></label>
+    <input type="range" id="pen" min="0" max="3" step="1" value="0" style="width:100%">
+    <div class="row">
+      <button class="go" id="btnStep"></button>
+      <button class="main" id="btnRun"></button>
+      <button id="btnClear"></button>
+    </div>
+    <div class="res" id="res"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel" id="tasks"></div>
+</div>
+
+<script>
+"use strict";
+/*CORE-START  地圖、搜尋、出題（node 測試會單獨拿這一段出來跑，不要用到 DOM） */
+const W = 18, H = 11;
+/* 規則跟第 2 節的動畫一樣：8 個方向，直走一格 1、斜走一格 1.4；不准斜著穿過兩個障礙物的角；
+   h＝不管障礙物的「八方向距離」（不會高估，所以 A* 找到的一定最短）。
+   「離障礙物遠一點」：走進「緊貼障礙物」的格子（周圍 8 格有障礙）多付 pen 的成本。 */
+const PRESETS = {
+  parking: ["....##.##.##.##...",
+            "....##.##.##.##.G.",
+            "..................",
+            "..................",
+            "..................",
+            "..##.##.##.##.##..",
+            "..##.##.##.##.##..",
+            "..................",
+            "..................",
+            "..................",
+            "S................."],
+  alley:   ["##################",
+            "S...#.....#......#",
+            "##.....#......#..#",
+            "##.##.....#.#....#",
+            "#....#.##......#.#",
+            "#.##...#..##.#...#",
+            "#....#...#....#.##",
+            "##.#...#...#.....#",
+            "#....#...#...#.#G#",
+            "#.#....#....#....#",
+            "##################"],
+  empty:   ["..................",
+            "..................",
+            "..................",
+            "..................",
+            "..................",
+            "S...............G.",
+            "..................",
+            "..................",
+            "..................",
+            "..................",
+            ".................."],
+};
+function parse(rows) {
+  const obs = new Set(); let S = null, G = null;
+  rows.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === "#") obs.add(x + "," + y); if (ch === "S") S = [x, y]; if (ch === "G") G = [x, y];
+  }));
+  return { obs, S, G };
+}
+const K = (x, y) => x + "," + y;
+const STEPS8 = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.4], [1, -1, 1.4], [-1, 1, 1.4], [-1, -1, 1.4]];
+const octile = (a, b) => { const dx = Math.abs(a[0] - b[0]), dy = Math.abs(a[1] - b[1]); return Math.max(dx, dy) + 0.4 * Math.min(dx, dy); };
+function nearObs(obs, x, y) {
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if ((dx || dy) && obs.has(K(x + dx, y + dy))) return true;
+  return false;
+}
+/* 回傳 { order: 依序看過的格子, path, len（幾何長度）, cost（含懲罰）, hug（路上有幾格緊貼障礙物） } */
+function search(map, useH, pen) {
+  const { obs, S, G } = map;
+  const heap = [];
+  const push = (n) => { heap.push(n); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (less(heap[i], heap[p])) { [heap[i], heap[p]] = [heap[p], heap[i]]; i = p; } else break; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && less(heap[l], heap[m])) m = l; if (r < heap.length && less(heap[r], heap[m])) m = r; if (m === i) break; [heap[i], heap[m]] = [heap[m], heap[i]]; i = m; } } return top; };
+  // 同樣的 f，先看 h 小的（離終點近的），再看先放進去的：結果固定、跟 Python 版一樣
+  const less = (a, b) => a.f < b.f - 1e-9 || (Math.abs(a.f - b.f) <= 1e-9 && (a.h < b.h - 1e-9 || (Math.abs(a.h - b.h) <= 1e-9 && a.seq < b.seq)));
+  let seq = 0;
+  const g = new Map([[K(...S), 0]]), came = new Map(), seen = new Set(), order = [];
+  const h0 = useH ? octile(S, G) : 0;
+  push({ f: h0, h: h0, g: 0, p: S, seq: seq++ });
+  let found = false;
+  while (heap.length) {
+    const cur = pop(); const ck = K(...cur.p);
+    if (seen.has(ck)) continue;
+    seen.add(ck); order.push(cur.p);
+    if (cur.p[0] === G[0] && cur.p[1] === G[1]) { found = true; break; }
+    for (const [dx, dy, w] of STEPS8) {
+      const nx = cur.p[0] + dx, ny = cur.p[1] + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H || obs.has(K(nx, ny))) continue;
+      if (dx && dy && (obs.has(K(cur.p[0] + dx, cur.p[1])) || obs.has(K(cur.p[0], cur.p[1] + dy)))) continue;
+      const ng = cur.g + w + (pen && nearObs(obs, nx, ny) ? pen : 0);
+      const nk = K(nx, ny);
+      if (ng < (g.has(nk) ? g.get(nk) : 1e9) - 1e-9) {
+        g.set(nk, ng); came.set(nk, cur.p);
+        const hh = useH ? octile([nx, ny], G) : 0;
+        push({ f: ng + hh, h: hh, g: ng, p: [nx, ny], seq: seq++ });
+      }
+    }
+  }
+  if (!found) return { order, path: null, len: null, cost: null, hug: null, found };
+  const path = [G]; while (K(...path[path.length - 1]) !== K(...S)) path.push(came.get(K(...path[path.length - 1])));
+  path.reverse();
+  let len = 0; for (let i = 1; i < path.length; i++) len += (path[i][0] !== path[i - 1][0] && path[i][1] !== path[i - 1][1]) ? 1.4 : 1;
+  const hug = path.filter(([x, y]) => nearObs(obs, x, y)).length;
+  return { order, path, len: Math.round(len * 10) / 10, cost: Math.round(g.get(K(...G)) * 10) / 10, hug, found };
+}
+/* 安全距離（RSS 最簡單的情況，跟第 2 節一樣）：反應 0.3 s、反應時間內不加速、我至少 4 m/s²、前車最猛 8 m/s² */
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const normSid = (s) => String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+function rssQ(sid) {
+  const r = mulberry(hash("w13rss|" + normSid(sid)));
+  const v = [40, 60, 70, 80][Math.floor(r() * 4)], stopped = r() < 0.5;
+  const ms = v / 3.6, react = ms * 0.3, me = ms * ms / 8, front = stopped ? 0 : ms * ms / 16;
+  return { v, stopped, ms, react, me, front, d: react + me - front };
+}
+function parseNum(s) {
+  s = String(s == null ? "" : s).trim().replace(/[,，]/g, ".").replace(/\s|m$/gi, "");
+  return /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : NaN;
+}
+function judgeRss(q, raw) {
+  const v = parseNum(raw);
+  if (isNaN(v)) return { ok: false, code: "nan" };
+  if (Math.abs(v - q.d) <= 0.6) return { ok: true };
+  const kmh = q.v;   // 忘了除以 3.6
+  const near = (a, b) => Math.abs(a - b) <= Math.max(0.8, Math.abs(b) * 0.03);
+  if (near(v, kmh * 0.3 + kmh * kmh / 8 - (q.stopped ? 0 : kmh * kmh / 16))) return { ok: false, code: "kmh" };
+  if (!q.stopped && near(v, q.react + q.me)) return { ok: false, code: "nofront" };
+  if (near(v, q.react + q.ms / 8 - (q.stopped ? 0 : q.ms / 16)) || near(v, q.react + q.ms / 4 - (q.stopped ? 0 : q.ms / 8))) return { ok: false, code: "nosq" };
+  if (near(v, q.me - q.front)) return { ok: false, code: "noreact" };
+  return { ok: false, code: "gen" };
+}
+/*CORE-END*/
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let LANG = "vi";
+{ const l = store.get("w12lang"); if (l === "zh" || l === "vi") LANG = l; }
+const L = (zh, vi) => (LANG === "zh" ? zh : vi);
+const fmt = (x, d = 1) => { const s = Number(x).toFixed(d); return LANG === "vi" ? s.replace(".", ",") : s; };
+
+/* ── 狀態 ── */
+let presetName = "parking", MAP = parse(PRESETS.parking), edited = false;
+let algo = "astar", tool = "wall", RUN = null, anim = null, shown = null;
+const T = { t1: null, t2: null, t3: null, t3c: "", t4: null, t5: null, t5raw: "", t5code: "", done: null };
+const key = () => "w13plan1:" + normSid($("sid").value);
+function save() { store.set(key(), JSON.stringify(T)); store.set("w13plan:name", $("name").value); store.set("w13plan:sid", $("sid").value); }
+function load() {
+  Object.assign(T, { t1: null, t2: null, t3: null, t3c: "", t4: null, t5: null, t5raw: "", t5code: "", done: null });
+  const j = store.get(key()); if (j) { try { Object.assign(T, JSON.parse(j)); } catch (e) {} }
+}
+
+/* ── 畫地圖 ── */
+const cv = $("cv"), ctx = cv.getContext("2d");
+let cell = 30;
+function resize() {
+  const w = cv.parentElement.clientWidth - 26; cell = Math.floor(Math.min(36, w / W));
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * cell * dpr; cv.height = H * cell * dpr; cv.style.width = W * cell + "px"; cv.style.height = H * cell + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
+}
+function draw() {
+  const seen = shown ? new Set(shown.order.slice(0, shown.n).map((p) => K(...p))) : new Set();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = K(x, y);
+    ctx.fillStyle = MAP.obs.has(k) ? "#8A97A8" : seen.has(k) ? "#17786F" : "#33496A";
+    ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2);
+  }
+  if (shown && shown.n >= shown.order.length && shown.path) {
+    ctx.strokeStyle = "#FFB020"; ctx.lineWidth = Math.max(3, cell / 6); ctx.lineJoin = "round"; ctx.beginPath();
+    shown.path.forEach(([x, y], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, (x + 0.5) * cell, (y + 0.5) * cell)); ctx.stroke();
+  }
+  for (const [p, col, lab] of [[MAP.S, "#6EA8FF", "S"], [MAP.G, "#EB5757", "G"]]) {
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc((p[0] + 0.5) * cell, (p[1] + 0.5) * cell, cell * 0.4, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `700 ${Math.round(cell * 0.5)}px system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(lab, (p[0] + 0.5) * cell, (p[1] + 0.55) * cell);
+  }
+}
+function cellAt(ev) { const r = cv.getBoundingClientRect(); return [Math.floor((ev.clientX - r.left) / cell), Math.floor((ev.clientY - r.top) / cell)]; }
+let painting = false, paintVal = true;
+function applyTool(x, y, first) {
+  if (x < 0 || y < 0 || x >= W || y >= H) return;
+  const k = K(x, y), isS = x === MAP.S[0] && y === MAP.S[1], isG = x === MAP.G[0] && y === MAP.G[1];
+  if (tool === "start" || tool === "goal") {
+    if (MAP.obs.has(k) || isS || isG) return;
+    if (tool === "start") MAP.S = [x, y]; else MAP.G = [x, y];
+  } else {
+    if (isS || isG) return;
+    if (first) paintVal = tool === "wall";
+    if (paintVal) MAP.obs.add(k); else MAP.obs.delete(k);
+  }
+  edited = true; stopAnim(); shown = null; RUN = null; renderRes(); draw();
+  document.querySelectorAll("[data-preset]").forEach((b) => b.classList.remove("on"));   // 改過地圖就不是原本的預設地圖了
+}
+cv.addEventListener("pointerdown", (e) => { painting = true; cv.setPointerCapture(e.pointerId); applyTool(...cellAt(e), true); });
+cv.addEventListener("pointermove", (e) => { if (painting && (tool === "wall" || tool === "erase")) applyTool(...cellAt(e), false); });
+cv.addEventListener("pointerup", () => { painting = false; });
+
+/* ── 找路 ── */
+function stopAnim() { if (anim) { clearInterval(anim); anim = null; } }
+function run(step) {
+  stopAnim();
+  const pen = +$("pen").value;
+  const r = search(MAP, algo === "astar", pen);
+  RUN = { preset: presetName, edited, algo, pen, found: r.found, looked: r.order.length, len: r.len, cost: r.cost, hug: r.hug };
+  shown = { order: r.order, path: r.path, n: step ? 0 : r.order.length };
+  if (step) {
+    const per = Math.max(1, Math.ceil(r.order.length / 80));
+    anim = setInterval(() => { shown.n = Math.min(shown.order.length, shown.n + per); draw(); renderRes(true); if (shown.n >= shown.order.length) { stopAnim(); renderRes(); } }, 40);
+  }
+  draw(); renderRes(step);
+}
+function renderRes(running) {
+  const n = shown ? shown.n : 0;
+  $("res").innerHTML = `<div>${L("看了幾格", "Đã xem")}<b>${shown ? n : "—"}</b></div>`
+    + `<div>${L("路長", "Đường dài")}<b>${RUN && RUN.found && !running ? fmt(RUN.len) : "—"}</b></div>`
+    + `<div>${L("貼著障礙物走", "Đi sát vật cản")}<b>${RUN && RUN.found && !running ? RUN.hug + " " + L("格", "ô") : "—"}</b></div>`;
+  const m = $("msg"); m.className = "msg";
+  if (!RUN || running) m.textContent = running ? L("找路中…綠色＝已經看過的格子", "Đang tìm… xanh = ô đã xem") : L("按「一步一步找」看它怎麼找，或按「直接找」。", "Bấm «Tìm từng bước» để xem cách tìm, hoặc «Tìm ngay».");
+  else if (!RUN.found) { m.className = "msg bad"; m.textContent = L(`找不到路：看了 ${RUN.looked} 格，終點被包住了。`, `Không có đường: đã xem ${RUN.looked} ô, đích bị bao kín.`); }
+  else m.textContent = L(`找到了：${algo === "astar" ? "A*" : "不猜方向"}，看了 ${RUN.looked} 格，路長 ${fmt(RUN.len)}${RUN.pen ? `（離障礙物遠一點＝${RUN.pen}）` : ""}。`,
+                         `Tìm thấy: ${algo === "astar" ? "A*" : "không đoán hướng"}, xem ${RUN.looked} ô, đường dài ${fmt(RUN.len)}${RUN.pen ? ` (tránh xa vật cản = ${RUN.pen})` : ""}.`);
+}
+
+/* ── 任務 ── */
+function grab(k) {
+  const r = RUN, bad = (zh, vi) => { T[k + "msg"] = L(zh, vi); renderTasks(); };
+  T[k + "msg"] = "";
+  if (!r) return bad("先按「直接找」或「一步一步找」。", "Bấm «Tìm ngay» hoặc «Tìm từng bước» trước.");
+  if (k === "t4") { if (r.found) return bad("這一次有找到路。請多放幾個障礙物，把終點整個包起來，再找一次。", "Lần này vẫn có đường. Đặt thêm vật cản bao kín đích rồi tìm lại."); T.t4 = { looked: r.looked }; }
+  else {
+    if (r.preset !== "parking" || r.edited) return bad("要用「停車場」地圖，而且不要改過（改過就再按一次「停車場」）。", "Phải dùng bản đồ «Bãi đỗ xe», không sửa (sửa rồi thì bấm lại «Bãi đỗ xe»).");
+    const wantAlgo = k === "t2" ? "dijkstra" : "astar", wantPen = k === "t3" ? 2 : 0;
+    if (r.algo !== wantAlgo) return bad(`方法要選「${wantAlgo === "astar" ? "A*" : "不猜方向"}」。`, `Phải chọn cách «${wantAlgo === "astar" ? "A*" : "không đoán hướng"}».`);
+    if (r.pen !== wantPen) return bad(`「離障礙物遠一點」要設成 ${wantPen}。`, `«Tránh xa vật cản» phải đặt là ${wantPen}.`);
+    T[k] = { looked: r.looked, len: r.len, hug: r.hug };
+  }
+  save(); renderTasks();
+}
+function rssCheck() {
+  const raw = $("t5in").value; T.t5raw = raw; const q = rssQ($("sid").value); const j = judgeRss(q, raw);
+  T.t5code = j.ok ? "ok" : j.code; T.t5 = j.ok ? { v: q.v, stopped: q.stopped, d: Math.round(q.d * 10) / 10 } : null;
+  save(); renderTasks();
+}
+function allDone() { return T.t1 && T.t2 && T.t3 && T.t3c === "longer" && T.t4 && T.t5; }
+function renderTasks() {
+  const sidOk = normSid($("sid").value).length >= 2;
+  const st = (ok) => `<span class="st ${ok ? "ok" : ""}">${ok ? "✓" : ""}</span>`;
+  const got = (k, txt) => T[k] ? `<div class="got">${txt}</div>` : (T[k + "msg"] ? `<div class="hint">${esc(T[k + "msg"])}</div>` : "");
+  const q = rssQ($("sid").value);
+  const rssHint = { nan: L("看不懂這個數字，只填數字，例如 16.2。", "Không đọc được số, chỉ điền số, ví dụ 16,2."),
+    kmh: L("速度要先換成公尺每秒：公里 ÷ 3.6。", "Đổi tốc độ sang m/s trước: km/h ÷ 3,6."),
+    nofront: L("前車也在動：還要減掉前車的煞車距離。", "Xe trước cũng đang chạy: phải trừ quãng phanh của xe trước."),
+    nosq: L("煞車距離要用速度的平方：v² ÷（2 × 減速度）。", "Quãng phanh dùng bình phương tốc độ: v² ÷ (2 × gia tốc phanh)."),
+    noreact: L("別忘了反應的 0.3 秒，這段時間車子還在開。", "Đừng quên 0,3 s phản ứng, lúc đó xe vẫn chạy."),
+    gen: L("還不對：反應距離＋我煞車距離－前車煞車距離。", "Chưa đúng: quãng phản ứng + mình phanh − xe trước phanh.") };
+  $("tasks").innerHTML = `<h2>${L("五個任務", "Năm nhiệm vụ")}</h2>
+    <div class="task"><h3>1. ${L("A* 找路", "A* tìm đường")}${st(T.t1)}</h3>
+      <p>${L("地圖選「停車場」，方法選「A*」，「離障礙物遠一點」＝0，找到路以後按「記下來」。", "Chọn bản đồ «Bãi đỗ xe», cách «A*», «tránh xa vật cản» = 0; tìm thấy đường rồi bấm «Ghi lại».")}</p>
+      <button data-grab="t1">${L("記下來", "Ghi lại")}</button>${got("t1", T.t1 ? L(`看了 ${T.t1.looked} 格，路長 ${fmt(T.t1.len)}，貼著障礙物走 ${T.t1.hug} 格`, `Xem ${T.t1.looked} ô, đường dài ${fmt(T.t1.len)}, đi sát vật cản ${T.t1.hug} ô`) : "")}</div>
+    <div class="task"><h3>2. ${L("不猜方向", "Không đoán hướng")}${st(T.t2)}</h3>
+      <p>${L("同一張地圖，方法改成「不猜方向」，再找一次、記下來。看了幾格？路有沒有變長？", "Cùng bản đồ, đổi sang «không đoán hướng», tìm lại và ghi lại. Xem bao nhiêu ô? Đường có dài hơn không?")}</p>
+      <button data-grab="t2">${L("記下來", "Ghi lại")}</button>${got("t2", T.t2 ? L(`看了 ${T.t2.looked} 格，路長 ${fmt(T.t2.len)}`, `Xem ${T.t2.looked} ô, đường dài ${fmt(T.t2.len)}`) : "")}</div>
+    <div class="task"><h3>3. ${L("離障礙物遠一點", "Tránh xa vật cản")}${st(T.t3 && T.t3c === "longer")}</h3>
+      <p>${L("回到 A*，把「離障礙物遠一點」拉到 2，再找一次、記下來，然後回答：路有什麼變化？", "Quay lại A*, kéo «tránh xa vật cản» lên 2, tìm lại, ghi lại, rồi trả lời: đường thay đổi thế nào?")}</p>
+      <button data-grab="t3">${L("記下來", "Ghi lại")}</button>${got("t3", T.t3 ? L(`路長 ${fmt(T.t3.len)}，貼著障礙物走 ${T.t3.hug} 格`, `Đường dài ${fmt(T.t3.len)}, đi sát vật cản ${T.t3.hug} ô`) : "")}
+      <select id="t3c" style="margin-top:6px"><option value="">${L("— 請選 —", "— chọn —")}</option>
+        <option value="same"${T.t3c === "same" ? " selected" : ""}>${L("完全一樣", "Giống hệt")}</option>
+        <option value="shorter"${T.t3c === "shorter" ? " selected" : ""}>${L("變短了", "Ngắn hơn")}</option>
+        <option value="longer"${T.t3c === "longer" ? " selected" : ""}>${L("稍微變長，可是離障礙物比較遠", "Dài hơn một chút, nhưng xa vật cản hơn")}</option></select>
+      ${T.t3c && T.t3c !== "longer" ? `<div class="hint">${L("比較第 1 題和這一題的「路長」和「貼著障礙物走」。", "So sánh «đường dài» và «đi sát vật cản» ở câu 1 và câu này.")}</div>` : ""}</div>
+    <div class="task"><h3>4. ${L("把路堵住", "Chặn hết đường")}${st(T.t4)}</h3>
+      <p>${L("用「放障礙」把終點整個包起來（哪一張地圖都可以），再找一次。找不到路的時候，按「記下來」。真的車遇到這種情況該怎麼辦？", "Dùng «đặt vật cản» bao kín đích (bản đồ nào cũng được), rồi tìm lại. Khi không tìm được đường, bấm «Ghi lại». Xe thật gặp chuyện này thì làm gì?")}</p>
+      <button data-grab="t4">${L("記下來", "Ghi lại")}</button>${got("t4", T.t4 ? L(`找不到路（看了 ${T.t4.looked} 格就確定沒有路）`, `Không có đường (xem ${T.t4.looked} ô là biết)`) : "")}</div>
+    <div class="task"><h3>5. ${L("安全距離", "Khoảng cách an toàn")}${st(T.t5)}</h3>
+      ${sidOk ? `<p>${L(`你開時速 <b>${q.v} 公里</b>，前車${q.stopped ? "<b>停在路上</b>" : `也開 <b>${q.v} 公里</b>`}。反應 0.3 秒、反應時間內不加速、你至少用 4 m/s² 煞、前車最猛 8 m/s² 煞。安全距離是幾公尺？（取一位小數）`,
+                                  `Bạn chạy <b>${q.v} km/h</b>, xe trước ${q.stopped ? "<b>đang đứng yên</b>" : `cũng chạy <b>${q.v} km/h</b>`}. Phản ứng 0,3 s, không tăng tốc lúc phản ứng, bạn phanh ít nhất 4 m/s², xe trước phanh mạnh nhất 8 m/s². Khoảng cách an toàn là bao nhiêu mét? (một chữ số thập phân)`)}</p>
+        <div class="rssin"><input type="text" id="t5in" inputmode="decimal" value="${esc(T.t5raw || "")}"${T.t5 ? " readonly" : ""}><span>m</span><button class="main" id="t5btn">${L("檢查", "Kiểm tra")}</button></div>
+        ${T.t5 ? `<div class="got">✓ ${fmt(T.t5.d)} m</div>` : (T.t5code && T.t5code !== "ok" ? `<div class="hint">${rssHint[T.t5code] || rssHint.gen}</div>` : "")}`
+             : `<p class="note">${L("先在上面填學號，速度才會出來（每個人不一樣）。", "Điền MSSV ở trên trước, tốc độ mới hiện ra (mỗi người khác nhau).")}</p>`}
+    </div>`;
+  renderDone();
+}
+function renderDone() {
+  const box = $("done");
+  if (!allDone()) { box.style.display = "none"; return; }
+  if (!T.done) { T.done = Date.now(); save(); }
+  const t = new Date(T.done), p2 = (n) => String(n).padStart(2, "0");
+  const when = `${t.getFullYear()}/${p2(t.getMonth() + 1)}/${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`;
+  const nm = $("name").value.trim();
+  box.innerHTML = `<div class="big">✓ ${L("五個任務都完成了！", "Xong cả 5 nhiệm vụ!")}</div>
+    <div class="who">${nm ? esc(nm) : `<span style="color:var(--red)">${L("（下面還沒填姓名）", "(chưa điền họ tên ở bên dưới)")}</span>`}　${esc(normSid($("sid").value))}</div>
+    <div class="when">${L("完成時間", "Hoàn thành lúc")} ${when}</div>
+    <table>
+      <tr><th>1 A*</th><td>${L("看了", "xem")} ${T.t1.looked} ${L("格", "ô")}・${L("路長", "dài")} ${fmt(T.t1.len)}</td></tr>
+      <tr><th>2 ${L("不猜方向", "không đoán")}</th><td>${L("看了", "xem")} ${T.t2.looked} ${L("格", "ô")}・${L("路長", "dài")} ${fmt(T.t2.len)}</td></tr>
+      <tr><th>3 ${L("遠一點", "tránh xa")}</th><td>${L("路長", "dài")} ${fmt(T.t3.len)}・${L("貼著走", "đi sát")} ${T.t3.hug} ${L("格", "ô")}（${L("原本", "lúc đầu")} ${T.t1.hug}）</td></tr>
+      <tr><th>4 ${L("堵住", "chặn")}</th><td>${L("找不到路", "không có đường")}</td></tr>
+      <tr><th>5 RSS</th><td>${T.t5.v} km/h・${T.t5.stopped ? L("前車停著", "xe trước đứng yên") : L("前車同速", "xe trước cùng tốc độ")} → ${fmt(T.t5.d)} m</td></tr>
+    </table>
+    <div class="go2">${L("把這個畫面截圖，傳到 LINE 群組。", "Chụp màn hình này, gửi vào nhóm LINE.")}</div>`;
+  box.style.display = "block";
+}
+
+/* ── 介面 ── */
+function render() {
+  document.documentElement.lang = LANG === "zh" ? "zh-Hant" : "vi";
+  $("btnZh").classList.toggle("on", LANG === "zh"); $("btnVi").classList.toggle("on", LANG === "vi");
+  document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
+  $("sid").placeholder = L("例如 A022", "ví dụ A022"); $("name").placeholder = L("姓名", "Họ tên");
+  $("fx").innerHTML = L("<b>A*</b> 每次挑 <b>f ＝ g ＋ h</b> 最小的格子來看：g＝從起點已經走了多遠，h＝不管障礙物、直接到終點還要多遠。直走一格 1、斜走一格 1.4。「不猜方向」就是不用 h。",
+                        "<b>A*</b> mỗi lần chọn ô có <b>f = g + h</b> nhỏ nhất: g = đã đi bao xa từ xuất phát, h = bỏ qua vật cản, tới đích còn bao xa. Đi thẳng 1 ô = 1, đi chéo = 1,4. «Không đoán hướng» là không dùng h.");
+  $("presets").innerHTML = [["parking", "停車場", "Bãi đỗ xe"], ["alley", "河內窄巷", "Hẻm Hà Nội"], ["empty", "空地", "Bãi trống"]]
+    .map(([k, zh, vi]) => `<button data-preset="${k}" class="${presetName === k && !edited ? "on" : ""}">${L(zh, vi)}</button>`).join("");
+  $("tools").innerHTML = [["wall", "放障礙", "Đặt vật cản"], ["erase", "擦掉", "Xóa"], ["start", "移起點 S", "Dời S"], ["goal", "移終點 G", "Dời G"]]
+    .map(([k, zh, vi]) => `<button data-tool="${k}" class="${tool === k ? "on" : ""}">${L(zh, vi)}</button>`).join("");
+  $("algos").innerHTML = [["astar", "A*", "A*"], ["dijkstra", "不猜方向", "Không đoán hướng"]]
+    .map(([k, zh, vi]) => `<button data-algo="${k}" class="${algo === k ? "on" : ""}">${L(zh, vi)}</button>`).join("");
+  $("legend").innerHTML = `<span><i style="background:#8A97A8"></i>${L("障礙物", "vật cản")}</span><span><i style="background:#17786F"></i>${L("看過的格子", "ô đã xem")}</span><span><i style="background:#FFB020"></i>${L("找到的路", "đường tìm được")}</span>`;
+  $("penLab").textContent = L(`離障礙物遠一點：${$("pen").value}（走進緊貼障礙物的格子，每格多算這麼多）`, `Tránh xa vật cản: ${$("pen").value} (đi vào ô sát vật cản thì cộng thêm từng này)`);
+  $("btnStep").textContent = L("一步一步找", "Tìm từng bước"); $("btnRun").textContent = L("直接找", "Tìm ngay"); $("btnClear").textContent = L("清掉結果", "Xóa kết quả");
+  renderRes(); renderTasks(); draw();
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.preset) { presetName = b.dataset.preset; MAP = parse(PRESETS[presetName]); edited = false; stopAnim(); shown = null; RUN = null; render(); }
+  else if (b.dataset.tool) { tool = b.dataset.tool; render(); }
+  else if (b.dataset.algo) { algo = b.dataset.algo; stopAnim(); shown = null; RUN = null; render(); }
+  else if (b.dataset.grab) grab(b.dataset.grab);
+  else if (b.id === "btnStep") run(true);
+  else if (b.id === "btnRun") run(false);
+  else if (b.id === "btnClear") { stopAnim(); shown = null; RUN = null; draw(); renderRes(); }
+  else if (b.id === "t5btn") rssCheck();
+  else if (b.id === "btnZh") { LANG = "zh"; store.set("w12lang", LANG); render(); }
+  else if (b.id === "btnVi") { LANG = "vi"; store.set("w12lang", LANG); render(); }
+});
+document.addEventListener("change", (e) => { if (e.target.id === "t3c") { T.t3c = e.target.value; save(); renderTasks(); } });
+$("pen").addEventListener("input", () => { stopAnim(); shown = null; RUN = null; render(); });
+$("sid").addEventListener("input", () => { load(); save(); renderTasks(); });
+$("name").addEventListener("input", () => { save(); renderDone(); });
+window.addEventListener("resize", resize);
+$("name").value = store.get("w13plan:name") || ""; $("sid").value = store.get("w13plan:sid") || "";
+load(); render(); resize();
+</script>
+</body>
+</html>
