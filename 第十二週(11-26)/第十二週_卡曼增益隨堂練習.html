@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>卡曼增益隨堂練習 · Bài tập tại lớp: hệ số Kalman</title>
+<style>
+  :root{--navy:#0B1F3A;--teal:#00A896;--teal-d:#007F72;--amber:#FFB020;
+        --line:#D8E0E8;--card:#F4F7FA;--mute:#5F7183;--ink:#1A2733;--red:#D9463E;--ok:#2E7D5B}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  /* Latin 字型要排在中文字型前面，否則越南文的聲調符號會錯位（第十週作業頁的教訓） */
+  body{margin:0;background:#EEF2F6;color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:15px;line-height:1.55}
+  #app{max-width:560px;margin:0 auto;padding:10px 12px 40px}
+  .top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .top h1{font-size:17px;margin:0;color:var(--navy);line-height:1.3}
+  .top h1 small{display:block;font-size:12px;font-weight:400;color:var(--mute)}
+  .lang{display:flex;flex:0 0 auto;margin-left:auto;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .lang button{padding:6px 11px;font-size:12px;background:#fff;border:none;border-radius:0}
+  .lang button.on{background:var(--navy);color:#fff}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:10px}
+  h2{font-size:15px;margin:0 0 6px;color:var(--navy);line-height:1.35}
+  h2 .tag{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--teal-d);border-radius:10px;padding:1px 8px;margin-right:6px;vertical-align:2px}
+  .note{font-size:12.5px;color:var(--mute);margin:2px 0 8px;line-height:1.5}
+  label{display:block;font-size:12.5px;color:var(--mute);margin:8px 0 3px}
+  input[type=text],select{width:100%;font:inherit;font-size:16px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .two label{margin-top:0}
+  button{font-family:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;cursor:pointer;line-height:1.25}
+  button.main{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;width:100%;margin-top:10px}
+  .story{font-size:14.5px;line-height:1.65}
+  .story b{color:var(--navy);font-variant-numeric:tabular-nums}
+  .given{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0 2px}
+  .given div{background:var(--card);border-radius:8px;padding:6px 9px;font-size:12.5px;color:var(--mute);line-height:1.4}
+  .given b{display:block;font-size:17px;color:var(--navy);font-variant-numeric:tabular-nums}
+  .field{margin-top:10px}
+  .field .row{display:flex;gap:8px;align-items:center}
+  .field .row input{flex:1 1 auto}
+  .field .unit{flex:0 0 auto;font-size:13px;color:var(--mute);min-width:3.2em}
+  .field .mark{flex:0 0 1.4em;font-size:20px;font-weight:700;text-align:center}
+  .field.ok input{border-color:var(--ok);background:#F1FAF5}
+  .field.ok .mark{color:var(--ok)}
+  .field.bad input{border-color:var(--red);background:#FDF3F2}
+  .field.bad .mark{color:var(--red)}
+  .hint{font-size:12.5px;color:#7A1F1A;background:#FDECEA;border-radius:8px;padding:6px 9px;margin-top:5px;line-height:1.5}
+  .hint .plug{display:block;color:var(--navy);font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .qok{font-size:13px;color:var(--ok);font-weight:700;margin-top:8px}
+  .formula{background:#FFF8E6;border:1px solid #F3D98B;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .formula h2{color:#7A4E00}
+  .formula ol{margin:2px 0 0;padding-left:20px;font-size:14px}
+  .formula li{margin:5px 0}
+  .formula .f{display:block;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+  .formula .n{display:block;font-size:12.5px;color:#5A4300}
+  .formula details{margin-top:8px;font-size:13px;color:#5A4300}
+  .formula summary{cursor:pointer;font-weight:700}
+  .sqrt{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;color:#5A4300}
+  .sqrt input{flex:0 0 7.5em;width:7.5em;padding:6px 8px;font-size:15px}
+  .sqrt b{color:var(--navy);font-size:15px;font-variant-numeric:tabular-nums}
+  .wait{font-size:13.5px;color:var(--mute);background:var(--card);border-radius:8px;padding:10px 11px}
+  /* 完成畫面：截圖傳 LINE 的那一張 */
+  #done{display:none;background:#fff;border:3px solid var(--ok);border-radius:12px;padding:14px 15px;margin-bottom:10px}
+  #done .big{font-size:22px;font-weight:800;color:var(--ok);line-height:1.25}
+  #done .who{font-size:17px;font-weight:700;margin-top:6px}
+  #done .when{font-size:12px;color:var(--mute)}
+  #done table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+  #done th,#done td{border-top:1px solid var(--line);padding:4px 4px;text-align:left;vertical-align:top}
+  #done th{color:var(--mute);font-weight:400;white-space:nowrap}
+  #done .go{margin-top:10px;background:#E3F4EA;border-radius:8px;padding:9px 11px;font-size:14px;font-weight:700;color:var(--ok);line-height:1.45}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <h1><span data-zh="卡曼增益隨堂練習" data-vi="Bài tập tại lớp: hệ số Kalman K"></span>
+      <small data-zh="第十二週 第 2 節最後 · 三題全對就可以先下課" data-vi="Tuần 12, cuối tiết 2 · đúng cả ba câu là được nghỉ trước"></small></h1>
+    <div class="lang"><button id="btnZh">中文</button><button id="btnVi" class="on">Tiếng Việt</button></div>
+  </div>
+
+  <div id="done"></div>
+
+  <div class="panel">
+    <div class="two">
+      <div><label for="name" data-zh="姓名" data-vi="Họ tên"></label><input type="text" id="name" autocomplete="name"></div>
+      <div><label for="sid" data-zh="學號" data-vi="Mã số sinh viên"></label><input type="text" id="sid" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    </div>
+    <p class="note" style="margin:8px 0 0" data-zh="題目的數字照學號出，每個人都不一樣，看別人的答案沒有用。答案不會上傳，只存在你的手機裡。"
+       data-vi="Số liệu trong đề tạo theo MSSV, mỗi người một khác, chép bài bạn không giúp được. Đáp án không tải lên, chỉ lưu trên điện thoại của bạn."></p>
+  </div>
+
+  <div class="formula">
+    <h2 data-zh="公式（跟第 3 張一樣）" data-vi="Công thức (giống trang 3)"></h2>
+    <ol>
+      <li><span class="f">K ＝ σ₁² ÷ (σ₁² ＋ σ₂²)</span>
+          <span class="n" data-zh="σ² 就是 σ 平方（變異數）。K 在 0 和 1 之間，取到小數點後兩位。" data-vi="σ² là σ bình phương (phương sai). K nằm giữa 0 và 1, lấy hai chữ số thập phân."></span></li>
+      <li><span class="f">x ＝ x₁ ＋ K × (x₂ − x₁)</span>
+          <span class="n" data-zh="從 x₁ 出發，往 x₂ 挪「差距的 K 倍」。取到小數點後一位。" data-vi="Bắt đầu từ x₁, dịch về phía x₂ một đoạn bằng K lần khoảng cách. Lấy một chữ số thập phân."></span></li>
+      <li><span class="f">σ² ＝ (1 − K) × σ₁²　→　σ ＝ √σ²</span>
+          <span class="n" data-zh="最後要開根號。σ 取到小數點後兩位。" data-vi="Cuối cùng phải khai căn. σ lấy hai chữ số thập phân."></span></li>
+    </ol>
+    <div class="sqrt"><span data-zh="開根號小幫手：" data-vi="Máy khai căn:"></span><span>√</span><input type="text" id="sqIn" inputmode="decimal" aria-label="√"><span>＝</span><b id="sqOut">—</b></div>
+    <details><summary data-zh="第 3 張的例子" data-vi="Ví dụ ở trang 3"></summary>
+      <div id="ex"></div></details>
+  </div>
+
+  <div id="qs"></div>
+</div>
+
+<script>
+"use strict";
+/*CORE-START  出題與判分（node 測試會把這一段單獨拿出來跑，不要在這一段用到 DOM） */
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const ri = (r, a, b) => a + Math.floor(r() * (b - a + 1));
+const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+const normSid = (s) => String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+
+/* 數字範圍（2026-11-17）：
+   第 1 題（騎車到學校）：自己估 σ₁ 4、5、6 分鐘；導航 App σ₂ 2、3 分鐘 → K 0.64–0.90。
+     σ₂ 不用 1：σ 會接近 1，σ² 和 σ 差不到容許誤差，學生忘了開根號也會被判對。
+   第 2 題（出隧道）：航位推算 σ₁ 6、8、10、12 m（第 6 張模擬 30 秒隧道，濾波器自己算的 σ 約 12 m）；
+     GNSS σ₂ 3、4、5 m（第 2 張 5 m、第 5 張 3 m）→ K 0.59–0.94。
+   兩題的差距 3 以上：答錯的幾種算法（取平均、用 1−K、方向反了）都會落在容許誤差外面。 */
+function gen(sid) {
+  const id = normSid(sid);
+  const r1 = mulberry(hash("w12kalman|1|" + id));
+  const q1 = { s1: pick(r1, [4, 5, 6]), s2: pick(r1, [2, 3]), x1: ri(r1, 18, 35) };
+  q1.x2 = q1.x1 + ri(r1, 3, 8) * (r1() < 0.5 ? -1 : 1);
+  const r2 = mulberry(hash("w12kalman|2|" + id));
+  const q2 = { s1: pick(r2, [6, 8, 10, 12]), s2: pick(r2, [3, 4, 5]), x1: ri(r2, 4000, 9000) / 10 };
+  q2.x2 = Math.round((q2.x1 + ri(r2, 30, 90) / 10 * (r2() < 0.5 ? -1 : 1)) * 10) / 10;
+  return { q1, q2 };
+}
+function solve(q) {
+  const v1 = q.s1 * q.s1, v2 = q.s2 * q.s2, K = v1 / (v1 + v2);
+  return { v1, v2, K, x: q.x1 + K * (q.x2 - q.x1), s: Math.sqrt((1 - K) * v1) };
+}
+/* 容許誤差：K 取兩位小數（±0.005）再拿去算 x 和 σ，答案也照要求的位數四捨五入，都要算對 */
+function tols(q) {
+  const S = solve(q), d = Math.abs(q.x2 - q.x1);
+  return { K: 0.0051, x: 0.0051 * d + 0.051, s: 0.0051 * q.s1 / (2 * Math.sqrt(1 - S.K)) + 0.0151 };
+}
+function parseNum(s) {
+  if (s == null) return NaN;
+  s = String(s).trim().replace(/％/g, "%").replace(/[\s]/g, "").replace(/[,，]/g, ".").replace(/[．。]/g, ".");
+  const pct = /%$/.test(s); s = s.replace(/%$/, "");
+  let v;
+  if (/^-?\d+(\.\d+)?\/\d+(\.\d+)?$/.test(s)) { const [a, b] = s.split("/"); v = +b ? +a / +b : NaN; }
+  else v = /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : NaN;
+  return pct ? v / 100 : v;
+}
+/* 判一格：回傳 { ok, code }；code 是錯的時候最可能的原因（給提示用） */
+function judge(q, f, raw) {
+  if (raw == null || String(raw).trim() === "") return { ok: false, code: "empty" };
+  const v = parseNum(raw);
+  if (isNaN(v)) return { ok: false, code: "nan" };
+  const S = solve(q), T = tols(q), near = (a, b, t) => Math.abs(a - b) <= t + 1e-9;
+  /* 認錯誤算法用的範圍：學生的 K 多半先取兩位小數，所以照 K 差 0.005 會帶出多少誤差來放寬 */
+  const mK = (b) => Math.max(0.0076, Math.abs(b) * 0.03);
+  if (f === "K") {
+    if (near(v, S.K, T.K)) return { ok: true };
+    if (near(v, q.s1 / (q.s1 + q.s2), mK(v)) || near(v, q.s2 / (q.s1 + q.s2), mK(v))) return { ok: false, code: "K_sigma" };
+    if (near(v, S.v2 / (S.v1 + S.v2), mK(v))) return { ok: false, code: "K_swap" };
+    if (v <= 0 || v >= 1) return { ok: false, code: "K_range" };
+    if (near(v, S.K, 0.02)) return { ok: false, code: "round2" };
+    return { ok: false, code: "gen" };
+  }
+  if (f === "x") {
+    const d = q.x2 - q.x1, mx = T.x * 1.5;
+    if (near(v, S.x, T.x)) return { ok: true };
+    if (near(v, (q.x1 + q.x2) / 2, mx)) return { ok: false, code: "x_avg" };
+    if (near(v, q.x1 + (1 - S.K) * d, mx)) return { ok: false, code: "x_1mk" };
+    if (near(v, q.x1 - S.K * d, mx)) return { ok: false, code: "x_sign" };
+    if (near(Math.abs(v), Math.abs(S.K * d), mx)) return { ok: false, code: "x_nobase" };
+    if (v < Math.min(q.x1, q.x2) - 1e-9 || v > Math.max(q.x1, q.x2) + 1e-9) return { ok: false, code: "x_out" };
+    if (near(v, S.x, 0.3)) return { ok: false, code: "round1" };
+    return { ok: false, code: "gen" };
+  }
+  /* f === "s" */
+  if (near(v, S.s, T.s)) return { ok: true };
+  if (near(v, (1 - S.K) * S.v1, 0.0051 * S.v1 + 0.03)) return { ok: false, code: "s_var" };
+  if (near(v, (1 - S.K) * q.s1, 0.0051 * q.s1 + 0.03)) return { ok: false, code: "s_nosq" };
+  if (near(v, Math.sqrt((1 - S.K) * S.v2), T.s * 1.5) || near(v, (1 - S.K) * S.v2, 0.0051 * S.v2 + 0.03)) return { ok: false, code: "s_v2" };
+  if (v >= Math.min(q.s1, q.s2)) return { ok: false, code: "s_big" };
+  if (near(v, S.s, 0.1)) return { ok: false, code: "round2" };
+  return { ok: false, code: "gen" };
+}
+/* 選擇題：3a 合起來的 σ 比兩個都小；3b σ₂ 變大 → K 變小 */
+const MC = { a: "small", b: "down" };
+/*CORE-END*/
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let LANG = "vi";
+{ const l = store.get("w12lang"); if (l === "zh" || l === "vi") LANG = l; }
+const L = (zh, vi) => (LANG === "zh" ? zh : vi);
+const fmt = (x, d) => { const s = Number(x).toFixed(d); return LANG === "vi" ? s.replace(".", ",") : s; };
+const fx = (x) => fmt(x, Number.isInteger(x) ? 0 : 1);
+
+/* ── 狀態（每個學號各存一份） ── */
+const FIELDS = { q1: ["K", "x", "s"], q2: ["K", "x", "s"] };
+let S = null, P = null;
+const blank = () => ({ ans: {}, ok: {}, code: {}, wrong: {}, tries: { q1: 0, q2: 0, q3: 0 }, done: null });
+const key = () => "w12kalman:" + normSid($("sid").value);
+function save() { if (S) store.set(key(), JSON.stringify(S)); store.set("w12kalman:name", $("name").value); store.set("w12kalman:sid", $("sid").value); }
+function load() {
+  const id = normSid($("sid").value);
+  if (id.length < 2) { S = null; P = null; return; }
+  P = gen(id); S = blank();
+  const j = store.get(key()); if (j) { try { Object.assign(S, JSON.parse(j)); } catch (e) {} }
+}
+
+/* ── 提示 ── */
+function hint(q, qk, f, code) {
+  const Q = P[q];
+  const tbl = {
+    empty: L("請先填答案。", "Hãy điền đáp án."),
+    nan: L("看不懂這個數字，請只填數字，例如 0.80。", "Không đọc được số này, chỉ điền số, ví dụ 0,80."),
+    K_sigma: L(`K 用的是變異數：σ 要先平方。σ₁² ＝ ${Q.s1 * Q.s1}，σ₂² ＝ ${Q.s2 * Q.s2}。`, `K dùng phương sai: phải bình phương σ trước. σ₁² = ${Q.s1 * Q.s1}, σ₂² = ${Q.s2 * Q.s2}.`),
+    K_swap: L("分子放的是 σ₁²（出發的那一個），不是 σ₂²。", "Tử số là σ₁² (cái xuất phát), không phải σ₂²."),
+    K_range: L("K 一定在 0 和 1 之間。", "K luôn nằm giữa 0 và 1."),
+    x_avg: L("這是取平均。卡曼濾波不是取平均：愈準的，權重愈大（第 2 張）。", "Đây là lấy trung bình. Kalman không lấy trung bình: nguồn chính xác hơn có trọng số lớn hơn (trang 2)."),
+    x_1mk: L("挪的是差距的 K 倍，不是 (1 − K) 倍。", "Dịch K lần khoảng cách, không phải (1 − K) lần."),
+    x_sign: L("方向反了：差距 ＝ x₂ − x₁，要往 x₂ 那邊挪。", "Ngược hướng rồi: khoảng cách = x₂ − x₁, phải dịch về phía x₂."),
+    x_nobase: L("這只是要挪的那一段，還要加上出發的 x₁。", "Đây mới là đoạn cần dịch, còn phải cộng với x₁ (điểm xuất phát)."),
+    x_out: L("合起來的結果，一定在 x₁ 和 x₂ 中間。", "Kết quả sau khi ghép luôn nằm giữa x₁ và x₂."),
+    s_var: L("這是 σ²（變異數），還要開根號。", "Đây là σ² (phương sai), còn phải khai căn."),
+    s_nosq: L("要乘 σ₁²（先平方），最後再開根號。", "Phải nhân với σ₁² (bình phương trước), cuối cùng mới khai căn."),
+    s_v2: L("公式是 (1 − K) × σ₁²，乘的是 σ₁²，不是 σ₂²。", "Công thức là (1 − K) × σ₁², nhân với σ₁², không phải σ₂²."),
+    s_big: L("合起來的 σ 一定比 σ₁、σ₂ 都小（第 2 張）。", "σ sau khi ghép luôn nhỏ hơn cả σ₁ và σ₂ (trang 2)."),
+    round1: L("很接近了。K 多留幾位小數再算，答案取一位小數。", "Gần đúng rồi. Giữ K nhiều chữ số hơn rồi tính lại, đáp án lấy một chữ số thập phân."),
+    round2: L("很接近了，取到小數點後兩位（四捨五入）。", "Gần đúng rồi, lấy hai chữ số thập phân (làm tròn)."),
+    gen: L("還不對，對照上面的公式再算一次。", "Chưa đúng, xem lại công thức ở trên rồi tính lại."),
+  };
+  let h = tbl[code] || tbl.gen;
+  /* 同一格錯兩次以上：把這一題的數字代進公式給他看，只差按計算機 */
+  if ((S.wrong[qk] || 0) >= 2 && code !== "empty" && code !== "nan") {
+    /* K 那一格還沒對的時候，x 和 σ 的提示只寫「K」，不把 K 的答案說出來 */
+    const kTxt = S.ok[q + "K"] ? String(S.ans[q + "K"]).trim() : "K";
+    const plug = f === "K" ? `K ＝ ${Q.s1 * Q.s1} ÷ (${Q.s1 * Q.s1} ＋ ${Q.s2 * Q.s2})`
+      : f === "x" ? `x ＝ ${fx(Q.x1)} ＋ ${kTxt} × (${fx(Q.x2)} − ${fx(Q.x1)})`
+      : `σ² ＝ (1 − ${kTxt}) × ${Q.s1 * Q.s1}　→　√`;
+    h += `<span class="plug">${esc(plug)}</span>`;
+  }
+  return h;
+}
+
+/* ── 題目 ── */
+function story(q) {
+  const Q = P[q];
+  if (q === "q1") {
+    const more = Q.x2 > Q.x1;
+    return {
+      tag: L("生活", "Đời sống"),
+      title: L("星期四早上，騎機車到學校要多久？", "Sáng thứ Năm, đi xe máy tới trường mất bao lâu?"),
+      body: L(`你自己憑經驗估：要 <b>${Q.x1} 分鐘</b>。可是你常常估不準，誤差大約 <b>${Q.s1} 分鐘</b>。手機的導航 App 說要 <b>${Q.x2} 分鐘</b>，${more ? "比你估的久" : "比你估的快"}；它比較準，誤差大約 <b>${Q.s2} 分鐘</b>。把兩個估計合起來（從你自己估的出發）：`,
+              `Bạn tự ước lượng theo kinh nghiệm: mất <b>${Q.x1} phút</b>. Nhưng bạn hay đoán không chuẩn, sai khoảng <b>${Q.s1} phút</b>. Ứng dụng chỉ đường trên điện thoại nói mất <b>${Q.x2} phút</b>, ${more ? "lâu hơn bạn đoán" : "nhanh hơn bạn đoán"}; nó chính xác hơn, sai khoảng <b>${Q.s2} phút</b>. Ghép hai ước lượng lại (bắt đầu từ ước lượng của bạn):`),
+      g1: L("你自己估", "Bạn tự ước lượng"), g2: L("導航 App", "Ứng dụng chỉ đường"),
+      u: L("分鐘", "phút"), xl: L("合起來，估要幾分鐘", "Sau khi ghép: mất bao nhiêu phút"),
+    };
+  }
+  return {
+    tag: L("自駕車", "Xe tự lái"),
+    title: L("出隧道的那一刻，車子在哪裡？", "Vừa ra khỏi hầm, xe đang ở đâu?"),
+    body: L(`自駕車在隧道裡開了 30 秒，收不到 GNSS，只能靠航位推算，位置愈來愈不確定（第 6 張）。出隧道的那一刻，航位推算說車子在這條路的 <b>${fmt(Q.x1, 1)} 公尺</b>處，誤差 σ₁ ＝ <b>${Q.s1} 公尺</b>。剛好收到第一筆 GNSS，說在 <b>${fmt(Q.x2, 1)} 公尺</b>處，σ₂ ＝ <b>${Q.s2} 公尺</b>。用卡曼濾波合起來（從航位推算出發）：`,
+            `Xe tự lái chạy trong hầm 30 giây, không nhận được GNSS, chỉ dựa vào dead reckoning, vị trí ngày càng không chắc chắn (trang 6). Vừa ra khỏi hầm, dead reckoning nói xe ở mét thứ <b>${fmt(Q.x1, 1)}</b> của con đường, sai số σ₁ = <b>${Q.s1} m</b>. Đúng lúc đó nhận được số đo GNSS đầu tiên, nói xe ở mét thứ <b>${fmt(Q.x2, 1)}</b>, σ₂ = <b>${Q.s2} m</b>. Dùng bộ lọc Kalman ghép lại (bắt đầu từ dead reckoning):`),
+    g1: L("航位推算", "Dead reckoning"), g2: "GNSS",
+    u: L("公尺", "m"), xl: L("合起來的位置", "Vị trí sau khi ghép"),
+  };
+}
+function fieldHtml(q, f, lab, unit) {
+  const k = q + f, ok = S.ok[k], tried = k in S.code;
+  const cls = ok ? "ok" : tried ? "bad" : "";
+  return `<div class="field ${cls}" id="f_${k}"><label for="i_${k}">${lab}</label>
+    <div class="row"><input type="text" id="i_${k}" inputmode="decimal" autocomplete="off" value="${esc(S.ans[k] || "")}"${ok ? " readonly" : ""}><span class="unit">${unit}</span><span class="mark">${ok ? "✓" : tried ? "✗" : ""}</span></div>
+    ${!ok && tried ? `<div class="hint">${hint(q, k, f, S.code[k])}</div>` : ""}</div>`;
+}
+function qOk(q) { return q === "q3" ? S.ok.q3a && S.ok.q3b : FIELDS[q].every((f) => S.ok[q + f]); }
+function render() {
+  document.documentElement.lang = LANG === "zh" ? "zh-Hant" : "vi";
+  $("btnZh").classList.toggle("on", LANG === "zh"); $("btnVi").classList.toggle("on", LANG === "vi");
+  document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
+  $("sid").placeholder = L("例如 A022", "ví dụ A022"); $("name").placeholder = L("姓名", "Họ tên");
+  $("ex").innerHTML = L("航位推算說 100.0 m、σ₁ ＝ 2 m；GNSS 說 103.0 m、σ₂ ＝ 5 m。<br>K ＝ 4 ÷ (4 ＋ 25) ≈ 0.14；x ＝ 100.0 ＋ 0.14 × 3.0 ≈ 100.4 m；σ² ＝ (1 − 0.14) × 4 ≈ 3.45，σ ≈ 1.86 m。",
+    "Dead reckoning: 100,0 m, σ₁ = 2 m; GNSS: 103,0 m, σ₂ = 5 m.<br>K = 4 ÷ (4 + 25) ≈ 0,14; x = 100,0 + 0,14 × 3,0 ≈ 100,4 m; σ² = (1 − 0,14) × 4 ≈ 3,45, σ ≈ 1,86 m.");
+  sq();
+  const qs = $("qs");
+  if (!S) {
+    qs.innerHTML = `<div class="panel"><div class="wait">${L("先在上面填學號，題目的數字才會出來。", "Điền mã số sinh viên ở trên trước, số liệu của đề mới hiện ra.")}</div></div>`;
+    $("done").style.display = "none"; return;
+  }
+  let h = "";
+  ["q1", "q2"].forEach((q, i) => {
+    const t = story(q), Q = P[q];
+    h += `<div class="panel" id="p_${q}"><h2><span class="tag">${t.tag}</span>${L(`第 ${i + 1} 題　`, `Câu ${i + 1}. `)}${t.title}</h2>
+      <div class="story">${t.body}</div>
+      <div class="given"><div>${t.g1}<b>x₁ ＝ ${q === "q1" ? Q.x1 : fmt(Q.x1, 1)}</b>σ₁ ＝ ${Q.s1} ${t.u}</div><div>${t.g2}<b>x₂ ＝ ${q === "q1" ? Q.x2 : fmt(Q.x2, 1)}</b>σ₂ ＝ ${Q.s2} ${t.u}</div></div>
+      ${fieldHtml(q, "K", L("① 卡曼增益 K（取兩位小數）", "① Hệ số Kalman K (hai chữ số thập phân)"), "")}
+      ${fieldHtml(q, "x", L(`② ${t.xl}（取一位小數）`, `② ${t.xl} (một chữ số thập phân)`), t.u)}
+      ${fieldHtml(q, "s", L("③ 合起來的 σ（取兩位小數）", "③ σ sau khi ghép (hai chữ số thập phân)"), t.u)}
+      ${qOk(q) ? `<div class="qok">✓ ${L("這一題全對", "Câu này đúng hết")}</div>` : `<button class="main" data-chk="${q}">${L("檢查這一題", "Kiểm tra câu này")}</button>`}</div>`;
+  });
+  const sel = (id, opts) => `<select id="${id}">${[["", L("— 請選 —", "— chọn —")], ...opts].map(([v, t]) => `<option value="${v}"${S.ans[id] === v ? " selected" : ""}>${t}</option>`).join("")}</select>`;
+  const mk = (id) => (S.ok[id] ? `<span style="color:var(--ok);font-weight:700">✓</span>` : (id in S.code ? `<span style="color:var(--red);font-weight:700">✗</span>` : ""));
+  h += `<div class="panel" id="p_q3"><h2><span class="tag">${L("想一想", "Suy nghĩ")}</span>${L("第 3 題　兩個選擇題", "Câu 3. Hai câu chọn")}</h2>
+    <label for="q3a">${mk("q3a")} ${L("a. 你在第 2 題算出來的 σ，跟 σ₁、σ₂ 比起來：", "a. σ bạn tính được ở câu 2, so với σ₁ và σ₂:")}</label>
+    ${sel("q3a", [["mid", L("在 σ₁ 和 σ₂ 中間", "Nằm giữa σ₁ và σ₂")], ["small", L("比 σ₁、σ₂ 都小", "Nhỏ hơn cả σ₁ và σ₂")], ["big", L("比 σ₁、σ₂ 都大", "Lớn hơn cả σ₁ và σ₂")]])}
+    ${!S.ok.q3a && "q3a" in S.code ? `<div class="hint">${L("回去看你第 2 題算的 σ，跟題目給的 σ₁、σ₂ 比一比。", "Xem lại σ bạn tính ở câu 2, so với σ₁ và σ₂ trong đề.")}</div>` : ""}
+    <label for="q3b">${mk("q3b")} ${L("b. 同一題，如果那一筆 GNSS 被旁邊的大樓反射，σ₂ 變成 20 公尺，K 會：", "b. Cũng câu 2, nếu số đo GNSS đó bị nhà cao tầng bên cạnh phản xạ, σ₂ thành 20 m, thì K sẽ:")}</label>
+    ${sel("q3b", [["up", L("變大，更相信 GNSS", "Lớn hơn, tin GNSS hơn")], ["same", L("不變", "Không đổi")], ["down", L("變小，比較相信航位推算", "Nhỏ hơn, tin dead reckoning hơn")]])}
+    ${!S.ok.q3b && "q3b" in S.code ? `<div class="hint">${L("σ₂ 變大，K ＝ σ₁² ÷ (σ₁² ＋ σ₂²) 的分母就變大。", "σ₂ lớn lên thì mẫu số của K = σ₁² ÷ (σ₁² + σ₂²) lớn lên.")}</div>` : ""}
+    ${qOk("q3") ? `<div class="qok">✓ ${L("這一題全對", "Câu này đúng hết")}</div>` : `<button class="main" data-chk="q3">${L("檢查這一題", "Kiểm tra câu này")}</button>`}</div>`;
+  qs.innerHTML = h;
+  renderDone();
+}
+function renderDone() {
+  const box = $("done");
+  const all = S && qOk("q1") && qOk("q2") && qOk("q3");
+  if (!all) { box.style.display = "none"; return; }
+  if (!S.done) { S.done = Date.now(); save(); }
+  const nm = $("name").value.trim(), sid = normSid($("sid").value);
+  const t = new Date(S.done), p2 = (n) => String(n).padStart(2, "0");
+  const when = `${t.getFullYear()}/${p2(t.getMonth() + 1)}/${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`;
+  const row = (q, lab, u) => { const Q = P[q]; return `<tr><th>${lab}</th><td>σ₁ ${Q.s1}、σ₂ ${Q.s2} → K ${esc(S.ans[q + "K"])}、x ${esc(S.ans[q + "x"])} ${u}、σ ${esc(S.ans[q + "s"])} ${u}</td></tr>`; };
+  box.innerHTML = `<div class="big">✓ ${L("三題全對！", "Đúng cả ba câu!")}</div>
+    <div class="who">${nm ? esc(nm) : `<span style="color:var(--red)">${L("（下面還沒填姓名）", "(chưa điền họ tên ở bên dưới)")}</span>`}　${esc(sid)}</div>
+    <div class="when">${L("完成時間", "Hoàn thành lúc")} ${when}</div>
+    <table>${row("q1", L("第 1 題", "Câu 1"), L("分", "phút"))}${row("q2", L("第 2 題", "Câu 2"), "m")}
+      <tr><th>${L("檢查次數", "Số lần kiểm tra")}</th><td>${S.tries.q1}／${S.tries.q2}／${S.tries.q3}</td></tr></table>
+    <div class="go">${L("把這個畫面截圖，傳到 LINE 群組，就可以先下課休息。", "Chụp màn hình này, gửi vào nhóm LINE, rồi được nghỉ giải lao trước.")}</div>`;
+  box.style.display = "block";
+}
+
+/* ── 動作 ── */
+function check(q) {
+  if (!S) return;
+  S.tries[q] = (S.tries[q] || 0) + 1;
+  if (q === "q3") {
+    ["a", "b"].forEach((x) => { const id = "q3" + x, v = $(id).value; S.ans[id] = v; S.ok[id] = v === MC[x]; S.code[id] = S.ok[id] ? "ok" : "bad"; });
+  } else {
+    FIELDS[q].forEach((f) => {
+      const k = q + f, raw = $("i_" + k).value; S.ans[k] = raw;
+      const r = judge(P[q], f, raw); S.ok[k] = r.ok; S.code[k] = r.ok ? "ok" : r.code;
+      if (!r.ok && r.code !== "empty") S.wrong[k] = (S.wrong[k] || 0) + 1;
+    });
+  }
+  const wasDone = !!S.done;
+  save(); render();
+  if (!wasDone && S.done) $("done").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function sq() {
+  const v = parseNum($("sqIn").value);
+  $("sqOut").textContent = isNaN(v) || v < 0 ? "—" : fmt(Math.sqrt(v), 3);
+}
+$("qs").addEventListener("click", (e) => { const b = e.target.closest("[data-chk]"); if (b) check(b.dataset.chk); });
+$("qs").addEventListener("input", (e) => { if (S && e.target.id && e.target.id.startsWith("i_")) { S.ans[e.target.id.slice(2)] = e.target.value; save(); } });
+$("qs").addEventListener("change", (e) => { if (S && e.target.tagName === "SELECT") { S.ans[e.target.id] = e.target.value; save(); } });
+$("sqIn").addEventListener("input", sq);
+$("sid").addEventListener("input", () => { load(); save(); render(); });
+$("name").addEventListener("input", () => { save(); if (S && S.done) renderDone(); });
+$("btnZh").onclick = () => { LANG = "zh"; store.set("w12lang", LANG); render(); };
+$("btnVi").onclick = () => { LANG = "vi"; store.set("w12lang", LANG); render(); };
+$("name").value = store.get("w12kalman:name") || "";
+$("sid").value = store.get("w12kalman:sid") || "";
+load(); render();
+</script>
+</body>
+</html>
