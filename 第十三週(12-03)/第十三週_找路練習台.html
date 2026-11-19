@@ -165,7 +165,8 @@ function nearObs(obs, x, y) {
   for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if ((dx || dy) && obs.has(K(x + dx, y + dy))) return true;
   return false;
 }
-/* 回傳 { order: 依序看過的格子, path, len（幾何長度）, cost（含懲罰）, hug（路上有幾格緊貼障礙物） } */
+/* 回傳 { order: 依序看過的格子, path, len（幾何長度）, cost（含懲罰）, hug（路上有幾格緊貼障礙物）,
+          info: 每看一格時它的 g、h、f, fronts: 看完第 i 格後還在排隊名單裡的格子（fronts[0]＝一開始，只有 S） } */
 function search(map, useH, pen) {
   const { obs, S, G } = map;
   const heap = [];
@@ -174,15 +175,16 @@ function search(map, useH, pen) {
   // 同樣的 f，先看 h 小的（離終點近的），再看先放進去的：結果固定、跟 Python 版一樣
   const less = (a, b) => a.f < b.f - 1e-9 || (Math.abs(a.f - b.f) <= 1e-9 && (a.h < b.h - 1e-9 || (Math.abs(a.h - b.h) <= 1e-9 && a.seq < b.seq)));
   let seq = 0;
-  const g = new Map([[K(...S), 0]]), came = new Map(), seen = new Set(), order = [];
+  const g = new Map([[K(...S), 0]]), came = new Map(), seen = new Set(), order = [], info = [], fronts = [[K(...S)]];
+  const front = () => [...g.keys()].filter((k) => !seen.has(k));
   const h0 = useH ? octile(S, G) : 0;
   push({ f: h0, h: h0, g: 0, p: S, seq: seq++ });
   let found = false;
   while (heap.length) {
     const cur = pop(); const ck = K(...cur.p);
     if (seen.has(ck)) continue;
-    seen.add(ck); order.push(cur.p);
-    if (cur.p[0] === G[0] && cur.p[1] === G[1]) { found = true; break; }
+    seen.add(ck); order.push(cur.p); info.push({ g: cur.g, h: cur.h, f: cur.f });
+    if (cur.p[0] === G[0] && cur.p[1] === G[1]) { found = true; fronts.push(front()); break; }
     for (const [dx, dy, w] of STEPS8) {
       const nx = cur.p[0] + dx, ny = cur.p[1] + dy;
       if (nx < 0 || ny < 0 || nx >= W || ny >= H || obs.has(K(nx, ny))) continue;
@@ -195,13 +197,14 @@ function search(map, useH, pen) {
         push({ f: ng + hh, h: hh, g: ng, p: [nx, ny], seq: seq++ });
       }
     }
+    fronts.push(front());
   }
-  if (!found) return { order, path: null, len: null, cost: null, hug: null, found };
+  if (!found) return { order, path: null, len: null, cost: null, hug: null, found, info, fronts };
   const path = [G]; while (K(...path[path.length - 1]) !== K(...S)) path.push(came.get(K(...path[path.length - 1])));
   path.reverse();
   let len = 0; for (let i = 1; i < path.length; i++) len += (path[i][0] !== path[i - 1][0] && path[i][1] !== path[i - 1][1]) ? 1.4 : 1;
   const hug = path.filter(([x, y]) => nearObs(obs, x, y)).length;
-  return { order, path, len: Math.round(len * 10) / 10, cost: Math.round(g.get(K(...G)) * 10) / 10, hug, found };
+  return { order, path, len: Math.round(len * 10) / 10, cost: Math.round(g.get(K(...G)) * 10) / 10, hug, found, info, fronts };
 }
 /* 安全距離（RSS 最簡單的情況，跟第 2 節一樣）：反應 0.3 s、反應時間內不加速、我至少 4 m/s²、前車最猛 8 m/s² */
 function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -266,6 +269,16 @@ function draw() {
     ctx.fillStyle = MAP.obs.has(k) ? "#8A97A8" : seen.has(k) ? "#17786F" : "#33496A";
     ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2);
   }
+  if (shown && shown.stepping && shown.n < shown.order.length) {          // 一步一步找：排隊中＝粗綠框，下一個要看＝白框
+    const lw = Math.max(2, Math.round(cell / 11));
+    for (const k of shown.fronts[shown.n]) {
+      const [x, y] = k.split(",").map(Number);
+      ctx.fillStyle = "#24606E"; ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2);
+      ctx.strokeStyle = "#00A896"; ctx.lineWidth = lw; ctx.strokeRect(x * cell + 1 + lw / 2, y * cell + 1 + lw / 2, cell - 2 - lw, cell - 2 - lw);
+    }
+    const [nx, ny] = shown.order[shown.n];
+    ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = lw + 1; ctx.strokeRect(nx * cell + 1, ny * cell + 1, cell - 2, cell - 2);
+  }
   if (shown && shown.n >= shown.order.length && shown.path) {
     ctx.strokeStyle = "#FFB020"; ctx.lineWidth = Math.max(3, cell / 6); ctx.lineJoin = "round"; ctx.beginPath();
     shown.path.forEach(([x, y], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, (x + 0.5) * cell, (y + 0.5) * cell)); ctx.stroke();
@@ -289,7 +302,7 @@ function applyTool(x, y, first) {
     if (first) paintVal = tool === "wall";
     if (paintVal) MAP.obs.add(k); else MAP.obs.delete(k);
   }
-  edited = true; stopAnim(); shown = null; RUN = null; renderRes(); draw();
+  edited = true; stopAnim(); shown = null; RUN = null; renderRes(); draw(); setStepLabel();
   document.querySelectorAll("[data-preset]").forEach((b) => b.classList.remove("on"));   // 改過地圖就不是原本的預設地圖了
 }
 cv.addEventListener("pointerdown", (e) => { painting = true; cv.setPointerCapture(e.pointerId); applyTool(...cellAt(e), true); });
@@ -298,17 +311,18 @@ cv.addEventListener("pointerup", () => { painting = false; });
 
 /* ── 找路 ── */
 function stopAnim() { if (anim) { clearInterval(anim); anim = null; } }
+/* 2026-11-19：「一步一步找」改成每按一下看一格（原本是計時器自動播，一按就跑完）。
+   第一下只開始：白框在 S；之後每按一下，白框那格變綠、旁邊能走的排進名單（粗綠框）、名單裡 f 最小的變成新的白框。 */
+const stepping = () => !!(shown && shown.stepping && shown.n < shown.order.length);
+function setStepLabel() { $("btnStep").textContent = stepping() ? L("下一步", "Bước tiếp") : L("一步一步找", "Tìm từng bước"); }
 function run(step) {
+  if (step && stepping()) { shown.n++; if (shown.n >= shown.order.length) shown.stepping = false; draw(); renderRes(stepping()); setStepLabel(); return; }
   stopAnim();
   const pen = +$("pen").value;
   const r = search(MAP, algo === "astar", pen);
   RUN = { preset: presetName, edited, algo, pen, found: r.found, looked: r.order.length, len: r.len, cost: r.cost, hug: r.hug };
-  shown = { order: r.order, path: r.path, n: step ? 0 : r.order.length };
-  if (step) {
-    const per = Math.max(1, Math.ceil(r.order.length / 80));
-    anim = setInterval(() => { shown.n = Math.min(shown.order.length, shown.n + per); draw(); renderRes(true); if (shown.n >= shown.order.length) { stopAnim(); renderRes(); } }, 40);
-  }
-  draw(); renderRes(step);
+  shown = { order: r.order, path: r.path, info: r.info, fronts: r.fronts, n: step ? 0 : r.order.length, stepping: step };
+  draw(); renderRes(step); setStepLabel();
 }
 function renderRes(running) {
   const n = shown ? shown.n : 0;
@@ -316,7 +330,15 @@ function renderRes(running) {
     + `<div>${L("路長", "Đường dài")}<b>${RUN && RUN.found && !running ? fmt(RUN.len) : "—"}</b></div>`
     + `<div>${L("貼著障礙物走", "Đi sát vật cản")}<b>${RUN && RUN.found && !running ? RUN.hug + " " + L("格", "ô") : "—"}</b></div>`;
   const m = $("msg"); m.className = "msg";
-  if (!RUN || running) m.textContent = running ? L("找路中…綠色＝已經看過的格子", "Đang tìm… xanh = ô đã xem") : L("按「一步一步找」看它怎麼找，或按「直接找」。", "Bấm «Tìm từng bước» để xem cách tìm, hoặc «Tìm ngay».");
+  if (running && stepping()) {
+    const q = shown.fronts[shown.n].length;
+    if (n === 0) m.textContent = L("白框＝下一個要看的格子，一開始只有 S。按「下一步」，每按一下看一格；不想一直按，可以按「直接找」。",
+                                   "Khung trắng = ô sẽ xem tiếp, lúc đầu chỉ có S. Bấm «Bước tiếp», mỗi lần xem một ô; không muốn bấm mãi thì bấm «Tìm ngay».");
+    else { const i = shown.info[n - 1];
+      m.textContent = L(`第 ${n} 步：剛看完的格子 g ${fmt(i.g)} ＋ h ${fmt(i.h)} ＝ f ${fmt(i.f)}，變綠色；它旁邊能走的排進名單（粗綠框），現在排隊中 ${q} 格。白框＝名單裡 f 最小、下一個要看的。`,
+                        `Bước ${n}: ô vừa xem g ${fmt(i.g)} + h ${fmt(i.h)} = f ${fmt(i.f)}, thành màu xanh; ô bên cạnh đi được vào danh sách (viền xanh đậm), đang chờ ${q} ô. Khung trắng = ô có f nhỏ nhất, xem tiếp.`); }
+  }
+  else if (!RUN || running) m.textContent = running ? L("找路中…綠色＝已經看過的格子", "Đang tìm… xanh = ô đã xem") : L("按「一步一步找」，每按一下看一格；或按「直接找」。", "Bấm «Tìm từng bước», mỗi lần bấm xem một ô; hoặc «Tìm ngay».");
   else if (!RUN.found) { m.className = "msg bad"; m.textContent = L(`找不到路：看了 ${RUN.looked} 格，終點被包住了。`, `Không có đường: đã xem ${RUN.looked} ô, đích bị bao kín.`); }
   else m.textContent = L(`找到了：${algo === "astar" ? "A*" : "不猜方向"}，看了 ${RUN.looked} 格，路長 ${fmt(RUN.len)}${RUN.pen ? `（離障礙物遠一點＝${RUN.pen}）` : ""}。`,
                          `Tìm thấy: ${algo === "astar" ? "A*" : "không đoán hướng"}, xem ${RUN.looked} ô, đường dài ${fmt(RUN.len)}${RUN.pen ? ` (tránh xa vật cản = ${RUN.pen})` : ""}.`);
@@ -416,9 +438,9 @@ function render() {
     .map(([k, zh, vi]) => `<button data-tool="${k}" class="${tool === k ? "on" : ""}">${L(zh, vi)}</button>`).join("");
   $("algos").innerHTML = [["astar", "A*", "A*"], ["dijkstra", "不猜方向", "Không đoán hướng"]]
     .map(([k, zh, vi]) => `<button data-algo="${k}" class="${algo === k ? "on" : ""}">${L(zh, vi)}</button>`).join("");
-  $("legend").innerHTML = `<span><i style="background:#8A97A8"></i>${L("障礙物", "vật cản")}</span><span><i style="background:#17786F"></i>${L("看過的格子", "ô đã xem")}</span><span><i style="background:#FFB020"></i>${L("找到的路", "đường tìm được")}</span>`;
+  $("legend").innerHTML = `<span><i style="background:#8A97A8"></i>${L("障礙物", "vật cản")}</span><span><i style="background:#17786F"></i>${L("看過的格子", "ô đã xem")}</span><span><i style="background:#24606E;box-shadow:inset 0 0 0 2px #00A896"></i>${L("排隊中（還沒看）", "đang chờ")}</span><span><i style="background:#33496A;box-shadow:inset 0 0 0 2px #FFFFFF,0 0 0 1.5px #33496A"></i>${L("下一個要看", "xem tiếp")}</span><span><i style="background:#FFB020"></i>${L("找到的路", "đường tìm được")}</span>`;
   $("penLab").textContent = L(`離障礙物遠一點：${$("pen").value}（走進緊貼障礙物的格子，每格多算這麼多）`, `Tránh xa vật cản: ${$("pen").value} (đi vào ô sát vật cản thì cộng thêm từng này)`);
-  $("btnStep").textContent = L("一步一步找", "Tìm từng bước"); $("btnRun").textContent = L("直接找", "Tìm ngay"); $("btnClear").textContent = L("清掉結果", "Xóa kết quả");
+  setStepLabel(); $("btnRun").textContent = L("直接找", "Tìm ngay"); $("btnClear").textContent = L("清掉結果", "Xóa kết quả");
   renderRes(); renderTasks(); draw();
 }
 document.addEventListener("click", (e) => {
@@ -429,7 +451,7 @@ document.addEventListener("click", (e) => {
   else if (b.dataset.grab) grab(b.dataset.grab);
   else if (b.id === "btnStep") run(true);
   else if (b.id === "btnRun") run(false);
-  else if (b.id === "btnClear") { stopAnim(); shown = null; RUN = null; draw(); renderRes(); }
+  else if (b.id === "btnClear") { stopAnim(); shown = null; RUN = null; draw(); renderRes(); setStepLabel(); }
   else if (b.id === "t5btn") rssCheck();
   else if (b.id === "btnZh") { LANG = "zh"; store.set("w12lang", LANG); render(); }
   else if (b.id === "btnVi") { LANG = "vi"; store.set("w12lang", LANG); render(); }
