@@ -297,8 +297,8 @@ function render() {
   $("btnZh").classList.toggle("on", LANG === "zh"); $("btnVi").classList.toggle("on", LANG === "vi");
   document.querySelectorAll("[data-zh]").forEach((el) => { el.textContent = el.dataset[LANG]; });
   $("sid").placeholder = L("例如 A022", "ví dụ A022"); $("name").placeholder = L("姓名", "Họ tên");
-  $("ex").innerHTML = L("航位推算說 100.0 m、σ₁ ＝ 2 m；GNSS 說 103.0 m、σ₂ ＝ 5 m。<br>K ＝ 4 ÷ (4 ＋ 25) ≈ 0.14；x ＝ 100.0 ＋ 0.14 × 3.0 ≈ 100.4 m；σ² ＝ (1 − 0.14) × 4 ≈ 3.45，σ ≈ 1.86 m。",
-    "Dead reckoning: 100,0 m, σ₁ = 2 m; GNSS: 103,0 m, σ₂ = 5 m.<br>K = 4 ÷ (4 + 25) ≈ 0,14; x = 100,0 + 0,14 × 3,0 ≈ 100,4 m; σ² = (1 − 0,14) × 4 ≈ 3,45, σ ≈ 1,86 m.");
+  $("ex").innerHTML = L("航位推算說 100.0 m、σ₁ ＝ 2 m；GNSS 說 103.0 m、σ₂ ＝ 5 m。<br>K ＝ 4 ÷ (4 ＋ 25) ≈ 0.138（取兩位是 0.14）；x ＝ 100.0 ＋ 0.138 × 3.0 ≈ 100.4 m；σ² ＝ (1 − 0.138) × 4 ≈ 3.45，σ ≈ 1.86 m。",
+    "Dead reckoning: 100,0 m, σ₁ = 2 m; GNSS: 103,0 m, σ₂ = 5 m.<br>K = 4 ÷ (4 + 25) ≈ 0,138 (lấy hai chữ số: 0,14); x = 100,0 + 0,138 × 3,0 ≈ 100,4 m; σ² = (1 − 0,138) × 4 ≈ 3,45, σ ≈ 1,86 m.");
   sq();
   const qs = $("qs");
   if (!S) {

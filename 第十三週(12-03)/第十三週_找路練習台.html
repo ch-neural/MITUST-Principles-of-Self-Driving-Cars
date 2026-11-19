@@ -172,7 +172,7 @@ function search(map, useH, pen) {
   const heap = [];
   const push = (n) => { heap.push(n); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (less(heap[i], heap[p])) { [heap[i], heap[p]] = [heap[p], heap[i]]; i = p; } else break; } };
   const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && less(heap[l], heap[m])) m = l; if (r < heap.length && less(heap[r], heap[m])) m = r; if (m === i) break; [heap[i], heap[m]] = [heap[m], heap[i]]; i = m; } } return top; };
-  // 同樣的 f，先看 h 小的（離終點近的），再看先放進去的：結果固定、跟 Python 版一樣
+  // 同樣的 f，先看 h 小的（離終點近的），再看先放進去的：結果固定。簡報的動畫（Python）同分時先看 g 小的，所以同分的格子先後順序可能跟簡報不同，路長與格數不受影響
   const less = (a, b) => a.f < b.f - 1e-9 || (Math.abs(a.f - b.f) <= 1e-9 && (a.h < b.h - 1e-9 || (Math.abs(a.h - b.h) <= 1e-9 && a.seq < b.seq)));
   let seq = 0;
   const g = new Map([[K(...S), 0]]), came = new Map(), seen = new Set(), order = [], info = [], fronts = [[K(...S)]];
@@ -230,6 +230,7 @@ function judgeRss(q, raw) {
   if (!q.stopped && near(v, q.react + q.me)) return { ok: false, code: "nofront" };
   if (near(v, q.react + q.ms / 8 - (q.stopped ? 0 : q.ms / 16)) || near(v, q.react + q.ms / 4 - (q.stopped ? 0 : q.ms / 8))) return { ok: false, code: "nosq" };
   if (near(v, q.me - q.front)) return { ok: false, code: "noreact" };
+  if (q.stopped && near(v, q.react + q.me - q.ms * q.ms / 16)) return { ok: false, code: "stopfront" };   // 前車停著，卻還減了前車的煞車距離
   return { ok: false, code: "gen" };
 }
 /*CORE-END*/
@@ -375,7 +376,8 @@ function renderTasks() {
     nofront: L("前車也在動：還要減掉前車的煞車距離。", "Xe trước cũng đang chạy: phải trừ quãng phanh của xe trước."),
     nosq: L("煞車距離要用速度的平方：v² ÷（2 × 減速度）。", "Quãng phanh dùng bình phương tốc độ: v² ÷ (2 × gia tốc phanh)."),
     noreact: L("別忘了反應的 0.3 秒，這段時間車子還在開。", "Đừng quên 0,3 s phản ứng, lúc đó xe vẫn chạy."),
-    gen: L("還不對：反應距離＋我煞車距離－前車煞車距離。", "Chưa đúng: quãng phản ứng + mình phanh − xe trước phanh.") };
+    stopfront: L("前車停著，不會再往前滑：不用減前車的煞車距離。", "Xe trước đang đứng yên, không trượt thêm: không trừ quãng phanh của xe trước."),
+    gen: q.stopped ? L("還不對：前車停著，只要算 反應距離＋我煞車距離。", "Chưa đúng: xe trước đứng yên, chỉ tính quãng phản ứng + mình phanh.") : L("還不對：反應距離＋我煞車距離－前車煞車距離。", "Chưa đúng: quãng phản ứng + mình phanh − xe trước phanh.") };
   $("tasks").innerHTML = `<h2>${L("五個任務", "Năm nhiệm vụ")}</h2>
     <div class="task"><h3>1. ${L("A* 找路", "A* tìm đường")}${st(T.t1)}</h3>
       <p>${L("地圖選「停車場」，方法選「A*」，「離障礙物遠一點」＝0，找到路以後按「記下來」。", "Chọn bản đồ «Bãi đỗ xe», cách «A*», «tránh xa vật cản» = 0; tìm thấy đường rồi bấm «Ghi lại».")}</p>
