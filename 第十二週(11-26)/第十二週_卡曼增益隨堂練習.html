@@ -45,6 +45,14 @@
   .field.bad .mark{color:var(--red)}
   .hint{font-size:12.5px;color:#7A1F1A;background:#FDECEA;border-radius:8px;padding:6px 9px;margin-top:5px;line-height:1.5}
   .hint .plug{display:block;color:var(--navy);font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  /* 每一格旁的「提示」鈕（2026-11-24 使用者要求）：按了顯示這一格的算法，代入學生自己的數字，不算出答案 */
+  .hbtn{flex:0 0 auto;font-size:12.5px;padding:7px 9px;border-color:#F3D98B;background:#FFF8E6;color:#7A4E00;font-weight:700}
+  .hbtn.on{background:#F3D98B}
+  .selrow{display:flex;gap:8px;align-items:center}
+  .selrow select{flex:1 1 auto}
+  .tip{display:none;font-size:12.5px;color:#5A4300;background:#FFF8E6;border:1px solid #F3D98B;border-radius:8px;padding:7px 10px;margin-top:5px;line-height:1.6}
+  .tip.on{display:block}
+  .tip .plug{display:block;color:var(--navy);font-weight:700;font-variant-numeric:tabular-nums;margin:2px 0}
   .qok{font-size:13px;color:var(--ok);font-weight:700;margin-top:8px}
   .formula{background:#FFF8E6;border:1px solid #F3D98B;border-radius:10px;padding:10px 12px;margin-bottom:10px}
   .formula h2{color:#7A4E00}
@@ -261,6 +269,35 @@ function hint(q, qk, f, code) {
   return h;
 }
 
+/* ── 提示鈕：這一格怎麼算（代入這位同學的數字，最後一步留給他按計算機） ── */
+const TIP_OPEN = new Set();          // 哪幾格的提示是打開的（重畫時保持）
+function tipHtml(q, f) {
+  if (q === "q3") return {
+    q3a: L("看你第 2 題算出來的 σ，跟題目的 σ₁、σ₂ 比一比。也可以看公式 ③：σ² ＝ (1 − K) × σ₁²，K 在 0 和 1 之間，所以 (1 − K) 比 1 小。",
+           "So σ bạn tính ở câu 2 với σ₁, σ₂ trong đề. Cũng có thể xem công thức ③: σ² = (1 − K) × σ₁², K nằm giữa 0 và 1 nên (1 − K) nhỏ hơn 1."),
+    q3b: L("代進公式 ①：σ₂ ＝ 0.1，σ₂² ＝ 0.1 × 0.1 ＝ 0.01。" + `K ＝ ${P.q2.s1 * P.q2.s1} ÷ (${P.q2.s1 * P.q2.s1} ＋ 0.01)，分母跟分子幾乎一樣大。`,
+           "Thay vào công thức ①: σ₂ = 0,1, σ₂² = 0,1 × 0,1 = 0,01. " + `K = ${P.q2.s1 * P.q2.s1} ÷ (${P.q2.s1 * P.q2.s1} + 0,01), mẫu số gần bằng tử số.`),
+    q3c: L("收不到 GNSS，就等於它的 σ₂ 是無限大：K ＝ σ₁² ÷ (σ₁² ＋ 無限大)，分母無限大。也可以想：沒有量測，就沒有東西可以往那邊挪。",
+           "Không nhận được GNSS nghĩa là σ₂ lớn vô cùng: K = σ₁² ÷ (σ₁² + vô cùng), mẫu số lớn vô cùng. Cũng có thể nghĩ: không có số đo thì không có gì để dịch về phía đó."),
+  }[f];
+  const Q = P[q], v1 = Q.s1 * Q.s1, v2 = Q.s2 * Q.s2;
+  const X = (x) => (q === "q1" ? fx(x) : fmt(x, 1));
+  const kOk = S.ok[q + "K"], kTxt = kOk ? String(S.ans[q + "K"]).trim() : "K";
+  const kNote = kOk ? "" : L("（K 用你第 ① 格的答案）", " (K lấy đáp án ô ① của bạn)");
+  const P_ = (t) => `<span class="plug">${esc(LANG === "vi" ? t.replace(/＝/g, "=").replace(/＋/g, "+") : t)}</span>`;   // 越南文用半形符號
+  if (f === "K") return L(`公式 ①：K ＝ σ₁² ÷ (σ₁² ＋ σ₂²)。先把兩個 σ 平方：σ₁² ＝ ${Q.s1} × ${Q.s1} ＝ ${v1}，σ₂² ＝ ${Q.s2} × ${Q.s2} ＝ ${v2}。代進去：`,
+                           `Công thức ①: K = σ₁² ÷ (σ₁² + σ₂²). Bình phương hai σ trước: σ₁² = ${Q.s1} × ${Q.s1} = ${v1}, σ₂² = ${Q.s2} × ${Q.s2} = ${v2}. Thay vào:`)
+    + P_(`K ＝ ${v1} ÷ (${v1} ＋ ${v2})`) + L("用計算機算，取到小數點後兩位。分子放 σ₁²（出發的那一個）。", "Bấm máy tính, lấy hai chữ số thập phân. Tử số là σ₁² (cái xuất phát).");
+  if (f === "x") return L(`公式 ②：x ＝ x₁ ＋ K × (x₂ − x₁)。從 x₁ 出發，往 x₂ 挪「差距的 K 倍」${kNote}：`,
+                           `Công thức ②: x = x₁ + K × (x₂ − x₁). Bắt đầu từ x₁, dịch về phía x₂ «K lần khoảng chênh»${kNote}:`)
+    + P_(`x ＝ ${X(Q.x1)} ＋ ${kTxt} × (${X(Q.x2)} − ${X(Q.x1)})`) + L("先算括號裡的差距（可能是負的），乘上 K，再加 x₁，取一位小數。答案一定在 x₁ 和 x₂ 中間。", "Tính khoảng chênh trong ngoặc trước (có thể âm), nhân K, rồi cộng x₁, lấy một chữ số thập phân. Đáp án luôn nằm giữa x₁ và x₂.");
+  return L(`公式 ③：σ² ＝ (1 − K) × σ₁²，再開根號。只用 K 和 σ₁² ＝ ${v1}，不要用第 ② 格的 x${kNote}：`,
+           `Công thức ③: σ² = (1 − K) × σ₁², rồi khai căn. Chỉ dùng K và σ₁² = ${v1}, không dùng x ở ô ②${kNote}:`)
+    + P_(`σ² ＝ (1 − ${kTxt}) × ${v1}　→　σ ＝ √σ²`) + L("算出 σ² 以後，用最上面的「開根號小幫手」開根號，取兩位小數。σ 一定比 σ₁、σ₂ 都小。", "Tính ra σ² rồi dùng «máy khai căn» ở trên cùng để khai căn, lấy hai chữ số thập phân. σ luôn nhỏ hơn cả σ₁ và σ₂.");
+}
+const tipBtn = (k) => `<button type="button" class="hbtn${TIP_OPEN.has(k) ? " on" : ""}" data-tip="${k}">${L("提示", "Gợi ý")}</button>`;
+const tipBox = (k, q, f) => `<div class="tip${TIP_OPEN.has(k) ? " on" : ""}" id="t_${k}">${tipHtml(q, f)}</div>`;
+
 /* ── 題目 ── */
 function story(q) {
   const Q = P[q];
@@ -288,7 +325,8 @@ function fieldHtml(q, f, lab, unit) {
   const k = q + f, ok = S.ok[k], tried = k in S.code;
   const cls = ok ? "ok" : tried ? "bad" : "";
   return `<div class="field ${cls}" id="f_${k}"><label for="i_${k}">${lab}</label>
-    <div class="row"><input type="text" id="i_${k}" inputmode="decimal" autocomplete="off" value="${esc(S.ans[k] || "")}"${ok ? " readonly" : ""}><span class="unit">${unit}</span><span class="mark">${ok ? "✓" : tried ? "✗" : ""}</span></div>
+    <div class="row"><input type="text" id="i_${k}" inputmode="decimal" autocomplete="off" value="${esc(S.ans[k] || "")}"${ok ? " readonly" : ""}><span class="unit">${unit}</span>${ok ? "" : tipBtn(k)}<span class="mark">${ok ? "✓" : tried ? "✗" : ""}</span></div>
+    ${ok ? "" : tipBox(k, q, f)}
     ${!ok && tried ? `<div class="hint">${hint(q, k, f, S.code[k])}</div>` : ""}</div>`;
 }
 function qOk(q) { return q === "q3" ? S.ok.q3a && S.ok.q3b && S.ok.q3c : FIELDS[q].every((f) => S.ok[q + f]); }
@@ -316,7 +354,7 @@ function render() {
       ${fieldHtml(q, "s", L("③ 合起來的 σ（取兩位小數）", "③ σ sau khi ghép (hai chữ số thập phân)"), t.u)}
       ${qOk(q) ? `<div class="qok">✓ ${L("這一題全對", "Câu này đúng hết")}</div>` : `<button class="main" data-chk="${q}">${L("檢查這一題", "Kiểm tra câu này")}</button>`}</div>`;
   });
-  const sel = (id, opts) => `<select id="${id}">${[["", L("— 請選 —", "— chọn —")], ...opts].map(([v, t]) => `<option value="${v}"${S.ans[id] === v ? " selected" : ""}>${t}</option>`).join("")}</select>`;
+  const sel = (id, opts) => `<div class="selrow"><select id="${id}">${[["", L("— 請選 —", "— chọn —")], ...opts].map(([v, t]) => `<option value="${v}"${S.ans[id] === v ? " selected" : ""}>${t}</option>`).join("")}</select>${S.ok[id] ? "" : tipBtn(id)}</div>${S.ok[id] ? "" : tipBox(id, "q3", id)}`;
   const mk = (id) => (S.ok[id] ? `<span style="color:var(--ok);font-weight:700">✓</span>` : (id in S.code ? `<span style="color:var(--red);font-weight:700">✗</span>` : ""));
   h += `<div class="panel" id="p_q3"><h2><span class="tag">${L("想一想", "Suy nghĩ")}</span>${L("第 3 題　三個選擇題", "Câu 3. Ba câu chọn")}</h2>
     <label for="q3a">${mk("q3a")} ${L("a. 你在第 2 題算出來的 σ，跟 σ₁、σ₂ 比起來：", "a. σ bạn tính được ở câu 2, so với σ₁ và σ₂:")}</label>
@@ -371,7 +409,12 @@ function sq() {
   const v = parseNum($("sqIn").value);
   $("sqOut").textContent = isNaN(v) || v < 0 ? "—" : fmt(Math.sqrt(v), 3);
 }
-$("qs").addEventListener("click", (e) => { const b = e.target.closest("[data-chk]"); if (b) check(b.dataset.chk); });
+$("qs").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-tip]");
+  if (t) { const k = t.dataset.tip, on = !TIP_OPEN.has(k); on ? TIP_OPEN.add(k) : TIP_OPEN.delete(k);
+           t.classList.toggle("on", on); const box = $("t_" + k); if (box) box.classList.toggle("on", on); return; }
+  const b = e.target.closest("[data-chk]"); if (b) check(b.dataset.chk);
+});
 $("qs").addEventListener("input", (e) => { if (S && e.target.id && e.target.id.startsWith("i_")) { S.ans[e.target.id.slice(2)] = e.target.value; save(); } });
 $("qs").addEventListener("change", (e) => { if (S && e.target.tagName === "SELECT") { S.ans[e.target.id] = e.target.value; save(); } });
 $("sqIn").addEventListener("input", sq);
