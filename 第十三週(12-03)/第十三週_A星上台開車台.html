@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A* 上台開車台</title>
+<style>
+  /* Latin 字型要排在中文字型前面，否則越南文的聲調符號會錯位（第十週作業頁的教訓） */
+  :root{--bg:#0d1f35;--panel:#14304f;--line:#2a4a70;--ink:#ffffff;--mute:#a0b2c4;--teal:#00a896;--amber:#ffb020;--red:#e5534b;--blue:#5aa2ff}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif}
+  body{display:flex;flex-direction:column;overflow-x:hidden}
+  header{padding:10px 18px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:24px;font-weight:700}
+  header p{margin:2px 0 0;color:var(--mute);font-size:15px}
+  main{flex:1;display:flex;gap:14px;padding:12px 16px;min-height:0}
+  #stage{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+  #cvwrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  #info{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;background:var(--panel);border-radius:8px;padding:6px 12px;font-size:16px}
+  #info b{font-size:20px}
+  #legend{display:flex;flex-wrap:wrap;gap:4px 14px}
+  canvas{touch-action:none;border-radius:6px;cursor:crosshair}
+  #msg{min-height:2.6em;font-size:19px;line-height:1.35;padding:6px 12px;border-radius:8px;background:var(--panel)}
+  #msg small{display:block;color:var(--mute);font-size:15px}
+  aside{width:290px;flex:none;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .box h2{margin:0 0 6px;font-size:15px;color:var(--mute);font-weight:600}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:inherit;font-size:15px;color:var(--ink);background:#1d3d63;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;line-height:1.2}
+  button small{display:block;font-size:12px;color:var(--mute)}
+  button.on{background:var(--teal);border-color:var(--teal)}
+  button.on small{color:#e6fffb}
+  button.go{background:#2e6b3a;border-color:#3f8c4e}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .leg{display:flex;align-items:center;gap:6px;font-size:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .sw{width:20px;height:20px;border-radius:3px;flex:none}
+  input[type=range]{width:100%}
+  @media (max-width:820px){main{flex-direction:column}aside{width:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>A* 上台開車台：自己畫牆，看 A* 一邊算一邊找路，再讓車子開過去</h1>
+  <p>Vẽ tường, xem A* vừa tính vừa tìm đường, rồi cho xe chạy · 開車時點格子，可以丟一台違停車</p>
+</header>
+<main>
+  <section id="stage">
+    <div id="cvwrap"><canvas id="cv"></canvas></div>
+    <div id="info"><span>看過 · đã xem <b id="nSeen">0</b></span><span>排隊 · đang chờ <b id="nQueue">0</b></span><span id="f">白框：—</span><span>路長 · dài <b id="pathLen">—</b></span><span>路線格數 · số ô <b id="pathCells">—</b></span></div>
+    <div id="legend"></div>
+    <div id="msg"></div>
+  </section>
+  <aside>
+    <div class="box"><h2>1. 設計地圖 · Thiết kế bản đồ</h2>
+      <div class="grid2" id="tools"></div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnClear">清空<small>Xóa hết</small></button>
+        <button id="btnDefault">第 5 張的地圖<small>Bản đồ slide 5</small></button>
+      </div>
+    </div>
+    <div class="box"><h2>2. 找法 · Cách tìm</h2>
+      <div class="row" id="modes"></div>
+    </div>
+    <div class="box"><h2>3. 開始算 · Bắt đầu tính</h2>
+      <div class="row">
+        <button id="btnRun" class="go">▶ 開始算<small>Bắt đầu</small></button>
+        <button id="btnPause">⏸ 暫停<small>Tạm dừng</small></button>
+        <button id="btnStep">單步<small>Từng bước</small></button>
+      </div>
+      <div style="margin-top:8px;font-size:14px">速度 · Tốc độ：每秒 <b id="spdv">4</b> 格</div>
+      <input id="spd" type="range" min="1" max="20" value="4">
+    </div>
+    <div class="box"><h2>4. 開車 · Lái xe</h2>
+      <div class="row"><button id="btnDrive" class="go">🚗 開車<small>Lái xe</small></button></div>
+    </div>
+  </aside>
+</main>
+<script>
+/* CORE-BEGIN */
+// 純邏輯（不碰畫面），tools/test_drive_core.js 會抽出來測。規則照抄第三節找路練習台的 search()：
+// 8 個方向（直 1、斜 1.4）；斜走時旁邊兩格任一是牆就不准（不擠牆角）；h＝八方向距離；
+// 排隊順序 f 小先，f 相同 h 小先（離終點近的），再相同先排進名單的；比較容差 1e-9。
+const K = (x, y) => x + "," + y;
+const STEPS8 = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.4], [1, -1, 1.4], [-1, 1, 1.4], [-1, -1, 1.4]];
+const octile = (a, b) => { const dx = Math.abs(a[0] - b[0]), dy = Math.abs(a[1] - b[1]); return Math.max(dx, dy) + 0.4 * Math.min(dx, dy); };
+// 第 2 節第 5 張那張地圖（fig13_s2.py grid_obstacles()）
+function defaultMap() {
+  const walls = new Set();
+  [[4, 3], [4, 4], [5, 3], [5, 4]].forEach(([x, y]) => walls.add(K(x, y)));
+  for (let y = 1; y <= 8; y++) walls.add(K(9, y));
+  for (let x = 14; x <= 19; x++) walls.add(K(x, 7));
+  for (let y = 3; y <= 7; y++) walls.add(K(20, y));
+  return { W: 26, H: 11, S: [2, 6], G: [23, 3], walls };
+}
+function canStep(map, x, y, dx, dy) {
+  const nx = x + dx, ny = y + dy;
+  if (nx < 0 || ny < 0 || nx >= map.W || ny >= map.H || map.walls.has(K(nx, ny))) return false;
+  if (dx && dy && (map.walls.has(K(x + dx, y)) || map.walls.has(K(x, y + dy)))) return false;
+  return true;
+}
+// mode："astar"（f＝g＋h）或 "greedy"（只往 G 衝：f＝h，第一次排進名單後就不再改）
+function makeSearch(map, start, mode) {
+  const greedy = mode === "greedy", G = map.G;
+  const less = (a, b) => a.f < b.f - 1e-9 || (Math.abs(a.f - b.f) <= 1e-9 && (a.h < b.h - 1e-9 || (Math.abs(a.h - b.h) <= 1e-9 && a.seq < b.seq)));
+  const heap = [];
+  const push = (n) => { heap.push(n); let i = heap.length - 1; while (i > 0) { const q = (i - 1) >> 1; if (less(heap[i], heap[q])) { [heap[i], heap[q]] = [heap[q], heap[i]]; i = q; } else break; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && less(heap[l], heap[m])) m = l; if (r < heap.length && less(heap[r], heap[m])) m = r; if (m === i) break; [heap[i], heap[m]] = [heap[m], heap[i]]; i = m; } } return top; };
+  const g = new Map(), came = new Map(), seen = new Set(), seenList = [];
+  let seq = 0, done = false, found = false;
+  const h0 = octile(start, G);
+  g.set(K(...start), 0); push({ f: h0, h: h0, g: 0, p: start, seq: seq++ });
+  const clean = () => { while (heap.length && seen.has(K(...heap[0].p))) pop(); };
+  const peek = () => { clean(); return heap.length ? heap[0].p : null; };
+  function step() {
+    if (done) return { done, found, cur: null, next: null };
+    clean();
+    if (!heap.length) { done = true; return { done, found, cur: null, next: null }; }
+    const cur = pop(), ck = K(...cur.p);
+    seen.add(ck); seenList.push(cur.p);
+    if (cur.p[0] === G[0] && cur.p[1] === G[1]) { done = true; found = true; return { done, found, cur: cur.p, next: null }; }
+    for (const [dx, dy, w] of STEPS8) {
+      if (!canStep(map, cur.p[0], cur.p[1], dx, dy)) continue;
+      const nx = cur.p[0] + dx, ny = cur.p[1] + dy, nk = K(nx, ny), ng = cur.g + w;
+      if (seen.has(nk)) continue;
+      if (greedy ? g.has(nk) : !(ng < (g.has(nk) ? g.get(nk) : 1e9) - 1e-9)) continue;
+      g.set(nk, ng); came.set(nk, cur.p);
+      const hh = octile([nx, ny], G);
+      push({ f: greedy ? hh : ng + hh, h: hh, g: ng, p: [nx, ny], seq: seq++ });
+    }
+    const next = peek();
+    if (!next) done = true;
+    return { done, found, cur: cur.p, next };
+  }
+  return {
+    step, seen: seenList, next: peek,
+    isSeen: (c) => seen.has(K(...c)),
+    queued: () => new Set([...g.keys()].filter((k) => !seen.has(k))),
+    info: (c) => { const k = K(...c); if (!g.has(k)) return null; const gg = g.get(k), hh = octile(c, G); return { g: gg, h: hh, f: greedy ? hh : gg + hh }; },
+    path: () => {
+      if (!found) return null;
+      const p = [G]; while (K(...p[p.length - 1]) !== K(...start)) p.push(came.get(K(...p[p.length - 1])));
+      return p.reverse();
+    },
+    get done() { return done; }, get found() { return found; },
+  };
+}
+const pathLen = (p) => { let L = 0; for (let i = 1; i < p.length; i++) L += (p[i][0] !== p[i - 1][0] && p[i][1] !== p[i - 1][1]) ? 1.4 : 1; return Math.round(L * 10) / 10; };
+function runToEnd(map, start, mode) {
+  const s = makeSearch(map, start, mode || "astar");
+  while (!s.done) s.step();
+  const path = s.path();
+  return { seen: s.seen.length, path, len: path ? pathLen(path) : null, cells: path ? path.length : 0 };
+}
+// 車子在 path[fromIdx]：剩下的路線有沒有被牆擋住（格子是牆，或某一步斜走會擠牆角）
+function pathBlocked(map, path, fromIdx) {
+  for (let i = fromIdx + 1; i < path.length; i++) {
+    const [ax, ay] = path[i - 1], [bx, by] = path[i];
+    if (!canStep(map, ax, ay, bx - ax, by - ay)) return true;
+  }
+  return false;
+}
+/* CORE-END */
+
+/* ───────── 畫面 ───────── */
+const $ = (id) => document.getElementById(id);
+const COL = { free: "rgb(40,58,84)", wall: "rgb(120,130,145)", seen: "rgb(24,120,112)", queue: "rgb(34,78,94)", qline: "rgb(0,168,150)",
+              path: "rgb(255,176,32)", S: "#5aa2ff", G: "#e5534b", drop: "rgb(230,120,40)", grid: "rgb(13,31,53)" };
+let map = defaultMap(), drops = new Set();      // drops：開車時丟的違停車（也算牆）
+let tool = "wall", mode = "astar", speed = 4;
+let state = "edit";        // edit | search | paused | found | nopath | drive | replan | stopped | arrived
+let S = null, timer = null, path = null, car = null, carIdx = 0, carDir = [1, 0];
+let cell = 40, cv = $("cv"), ctx = cv.getContext("2d");
+const allWalls = () => { const w = new Set(map.walls); drops.forEach((k) => w.add(k)); return w; };
+const live = () => ({ ...map, walls: allWalls() });
+
+function say(zh, vi) { $("msg").innerHTML = zh + (vi ? `<small>${vi}</small>` : ""); }
+function stopTimer() { if (timer) { clearTimeout(timer); timer = null; } }
+
+function resize() {
+  const wrap = $("cvwrap"), w = wrap.clientWidth, h = Math.max(240, wrap.clientHeight);
+  cell = Math.max(14, Math.floor(Math.min(w / map.W, h / map.H)));
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = map.W * cell * dpr; cv.height = map.H * cell * dpr;
+  cv.style.width = map.W * cell + "px"; cv.style.height = map.H * cell + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
+}
+function rect(x, y, fill, inset = 1) { ctx.fillStyle = fill; ctx.fillRect(x * cell + inset, y * cell + inset, cell - 2 * inset, cell - 2 * inset); }
+function draw() {
+  const W = map.W, H = map.H, qs = S ? S.queued() : new Set(), nx = S && !S.done ? S.next() : null;
+  ctx.fillStyle = COL.grid; ctx.fillRect(0, 0, W * cell, H * cell);
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    const k = K(x, y);
+    let c = COL.free;
+    if (map.walls.has(k)) c = COL.wall; else if (drops.has(k)) c = COL.drop;
+    else if (S && S.isSeen([x, y])) c = COL.seen; else if (qs.has(k)) c = COL.queue;
+    rect(x, y, c);
+    if (drops.has(k)) { ctx.fillStyle = "#fff"; ctx.font = `bold ${Math.floor(cell * 0.42)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("車", (x + .5) * cell, (y + .5) * cell); }
+    if (qs.has(k) && !map.walls.has(k) && !drops.has(k)) { ctx.strokeStyle = COL.qline; ctx.lineWidth = Math.max(2, cell / 16); ctx.strokeRect(x * cell + 3, y * cell + 3, cell - 6, cell - 6); }
+  }
+  if (path) {
+    ctx.strokeStyle = COL.path; ctx.lineWidth = Math.max(3, cell / 7); ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.beginPath(); path.forEach(([x, y], i) => { const px = (x + .5) * cell, py = (y + .5) * cell; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+  }
+  if (nx) { ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(3, cell / 10); ctx.strokeRect(nx[0] * cell + 2, nx[1] * cell + 2, cell - 4, cell - 4); }
+  for (const [p, c, t] of [[map.S, COL.S, "S"], [map.G, COL.G, "G"]]) {
+    ctx.fillStyle = c; ctx.beginPath(); ctx.arc((p[0] + .5) * cell, (p[1] + .5) * cell, cell * .36, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `bold ${Math.floor(cell * .42)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(t, (p[0] + .5) * cell, (p[1] + .52) * cell);
+  }
+  if (car) drawCar(car, carDir);
+  renderInfo();
+}
+function drawCar([x, y], [dx, dy]) {
+  ctx.save(); ctx.translate((x + .5) * cell, (y + .5) * cell); ctx.rotate(Math.atan2(dy, dx));
+  const L = cell * .78, Wd = cell * .46;
+  ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#0d1f35"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-L / 2, -Wd / 2, L, Wd, cell * .1) : ctx.rect(-L / 2, -Wd / 2, L, Wd); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#5aa2ff"; ctx.fillRect(L * .08, -Wd * .36, L * .22, Wd * .72);     // 擋風玻璃＝車頭方向
+  ctx.restore();
+}
+const fmt = (v) => (Math.round(v * 10) / 10).toString();
+function renderInfo() {
+  $("nSeen").textContent = S ? S.seen.length : 0;
+  $("nQueue").textContent = S ? S.queued().size : 0;
+  const nx = S && !S.done ? S.next() : null, inf = nx ? S.info(nx) : null;
+  $("f").innerHTML = inf ? (mode === "greedy" ? `白框 · khung trắng：只看 h ＝ <b>${fmt(inf.h)}</b>` : `白框 · khung trắng：g ${fmt(inf.g)} ＋ h ${fmt(inf.h)} ＝ f <b>${fmt(inf.f)}</b>`) : "白框：—";
+  $("pathLen").textContent = path ? pathLen(path) : "—";
+  $("pathCells").textContent = path ? path.length : "—";
+  const busy = state === "search" || state === "replan", driving = state === "drive";
+  $("btnRun").disabled = busy || driving;
+  $("btnPause").disabled = !(busy || state === "paused");
+  $("btnPause").innerHTML = state === "paused" ? "▶ 繼續<small>Tiếp tục</small>" : "⏸ 暫停<small>Tạm dừng</small>";
+  $("btnStep").disabled = busy || driving || state === "arrived";
+  $("btnDrive").disabled = !(state === "found" || state === "stopped");
+  $("btnDrive").innerHTML = state === "stopped" ? "▶ 繼續（重新算）<small>Tiếp tục (tính lại)</small>" : "🚗 開車<small>Lái xe</small>";
+  document.querySelectorAll("#tools button,#modes button,#btnClear,#btnDefault").forEach((b) => b.disabled = busy || driving || state === "paused");
+}
+
+/* ───────── 算 ───────── */
+function origin() { return car && (state === "replan" || state === "stopped" || state === "drive") ? car : map.S; }
+function newSearch(from) { S = makeSearch(live(), from, mode); path = null; }
+function tick() {
+  timer = null;
+  const st = S.step();
+  if (st.done) return finish();
+  draw();
+  if (state === "search" || state === "replan") timer = setTimeout(tick, 1000 / speed);
+}
+function finish() {
+  stopTimer(); path = S.path();
+  if (state === "replan" || (state === "paused" && car)) {
+    if (path) { carIdx = 0; state = "drive"; say("找到新路線，繼續開", "Đã có đường mới, chạy tiếp"); draw(); timer = setTimeout(drive, 400); }
+    else { state = "stopped"; say("找不到路，安全地停下來。可以擦掉障礙物，再按「繼續」", "Không tìm được đường, dừng an toàn. Xóa vật cản rồi bấm «Tiếp tục»"); draw(); }
+    return;
+  }
+  if (path) {
+    state = "found";
+    say(mode === "greedy" ? `找到了：只往 G 衝，看了 ${S.seen.length} 格，路長 ${pathLen(path)}（不一定最短）。按「開車」` : `找到了：看了 ${S.seen.length} 格，路長 ${pathLen(path)}。從 G 倒著接回 S＝黃色路線。按「開車」`,
+        `Tìm thấy: xem ${S.seen.length} ô, dài ${String(pathLen(path)).replace(".", ",")}. Bấm «Lái xe»`);
+  } else { state = "nopath"; say("找不到路：G 走不到。改一下牆再試", "Không có đường tới G. Sửa tường rồi thử lại"); }
+  draw();
+}
+function startSearch(stepOnly) {
+  stopTimer(); car = null; drops.clear();
+  if (!S || state === "edit" || state === "found" || state === "nopath" || state === "arrived") newSearch(map.S);
+  if (stepOnly) { state = "paused"; const st = S.step(); if (st.done) return finish(); say("單步：每按一次，看一格", "Từng bước: mỗi lần bấm xem một ô"); draw(); return; }
+  state = "search"; say(mode === "greedy" ? "只往 G 衝：每次挑離 G 最近的格子（只看 h）" : "A* 每次挑 f＝g＋h 最小的格子。綠色＝看過，綠框＝排隊中，白框＝下一個要看的", "Mỗi lần chọn ô có f nhỏ nhất. Xanh = đã xem, khung xanh = đang chờ, khung trắng = xem tiếp");
+  tick();
+}
+
+/* ───────── 開車 ───────── */
+function drive() {
+  timer = null;
+  if (state !== "drive") return;
+  if (pathBlocked(live(), path, carIdx)) return replan();
+  if (carIdx >= path.length - 1) { state = "arrived"; say("到達終點！", "Đã tới đích!"); draw(); return; }
+  const a = path[carIdx], b = path[carIdx + 1]; carDir = [b[0] - a[0], b[1] - a[1]];
+  carIdx++; car = b; draw();
+  timer = setTimeout(drive, 400);
+}
+function startDrive() {
+  stopTimer();
+  if (state === "stopped") return replan();
+  car = path[0]; carIdx = 0; if (path[1]) carDir = [path[1][0] - path[0][0], path[1][1] - path[0][1]];
+  state = "drive"; S = null; say("開車中：點一下格子，可以丟一台違停車擋路", "Đang chạy: bấm vào ô để đặt một xe đỗ sai chắn đường"); draw();
+  timer = setTimeout(drive, 400);
+}
+function replan() {
+  stopTimer(); state = "replan";
+  say("前面有障礙物，重新規劃：從車子現在的位置重新算", "Có vật cản phía trước, lập lại kế hoạch từ vị trí hiện tại của xe");
+  newSearch(car); draw(); timer = setTimeout(tick, 1000 / speed);
+}
+
+/* ───────── 滑鼠、觸控 ───────── */
+function cellAt(ev) { const r = cv.getBoundingClientRect(); return [Math.floor((ev.clientX - r.left) / cell), Math.floor((ev.clientY - r.top) / cell)]; }
+const same = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+let dragging = false;
+function toEdit() { stopTimer(); S = null; path = null; car = null; drops.clear(); state = "edit"; }
+function editCell([x, y]) {
+  if (x < 0 || y < 0 || x >= map.W || y >= map.H) return;
+  const k = K(x, y), p = [x, y];
+  if (tool === "wall") { if (same(p, map.S) || same(p, map.G)) return; map.walls.add(k); }
+  else if (tool === "erase") map.walls.delete(k);
+  else if (tool === "start") { if (map.walls.has(k) || same(p, map.G)) return; map.S = p; }
+  else if (tool === "goal") { if (map.walls.has(k) || same(p, map.S)) return; map.G = p; }
+}
+function dropAt([x, y]) {
+  if (x < 0 || y < 0 || x >= map.W || y >= map.H) return;
+  const k = K(x, y), p = [x, y];
+  if (state === "stopped") {                    // 停下來時：點違停車＝擦掉它
+    if (drops.has(k)) { drops.delete(k); say("擦掉了一台違停車。按「繼續（重新算）」", "Đã xóa một xe đỗ sai. Bấm «Tiếp tục»"); draw(); }
+    return;
+  }
+  if (map.walls.has(k) || drops.has(k) || same(p, car) || same(p, map.G)) return;
+  drops.add(k);
+  if (state === "drive" && path) {
+    if (pathBlocked(live(), path, carIdx)) replan();
+    else { say("沒擋到路線，繼續開", "Không chặn đường, chạy tiếp"); draw(); }
+  } else draw();
+}
+cv.addEventListener("pointerdown", (ev) => {
+  const c = cellAt(ev);
+  if (state === "drive" || state === "replan" || state === "stopped") return dropAt(c);
+  if (state === "search" || state === "paused") return;
+  if (state !== "edit") toEdit();
+  dragging = true; cv.setPointerCapture(ev.pointerId); editCell(c); draw();
+});
+cv.addEventListener("pointermove", (ev) => { if (!dragging || tool === "start" || tool === "goal") return; editCell(cellAt(ev)); draw(); });
+cv.addEventListener("pointerup", () => { dragging = false; });
+
+/* ───────── 按鈕 ───────── */
+const TOOLS = [["wall", "畫牆", "Vẽ tường"], ["erase", "擦掉", "Xóa"], ["start", "移起點 S", "Dời S"], ["goal", "移終點 G", "Dời G"]];
+const MODES = [["astar", "A*（g＋h）", "A* (g + h)"], ["greedy", "只往 G 衝（只看 h）", "Chỉ lao về G (chỉ h)"]];
+function buttons() {
+  $("tools").innerHTML = TOOLS.map(([k, z, v]) => `<button data-t="${k}" class="${tool === k ? "on" : ""}">${z}<small>${v}</small></button>`).join("");
+  $("modes").innerHTML = MODES.map(([k, z, v]) => `<button data-m="${k}" class="${mode === k ? "on" : ""}">${z}<small>${v}</small></button>`).join("");
+}
+$("tools").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; tool = b.dataset.t; buttons(); renderInfo(); });
+$("modes").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; mode = b.dataset.m; toEdit(); buttons(); say(mode === "greedy" ? "只往 G 衝：只看離 G 多近，不管已經走了多遠" : "A*：走過的路 g ＋ 估計還要的路 h", mode === "greedy" ? "Chỉ xem còn cách G bao xa" : "A*: g + h"); draw(); });
+$("btnClear").onclick = () => { toEdit(); map.walls.clear(); say("清空了，用「畫牆」自己設計", "Đã xóa hết, hãy tự vẽ tường"); draw(); };
+$("btnDefault").onclick = () => { toEdit(); map = defaultMap(); say("第 2 節第 5 張的地圖：A* 會看 108 格、路長 25.4", "Bản đồ slide 5: A* xem 108 ô, dài 25,4"); draw(); };
+$("btnRun").onclick = () => startSearch(false);
+$("btnStep").onclick = () => startSearch(true);
+$("btnPause").onclick = () => {
+  if (state === "paused") { state = car ? "replan" : "search"; tick(); }
+  else { stopTimer(); state = "paused"; draw(); }
+};
+$("btnDrive").onclick = startDrive;
+$("spd").oninput = (e) => { speed = +e.target.value; $("spdv").textContent = speed; };
+$("legend").innerHTML = [[COL.seen, "看過", "đã xem"], [COL.queue, "排隊中（綠框）", "đang chờ"], [COL.free, "白框＝下一個要看", "khung trắng = xem tiếp"],
+  [COL.wall, "牆", "tường"], [COL.drop, "違停車（開車時丟）", "xe đỗ sai"], [COL.path, "路線", "đường đi"]]
+  .map(([c, z, v], i) => `<div class="leg"><span class="sw" style="background:${c};${i === 1 ? "outline:3px solid " + COL.qline + ";outline-offset:-3px" : ""}${i === 2 ? "outline:3px solid #fff;outline-offset:-3px" : ""}"></span>${z} · ${v}</div>`).join("");
+buttons(); say("先畫牆、移起點和終點，再按「開始算」", "Vẽ tường, dời S và G, rồi bấm «Bắt đầu tính»");
+window.addEventListener("resize", resize); resize();
+window.__drive = { get state() { return state; }, get seen() { return S ? S.seen.length : 0; }, get len() { return path ? pathLen(path) : null; }, get car() { return car; }, get path() { return path; },
+  setSpeed: (v) => { speed = v; }, drop: (x, y) => dropAt([x, y]) };
+</script>
+</body>
+</html>
