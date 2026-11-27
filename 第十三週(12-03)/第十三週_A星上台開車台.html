@@ -20,6 +20,9 @@
   #info{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;background:var(--panel);border-radius:8px;padding:6px 12px;font-size:16px}
   #info b{font-size:20px}
   #legend{display:flex;flex-wrap:wrap;gap:4px 14px}
+  #cmp{font-size:17px;background:#1d3d63;border:1px solid var(--amber);border-radius:8px;padding:5px 12px}
+  #cmp:empty{display:none}
+  #cmp b{color:var(--amber)}
   canvas{touch-action:none;border-radius:6px;cursor:crosshair}
   #msg{min-height:2.6em;font-size:19px;line-height:1.35;padding:6px 12px;border-radius:8px;background:var(--panel)}
   #msg small{display:block;color:var(--mute);font-size:15px}
@@ -49,6 +52,7 @@
   <section id="stage">
     <div id="cvwrap"><canvas id="cv"></canvas></div>
     <div id="info"><span>看過 · đã xem <b id="nSeen">0</b></span><span>排隊 · đang chờ <b id="nQueue">0</b></span><span id="f">白框：—</span><span>路長 · dài <b id="pathLen">—</b></span><span>路線格數 · số ô <b id="pathCells">—</b></span></div>
+    <div id="cmp"></div>
     <div id="legend"></div>
     <div id="msg"></div>
   </section>
@@ -172,6 +176,8 @@ let tool = "wall", mode = "astar", speed = 4;
 let state = "edit";        // edit | search | paused | found | nopath | drive | replan | stopped | arrived
 let S = null, timer = null, path = null, car = null, carIdx = 0, carDir = [1, 0];
 let cell = 40, cv = $("cv"), ctx = cv.getContext("2d");
+let results = {};          // 同一張地圖兩種找法的結果（地圖一改就清掉）：{ sig, greedy:{seen,len}, astar:{seen,len} }
+const mapSig = () => [...map.walls].sort().join(";") + "|" + map.S + "|" + map.G;
 const allWalls = () => { const w = new Set(map.walls); drops.forEach((k) => w.add(k)); return w; };
 const live = () => ({ ...map, walls: allWalls() });
 
@@ -227,6 +233,7 @@ function renderInfo() {
   $("f").innerHTML = inf ? (mode === "greedy" ? `白框 · khung trắng：只看 h ＝ <b>${fmt(inf.h)}</b>` : `白框 · khung trắng：g ${fmt(inf.g)} ＋ h ${fmt(inf.h)} ＝ f <b>${fmt(inf.f)}</b>`) : "白框：—";
   $("pathLen").textContent = path ? pathLen(path) : "—";
   $("pathCells").textContent = path ? path.length : "—";
+  renderCmp();
   const busy = state === "search" || state === "replan", driving = state === "drive";
   $("btnRun").disabled = busy || driving;
   $("btnPause").disabled = !(busy || state === "paused");
@@ -235,6 +242,14 @@ function renderInfo() {
   $("btnDrive").disabled = !(state === "found" || state === "stopped");
   $("btnDrive").innerHTML = state === "stopped" ? "▶ 繼續（重新算）<small>Tiếp tục (tính lại)</small>" : "🚗 開車<small>Lái xe</small>";
   document.querySelectorAll("#tools button,#modes button,#btnClear,#btnDefault").forEach((b) => b.disabled = busy || driving || state === "paused");
+}
+
+function renderCmp() {
+  const g = results.greedy, a = results.astar;
+  if (results.sig !== mapSig() || !g || !a) { $("cmp").innerHTML = ""; return; }
+  const d = Math.round((g.len - a.len) * 10) / 10;
+  $("cmp").innerHTML = `同一張地圖比一比 · So sánh：只往 G 衝 看 ${g.seen} 格、路長 ${g.len}　｜　A* 看 ${a.seen} 格、路長 <b>${a.len}</b>` +
+    (d > 0 ? `（<b>短 ${d}</b>，多看 ${a.seen - g.seen} 格）` : "（一樣長）");
 }
 
 /* ───────── 算 ───────── */
@@ -256,7 +271,9 @@ function finish() {
   }
   if (path) {
     state = "found";
-    say(mode === "greedy" ? `找到了：只往 G 衝，看了 ${S.seen.length} 格，路長 ${pathLen(path)}（不一定最短）。按「開車」` : `找到了：看了 ${S.seen.length} 格，路長 ${pathLen(path)}。從 G 倒著接回 S＝黃色路線。按「開車」`,
+    if (results.sig !== mapSig()) results = { sig: mapSig() };
+    results[mode] = { seen: S.seen.length, len: pathLen(path) };
+    say(mode === "greedy" ? `找到了：只往 G 衝，看了 ${S.seen.length} 格，路長 ${pathLen(path)}（不一定最短）。按「開車」` : `找到了：看了 ${S.seen.length} 格，路長 ${pathLen(path)}，這是最短的路。從 G 倒著接回 S＝黃色路線。按「開車」`,
         `Tìm thấy: xem ${S.seen.length} ô, dài ${String(pathLen(path)).replace(".", ",")}. Bấm «Lái xe»`);
   } else { state = "nopath"; say("找不到路：G 走不到。改一下牆再試", "Không có đường tới G. Sửa tường rồi thử lại"); }
   draw();
