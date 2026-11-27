@@ -262,8 +262,10 @@ function finish() {
   draw();
 }
 function startSearch(stepOnly) {
+  // 只有「從 S 開始的搜尋暫停中（沒有車子）」才接著算；其他情況（停下來、重算到一半暫停、到達…）一律從 S 重新算
+  const resume = state === "paused" && !car && S && !S.done;
   stopTimer(); car = null; drops.clear();
-  if (!S || state === "edit" || state === "found" || state === "nopath" || state === "arrived") newSearch(map.S);
+  if (!resume) newSearch(map.S);
   if (stepOnly) { state = "paused"; const st = S.step(); if (st.done) return finish(); say("單步：每按一次，看一格", "Từng bước: mỗi lần bấm xem một ô"); draw(); return; }
   state = "search"; say(mode === "greedy" ? "只往 G 衝：每次挑離 G 最近的格子（只看 h）" : "A* 每次挑 f＝g＋h 最小的格子。綠色＝看過，綠框＝排隊中，白框＝下一個要看的", "Mỗi lần chọn ô có f nhỏ nhất. Xanh = đã xem, khung xanh = đang chờ, khung trắng = xem tiếp");
   tick();
